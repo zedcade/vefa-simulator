@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Simulateur VEFA</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -30,13 +31,15 @@ body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color
 .topbar-right-right{justify-self:end;}
 .save-indicator{font-size:10.5px;color:var(--accent2);opacity:0;transition:opacity .3s;white-space:nowrap;}
 .save-indicator.show{opacity:1;}
-.file-btn-wrap{position:relative;display:inline-block;}
-.file-dropdown{position:absolute;top:calc(100% + 4px);left:0;background:var(--panel2);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,.5);max-height:220px;overflow-y:auto;z-index:55;display:none;min-width:190px;}
+.file-btn-wrap{position:relative;display:inline-flex;align-items:center;gap:2px;}
+.file-dropdown{position:absolute;top:calc(100% + 4px);left:0;background:var(--panel2);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,.5);max-height:220px;overflow-y:auto;z-index:55;display:none;min-width:220px;}
 .file-btn-wrap:hover .file-dropdown{display:block;}
+.file-dropdown.show{display:block;}
 .file-dropdown-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;font-size:12px;color:var(--text);border-bottom:1px solid var(--border);cursor:pointer;white-space:nowrap;}
 .file-dropdown-item:last-child{border-bottom:none;}
 .file-dropdown-item:hover{background:var(--accent);color:#fff;}
 .file-dropdown-item .file-remove{color:var(--danger);font-size:12px;cursor:pointer;padding:2px 4px;flex:0 0 auto;}
+.file-dropdown-add{color:var(--accent2);font-weight:600;}
 .file-dropdown-empty{padding:8px 10px;font-size:11.5px;color:var(--muted);}
 .contact-dropdown{display:none;padding:12px;width:230px;position:absolute;top:calc(100% + 4px);left:0;background:var(--panel2);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,.5);z-index:56;}
 .contact-dropdown.show{display:block;}
@@ -44,7 +47,7 @@ body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color
 .contact-field:last-child{margin-bottom:0;}
 .contact-field label{display:block;font-size:10.5px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;}
 .contact-field input{width:100%;background:var(--panel);border:1px solid var(--border);color:var(--text);padding:6px 8px;border-radius:5px;font-size:12.5px;}
-.status-wrap{justify-self:center;display:flex;align-items:center;gap:8px;}
+.status-wrap{justify-self:center;display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
 .status-wrap select,.status-wrap input[type=date]{
   background:var(--panel2);border:1px solid var(--border);color:var(--text);
   padding:7px 10px;border-radius:6px;font-size:12.5px;
@@ -59,6 +62,11 @@ h2{font-size:16px;color:var(--accent);border-bottom:1px solid var(--border);padd
 h2[data-tooltip]{cursor:help;}
 .h2-toggle{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);font-weight:400;border-bottom:none;padding-bottom:0;white-space:nowrap;cursor:help;}
 .grid{display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:start;}
+/* Direct grid/flex item wrappers need an explicit min-width:0 -- otherwise a nowrap table cell
+   (e.g. the omitted-rows marker or a wide date/amount column) buried deep inside a .scrollbox
+   forces its min-content size all the way up through the grid track, stretching the whole page
+   past the viewport on narrow screens even though the scrollbox itself scrolls internally. */
+.grid > div,.topbar-right > *,.status-wrap{min-width:0;}
 .panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:18px;min-width:0;}
 .panel.highlight{border:1.5px solid var(--gold);}
 .panel.negotiate{border:1.5px solid var(--accent2);}
@@ -181,6 +189,43 @@ table input[type=date],table input[type=number]{width:100%;background:var(--pane
 .switch.sm input:checked + .slider:before{transform:translateX(12px);}
 @media (max-width:900px){.grid,.topbar,.bottom-section{grid-template-columns:1fr;}.topbar-right{grid-template-columns:1fr;}.status-wrap{justify-self:start;}.topbar-right-right{justify-self:start;}}
 @media (max-width:700px){.two-col{grid-template-columns:1fr;}}
+@media (max-width:480px){
+  body{padding:12px;}
+  .panel{padding:12px;}
+  h2{font-size:15px;}
+  .btn{padding:8px 12px;font-size:12.5px;}
+  .kpi-grid{grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:8px;}
+  .kpi{padding:8px;min-height:72px;}
+  .kpi .value{font-size:15px;}
+  .nego-grid{grid-template-columns:repeat(auto-fit,minmax(130px,1fr));}
+  .status-wrap{width:100%;}
+  .status-wrap select{min-width:0;flex:1 1 100%;width:100%;}
+  .status-wrap input[type=date]{flex:1 1 100%;width:100%;}
+  .field-row{flex-wrap:wrap;}
+  .field-row label{flex:1 1 100%;margin-bottom:2px;}
+  .field-row input,.field-row select{flex:1 1 100%;width:100%;}
+  .field-row input[type=date],.field-row input[type=month],.field-row input[type=text]{width:100%;flex:1 1 100%;}
+  #prixM2Calc,#ecartM2,#dateLivraisonEstimee,#stadeCommercialisation{width:100%!important;flex:1 1 100%!important;}
+  .field-row .switch{flex:0 0 40px;align-self:flex-start;}
+  .topbar-right-left{gap:8px;}
+  table{font-size:11.5px;}
+  th,td{padding:5px 6px;}
+  .file-dropdown{min-width:0;width:min(240px,85vw);}
+  #negoAddDropdown{min-width:0;width:min(280px,85vw);}
+  .contact-dropdown{width:min(230px,85vw);}
+}
+/* iOS Safari (and iOS Chrome, same engine) auto-zooms the whole page in whenever a focused form
+   field has font-size below 16px. Every field on this page is under that threshold, so on a phone
+   every single tap into a field would otherwise force an unwanted zoom. This does not change the
+   desktop-facing compact sizing above 900px. */
+@media (max-width:900px){
+  .field-row input,.field-row select,
+  .status-wrap select,.status-wrap input[type=date],
+  table input[type=date],table input[type=number],
+  .nego-value-row input,
+  .contact-field input { font-size:16px; }
+  #p0amount { font-size:16px !important; }
+}
 </style>
 </head>
 <body>
@@ -199,11 +244,11 @@ table input[type=date],table input[type=number]{width:100%;background:var(--pane
     <div class="topbar-right-left">
       <button class="btn btn-secondary" onclick="newProject()">+ Nouveau projet</button>
       <div class="file-btn-wrap" id="planBtnWrap">
-        <button class="btn btn-secondary" onclick="document.getElementById('planFileInput').click()">Plan</button>
+        <button class="btn btn-secondary" type="button" onclick="toggleFileDropdown('plan')">Plan</button>
         <div class="file-dropdown" id="planDropdown"></div>
       </div>
       <div class="file-btn-wrap" id="brochureBtnWrap">
-        <button class="btn btn-secondary" onclick="document.getElementById('brochureFileInput').click()">Brochure</button>
+        <button class="btn btn-secondary" type="button" onclick="toggleFileDropdown('brochure')">Brochure</button>
         <div class="file-dropdown" id="brochureDropdown"></div>
       </div>
       <div class="file-btn-wrap" id="contactBtnWrap">
@@ -239,17 +284,17 @@ table input[type=date],table input[type=number]{width:100%;background:var(--pane
 <div>
   <div class="panel">
     <h2>Projet</h2>
-    <div class="field-row"><label>Prix d'acquisition (&euro;)</label><input type="number" class="auto" id="price" value="568000" step="100" min="0"></div>
-    <div class="field-row"><label>Remise (%)</label><input type="number" class="auto" id="remise" value="1.2852" step="0.01" min="0"></div>
-    <div class="field-row"><label>Mois de d&eacute;marrage construction</label><input type="month" class="auto" id="startMonth" value="2026-12"></div>
+    <div class="field-row"><label>Prix d'acquisition (&euro;)</label><input type="number" class="auto" id="price" value="350000" step="100" min="0"></div>
+    <div class="field-row"><label>Remise (%)</label><input type="number" class="auto" id="remise" value="1" step="0.01" min="0"></div>
+    <div class="field-row"><label>Mois de d&eacute;marrage construction</label><input type="month" class="auto" id="startMonth" value="2027-01"></div>
     <div class="field-row"><label data-tooltip="Estimation modifiable -- les programmes VEFA communiquent souvent un trimestre (ex: T4 2028) plut&ocirc;t qu'un mois pr&eacute;cis. Ce champ suit automatiquement la date de Livraison du calendrier des appels de fonds tant que vous ne l'avez pas modifi&eacute; manuellement.">Date de livraison estim&eacute;e</label><input type="month" class="auto" id="dateLivraisonEstimee" oninput="this.dataset.userSet='1'"></div>
     <div class="section-title">Localisation et prix m&sup2;</div>
-    <div class="field-row"><label>Code postal</label><input type="text" class="auto" id="commune" value="92350"></div>
-    <div class="field-row"><label><a id="adresseLink" href="#" target="_blank" data-tooltip="Ouvre Google Maps pour l'adresse renseign&eacute;e">Adresse (rue)</a></label><input type="text" class="auto" id="adresse" value="Rue de Sceaux" placeholder="ex: Rue de Sceaux"></div>
-    <div class="field-row"><label>Surface habitable totale (m&sup2;)</label><input type="number" class="auto" id="surface" value="84.15" step="0.1" min="0"></div>
+    <div class="field-row"><label>Code postal</label><input type="text" class="auto" id="commune" value="75000"></div>
+    <div class="field-row"><label><a id="adresseLink" href="#" target="_blank" data-tooltip="Ouvre Google Maps pour l'adresse renseign&eacute;e">Adresse (rue)</a></label><input type="text" class="auto" id="adresse" value="" placeholder="ex: Rue de Sceaux"></div>
+    <div class="field-row"><label>Surface habitable totale (m&sup2;)</label><input type="number" class="auto" id="surface" value="70" step="0.1" min="0"></div>
     <div class="field-row"><label>Prix/m&sup2; calcul&eacute; (&euro;)</label><input type="text" id="prixM2Calc" value="" disabled></div>
-    <div class="field-row"><label><a id="prixM2MoyenLink" href="#" target="_blank" data-tooltip="Ouvre la r&eacute;f&eacute;rence SeLoger renseign&eacute;e ci-dessous">Prix moyen commune (&euro;/m&sup2;)</a></label><input type="number" class="auto" id="prixM2Moyen" value="5261" step="10" min="0"></div>
-    <div class="field-row full-width"><input type="text" class="auto" id="selogerUrl" value="https://www.seloger.com/prix-de-l-immo/vente/ile-de-france/hauts-de-seine/le-plessis-robinson/rue-de-sceaux/r92060_8520_29e180.htm" placeholder="Lien SeLoger (prix moyen au m2)"></div>
+    <div class="field-row"><label><a id="prixM2MoyenLink" href="#" target="_blank" data-tooltip="Ouvre la r&eacute;f&eacute;rence SeLoger renseign&eacute;e ci-dessous">Prix moyen commune (&euro;/m&sup2;)</a></label><input type="number" class="auto" id="prixM2Moyen" value="5000" step="10" min="0"></div>
+    <div class="field-row full-width"><input type="text" class="auto" id="selogerUrl" value="" placeholder="Lien SeLoger (prix moyen au m2)"></div>
     <div class="field-row"><label>&Eacute;cart vs moyenne commune</label><input type="text" id="ecartM2" value="" disabled></div>
     <div class="field-row"><label>Stade de commercialisation</label>
       <select class="auto" id="stadeCommercialisation">
@@ -268,21 +313,21 @@ table input[type=date],table input[type=number]{width:100%;background:var(--pane
     <div class="field-row"><label data-tooltip="G&eacute;n&eacute;ralement 0 &euro; en VEFA (vente directe par le promoteur, sans agence).">Frais d'agence (&euro;)</label><input type="number" class="auto" id="fraisAgence" value="0" step="100" min="0"></div>
     <div class="field-row"><label data-tooltip="Meubles, &eacute;lectrom&eacute;nager, d&eacute;m&eacute;nagement. Certaines banques financent une part de mobilier (plafonn&eacute;e environ 10% du pr&ecirc;t), jamais automatique.">Mobilier / autres (&euro;)</label><input type="number" class="auto" id="fraisMobilier" value="0" step="1" min="0"></div>
     <div class="section-title" data-tooltip="Ces montants sont vos hypoth&egrave;ses par d&eacute;faut. &Agrave; confirmer avec votre offre de pr&ecirc;t r&eacute;elle.">Frais li&eacute;s au cr&eacute;dit</div>
-    <div class="field-row"><label data-tooltip="Caution bancaire : g&eacute;n&eacute;ralement 1-2% du montant emprunt&eacute; ; une partie (environ 65-73%) est restituable en fin de pr&ecirc;t.">Frais de garantie (&euro;)</label><input type="number" class="auto" id="fraisGarantie" value="5533" step="1" min="0"></div>
+    <div class="field-row"><label data-tooltip="Caution bancaire : g&eacute;n&eacute;ralement 1-2% du montant emprunt&eacute; ; une partie (environ 65-73%) est restituable en fin de pr&ecirc;t.">Frais de garantie (&euro;)</label><input type="number" class="auto" id="fraisGarantie" value="3000" step="1" min="0"></div>
     <div class="field-row"><label data-tooltip="Moyenne nationale environ 1900 &euro; pour un pr&ecirc;t de 200 000 &euro;, mais l'&eacute;cart va de 0 &euro; (banques en ligne) &agrave; 2500 &euro;.">Frais de dossier (&euro;)</label><input type="number" class="auto" id="fraisDossier" value="1500" step="1" min="0"></div>
-    <div class="field-row"><label data-tooltip="Si vous passez par un courtier : g&eacute;n&eacute;ralement 1% du montant du pr&ecirc;t.">Frais de courtage (&euro;)</label><input type="number" class="auto" id="fraisCourtage" value="4454" step="1" min="0"></div>
+    <div class="field-row"><label data-tooltip="Si vous passez par un courtier : g&eacute;n&eacute;ralement 1% du montant du pr&ecirc;t.">Frais de courtage (&euro;)</label><input type="number" class="auto" id="fraisCourtage" value="2500" step="1" min="0"></div>
     <div class="field-row"><label data-tooltip="Due uniquement en cas de remboursement anticip&eacute;. Plafonn&eacute;e par la loi (Art. R313-25 Code conso) &agrave; MIN(3% du capital restant d&ucirc;, 6 mois d'int&eacute;r&ecirc;ts au taux moyen du pr&ecirc;t).">IRA remb. anticip&eacute; (&euro;)</label><input type="number" class="auto" id="fraisIRA" value="0" step="100" min="0"></div>
   </div>
 
   <div class="panel">
     <h2>Financement</h2>
-    <div class="field-row"><label data-tooltip="Objectif d'apport. Le tableau Diff&eacute;r&eacute; suppose que vous levez le compl&eacute;ment n&eacute;cessaire &agrave; chaque &eacute;tape pour que l'apport couvre en priorit&eacute; chaque appel jusqu'&agrave; ce plafond.">Apport cible total (&euro;)</label><input type="number" class="auto" id="apport" value="300000" step="1000" min="0"></div>
+    <div class="field-row"><label data-tooltip="Objectif d'apport. Le tableau Diff&eacute;r&eacute; suppose que vous levez le compl&eacute;ment n&eacute;cessaire &agrave; chaque &eacute;tape pour que l'apport couvre en priorit&eacute; chaque appel jusqu'&agrave; ce plafond.">Apport cible total (&euro;)</label><input type="number" class="auto" id="apport" value="150000" step="1000" min="0"></div>
     <div class="section-title">PTZ<a class="inline-link" href="https://www.anil.org/outils/outils-de-calcul/votre-pret-a-taux-zero/" target="_blank">Simulateur ANIL</a></div>
-    <div class="field-row"><label>Montant PTZ (&euro;)</label><input type="number" class="auto" id="ptzAmount" value="108000" step="1000" min="0"></div>
+    <div class="field-row"><label>Montant PTZ (&euro;)</label><input type="number" class="auto" id="ptzAmount" value="50000" step="1000" min="0"></div>
     <div class="field-row"><label>Diff&eacute;r&eacute; PTZ (mois depuis livraison)</label><input type="number" class="auto" id="ptzDefer" value="0" step="1" min="0"></div>
     <div class="field-row"><label>Dur&eacute;e totale PTZ (mois)</label><input type="number" class="auto" id="ptzTotalMonths" value="180" step="1" min="0"></div>
     <div class="section-title">&Eacute;ligibilit&eacute; PTZ</div>
-    <div class="field-row"><label>RFR N-2 (&euro;)</label><input type="number" class="auto" id="rfr" value="70000" step="100" min="0"></div>
+    <div class="field-row"><label>RFR N-2 (&euro;)</label><input type="number" class="auto" id="rfr" value="45000" step="100" min="0"></div>
     <div class="field-row"><label>Zone PTZ</label>
       <select class="auto" id="ptzZone">
         <option value="AbisA" selected>A bis / A</option>
@@ -291,11 +336,11 @@ table input[type=date],table input[type=number]{width:100%;background:var(--pane
         <option value="C">C</option>
       </select>
     </div>
-    <div class="field-row"><label>Personnes du foyer</label><input type="number" class="auto" id="ptzPersonnes" value="3" step="1" min="0"></div>
+    <div class="field-row"><label>Personnes du foyer</label><input type="number" class="auto" id="ptzPersonnes" value="2" step="1" min="0"></div>
     <div class="note" id="ptzEligNote"></div>
     <div class="section-title">Pr&ecirc;t principal</div>
     <div class="field-row"><label>Dur&eacute;e amortissement post-livraison (ans)</label><input type="number" class="auto" id="loanYears" value="15" step="1" min="0"></div>
-    <div class="field-row"><label>Taux nominal du pr&ecirc;t (%)</label><input type="number" class="auto" id="loanRate" value="3.15" step="0.01" min="0"></div>
+    <div class="field-row"><label>Taux nominal du pr&ecirc;t (%)</label><input type="number" class="auto" id="loanRate" value="3.5" step="0.01" min="0"></div>
     <div class="section-title">Assurance emprunteur</div>
     <div class="field-row"><label>Taux annuel emprunteur 1 (%)</label><input type="number" class="auto" id="ins1Rate" value="0.55" step="0.01" min="0"></div>
     <div class="field-row"><label>Quotit&eacute; emprunteur 1 (%)</label><input type="number" class="auto" id="ins1Quota" value="100" step="1" min="0"></div>
@@ -313,11 +358,11 @@ table input[type=date],table input[type=number]{width:100%;background:var(--pane
 
   <div class="panel">
     <h2>Emprunteurs et &eacute;pargne</h2>
-    <div class="field-row"><label>Salaire net emprunteur 1 (&euro;/mois)</label><input type="number" class="auto" id="salary1" value="7030" step="10" min="0"></div>
-    <div class="field-row"><label>Salaire net emprunteur 2 (&euro;/mois)</label><input type="number" class="auto" id="salary2" value="3863" step="10" min="0"></div>
+    <div class="field-row"><label>Salaire net emprunteur 1 (&euro;/mois)</label><input type="number" class="auto" id="salary1" value="3000" step="10" min="0"></div>
+    <div class="field-row"><label>Salaire net emprunteur 2 (&euro;/mois)</label><input type="number" class="auto" id="salary2" value="2000" step="10" min="0"></div>
     <div class="field-row"><label>% du salaire mis de c&ocirc;t&eacute; /mois</label><input type="number" class="auto" id="savingsRate" value="30" step="1" min="0"></div>
-    <div class="field-row"><label>Rendement Flex Fund (% APY)</label><input type="number" class="auto" id="flexFundRate" value="2.08" step="0.01" min="0"></div>
-    <div class="field-row"><label>Apport disponible aujourd'hui (&euro;)</label><input type="number" class="auto" id="apportDispo" value="150000" step="1000" min="0"></div>
+    <div class="field-row"><label>Rendement Flex Fund (% APY)</label><input type="number" class="auto" id="flexFundRate" value="2" step="0.01" min="0"></div>
+    <div class="field-row"><label>Apport disponible aujourd'hui (&euro;)</label><input type="number" class="auto" id="apportDispo" value="50000" step="1000" min="0"></div>
     <div class="field-row"><label>Date de r&eacute;f&eacute;rence "aujourd'hui"</label><input type="date" class="auto" id="refDate"></div>
   </div>
 
@@ -545,6 +590,22 @@ document.addEventListener('click', e=>{
   if(wrap && !wrap.contains(e.target)) document.getElementById('contactDropdown').classList.remove('show');
 });
 
+// ---- Plan/Brochure file dropdown (tap-to-toggle, for touch devices which have no :hover state) ----
+function toggleFileDropdown(category){
+  const dd=document.getElementById(category+'Dropdown');
+  if(!dd) return;
+  const wasShown=dd.classList.contains('show');
+  document.getElementById('planDropdown').classList.remove('show');
+  document.getElementById('brochureDropdown').classList.remove('show');
+  if(!wasShown) dd.classList.add('show');
+}
+document.addEventListener('click', e=>{
+  if(!e.target.closest('.file-btn-wrap')){
+    document.getElementById('planDropdown').classList.remove('show');
+    document.getElementById('brochureDropdown').classList.remove('show');
+  }
+});
+
 // ---- Status indicator date label ----
 function statusDateLabel(status){ return STATUS_DATE_LABELS[status] || 'Date'; }
 function updateStatusDateLabel(){
@@ -638,6 +699,7 @@ function positionAndShowTooltip(el){
   tip.style.left=left+'px'; tip.style.top=top+'px';
 }
 function hideTooltip(){ document.getElementById('globalTooltip').style.display='none'; }
+let touchTooltipTarget=null;
 function bindTooltipDelegation(){
   document.body.addEventListener('mouseover', e=>{ const el=e.target.closest('[data-tooltip]'); if(el) positionAndShowTooltip(el); });
   document.body.addEventListener('mouseout', e=>{
@@ -646,6 +708,20 @@ function bindTooltipDelegation(){
     if(el && el!==related) hideTooltip();
   });
   window.addEventListener('scroll', hideTooltip, true);
+  // Touch devices have no hover state, so the mouseover/mouseout handlers above never fire there.
+  // A tap on a data-tooltip element toggles it open/closed; tapping anywhere else dismisses it.
+  // Taps that land on an actual control (input, link, button, negotiation card, dropdown item) are
+  // left alone so this doesn't hijack their normal tap behavior.
+  document.body.addEventListener('touchstart', e=>{
+    const el=e.target.closest('[data-tooltip]');
+    if(!el){ if(touchTooltipTarget){ hideTooltip(); touchTooltipTarget=null; } return; }
+    if(e.target.closest('input, select, textarea, a, button, .nego-card, .file-dropdown-item, .dropdown-item, .nego-add-item')){
+      if(touchTooltipTarget){ hideTooltip(); touchTooltipTarget=null; }
+      return;
+    }
+    if(touchTooltipTarget===el){ hideTooltip(); touchTooltipTarget=null; return; }
+    positionAndShowTooltip(el); touchTooltipTarget=el;
+  }, {passive:true});
 }
 // ---- Global guard: block negative values on any number input (including dynamically created ones) ----
 document.addEventListener('input', e=>{
@@ -661,7 +737,15 @@ function serializeState(){
   return state;
 }
 function applyState(state){
-  document.querySelectorAll('.auto').forEach(el=>{ if(state.hasOwnProperty(el.id)){ if(el.type==='checkbox') el.checked=state[el.id]; else el.value=state[el.id]; } });
+  if(!state){
+    console.error('Aucune donn\u00e9e valide \u00e0 charger pour ce projet -- valeurs par d\u00e9faut appliqu\u00e9es. Le prochain enregistrement recr\u00e9era les donn\u00e9es du projet.');
+    state={};
+  }
+  document.querySelectorAll('.auto').forEach(el=>{
+    try{
+      if(state.hasOwnProperty(el.id)){ if(el.type==='checkbox') el.checked=state[el.id]; else el.value=state[el.id]; }
+    }catch(e){ console.error('Champ "'+el.id+'" : valeur ignor\u00e9e (donn\u00e9e invalide).', e); }
+  });
   document.getElementById('fraisNotaire').disabled=document.getElementById('fraisNotaireFNO').checked;
   updateFraisNotaireLabel();
   if(document.getElementById('dateLivraisonEstimee').value) document.getElementById('dateLivraisonEstimee').dataset.userSet='1';
@@ -676,7 +760,12 @@ function saveProject(name, state){
   if(!list.includes(name)){ list.push(name); setProjectList(list); }
   setLastActive(name); flashSaveIndicator();
 }
-function loadProjectState(name){ const raw=localStorage.getItem(STORAGE_PREFIX+name); return raw?JSON.parse(raw):null; }
+function loadProjectState(name){
+  const raw=localStorage.getItem(STORAGE_PREFIX+name);
+  if(!raw) return null;
+  try{ return JSON.parse(raw); }
+  catch(e){ console.error('Projet "'+name+'" : donn\u00e9es corrompues, chargement par d\u00e9faut.', e); return null; }
+}
 function deleteProjectStorage(name){ localStorage.removeItem(STORAGE_PREFIX+name); setProjectList(getProjectList().filter(n=>n!==name)); }
 let saveFlashTimeout=null;
 function flashSaveIndicator(){ const el=document.getElementById('saveIndicator'); el.classList.add('show'); clearTimeout(saveFlashTimeout); saveFlashTimeout=setTimeout(()=>el.classList.remove('show'),1200); }
@@ -735,13 +824,25 @@ async function renameFileCategoryProject(category, oldName, newName){
   if(entries.length){ await setFileEntries(category, newName, entries); await setFileEntries(category, oldName, []); }
 }
 async function deleteFileCategoryProject(category, projectName){ await setFileEntries(category, projectName, []); }
+const FILE_CATEGORY_LABELS={plan:'Ajouter un plan',brochure:'Ajouter une brochure'};
+function fileDropdownAddItemHtml(category){
+  return '<div class="file-dropdown-item file-dropdown-add" data-cat="'+category+'"><span>+ '+(FILE_CATEGORY_LABELS[category]||'Ajouter une fiche')+'</span></div>';
+}
+function bindFileDropdownAddHandler(dd, category){
+  const addEl=dd.querySelector('.file-dropdown-add');
+  if(addEl) addEl.addEventListener('click', ()=>{
+    document.getElementById(category+'FileInput').click();
+    dd.classList.remove('show');
+  });
+}
 async function refreshFileDropdown(category){
   const dd=document.getElementById(category+'Dropdown');
   if(!dd) return;
-  if(!currentProjectName){ dd.innerHTML='<div class="file-dropdown-empty">Aucun fichier</div>'; return; }
+  if(!currentProjectName){ dd.innerHTML=fileDropdownAddItemHtml(category)+'<div class="file-dropdown-empty">Aucun fichier</div>'; bindFileDropdownAddHandler(dd, category); return; }
   const entries=await getFileEntries(category, currentProjectName);
-  if(!entries.length){ dd.innerHTML='<div class="file-dropdown-empty">Aucun fichier</div>'; return; }
-  dd.innerHTML=entries.map(e=>'<div class="file-dropdown-item" data-id="'+e.id+'"><span class="file-open" data-id="'+e.id+'">'+e.name+'</span><span class="file-remove" data-id="'+e.id+'" title="Supprimer">x</span></div>').join('');
+  if(!entries.length){ dd.innerHTML=fileDropdownAddItemHtml(category)+'<div class="file-dropdown-empty">Aucun fichier</div>'; bindFileDropdownAddHandler(dd, category); return; }
+  dd.innerHTML=fileDropdownAddItemHtml(category)+entries.map(e=>'<div class="file-dropdown-item" data-id="'+e.id+'"><span class="file-open" data-id="'+e.id+'">'+e.name+'</span><span class="file-remove" data-id="'+e.id+'" title="Supprimer">x</span></div>').join('');
+  bindFileDropdownAddHandler(dd, category);
   dd.querySelectorAll('.file-open').forEach(el=>el.addEventListener('click', async ()=>{
     const entries2=await getFileEntries(category, currentProjectName);
     const entry=entries2.find(x=>x.id===el.getAttribute('data-id'));
@@ -818,7 +919,8 @@ function nextAvailableName(base){
 }
 function newProject(){
   if(currentProjectName) saveProject(currentProjectName, serializeState());
-  const newName=nextAvailableName(currentProjectName||'Mon projet VEFA');
+  const defaultBaseName='Mon projet VEFA';
+  const newName = getProjectList().includes(defaultBaseName) ? nextAvailableName(defaultBaseName) : defaultBaseName;
   if(defaultStateSnapshot) applyState(defaultStateSnapshot);
   currentProjectName=newName; document.getElementById('pageTitle').value=newName;
   switchTab('differe', true); runSimulation(); saveProject(currentProjectName, serializeState()); refreshAllFileDropdowns();
@@ -1569,13 +1671,19 @@ window.onload=function(){
 
   const list=getProjectList();
   const lastActive=localStorage.getItem(STORAGE_LAST_ACTIVE);
-  if(lastActive && list.includes(lastActive)){
-    currentProjectName=lastActive; applyState(loadProjectState(lastActive));
-  } else if(list.includes('Mon projet VEFA')){
-    currentProjectName='Mon projet VEFA'; applyState(loadProjectState('Mon projet VEFA'));
-  } else {
-    currentProjectName='Mon projet VEFA';
-    initNegoData(); renderNegoExtrasGrid();
+  try{
+    if(lastActive && list.includes(lastActive)){
+      currentProjectName=lastActive; applyState(loadProjectState(lastActive));
+    } else if(list.includes('Mon projet VEFA')){
+      currentProjectName='Mon projet VEFA'; applyState(loadProjectState('Mon projet VEFA'));
+    } else {
+      currentProjectName='Mon projet VEFA';
+      initNegoData(); renderNegoExtrasGrid();
+    }
+  }catch(e){
+    console.error('Erreur au chargement du projet -- valeurs par d\u00e9faut appliqu\u00e9es.', e);
+    currentProjectName=currentProjectName||lastActive||'Mon projet VEFA';
+    if(defaultStateSnapshot) applyState(defaultStateSnapshot);
   }
   document.getElementById('pageTitle').value=currentProjectName;
   setLastActive(currentProjectName);
