@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Simulateur VEFA</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root{--bg:#0f1420;--panel:#161d2e;--panel2:#1c2438;--border:#2a3452;--text:#e8ecf5;--muted:#9aa6c0;--accent:#4f8cff;--accent2:#3ddc97;--warn:#ffb454;--danger:#ff6b6b;--gold:#ffd166;color-scheme:dark;}
+*{box-sizing:border-box;}
+html,body{overflow-x:hidden;}
+* { scrollbar-width:thin; scrollbar-color:var(--border) var(--panel2); }
+::-webkit-scrollbar{width:10px;height:10px;}
+::-webkit-scrollbar-track{background:var(--panel2);border-radius:8px;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px;border:2px solid var(--panel2);}
+::-webkit-scrollbar-thumb:hover{background:var(--muted);}
+body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);padding:24px;line-height:1.4;}
+.topbar{display:grid;grid-template-columns:380px 1fr;gap:20px;margin-bottom:18px;align-items:center;}
+.title-wrap{position:relative;}
+#pageTitle{font-size:18px;font-weight:700;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:10px 30px 10px 12px;border-radius:8px;width:100%;cursor:pointer;}
+.title-wrap .chevron{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:10px;pointer-events:none;}
+#projectDropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--panel2);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,.5);max-height:220px;overflow-y:auto;z-index:50;display:none;}
+#projectDropdown.show{display:block;}
+.dropdown-item{padding:8px 12px;font-size:13px;cursor:pointer;color:var(--text);border-bottom:1px solid var(--border);}
+.dropdown-item:hover{background:var(--accent);color:#fff;}
+.dropdown-item.current{color:var(--accent2);font-weight:600;}
+.dropdown-empty{padding:10px 12px;font-size:12px;color:var(--muted);}
+.topbar-right{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;}
+.topbar-right-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-self:start;}
+.topbar-right-right{justify-self:end;}
+.save-indicator{font-size:10.5px;color:var(--accent2);opacity:0;transition:opacity .3s;white-space:nowrap;}
+.save-indicator.show{opacity:1;}
+.file-btn-wrap{position:relative;display:inline-block;}
+.file-dropdown{position:absolute;top:calc(100% + 4px);left:0;background:var(--panel2);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,.5);max-height:220px;overflow-y:auto;z-index:55;display:none;min-width:190px;}
+.file-btn-wrap:hover .file-dropdown{display:block;}
+.file-dropdown-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;font-size:12px;color:var(--text);border-bottom:1px solid var(--border);cursor:pointer;white-space:nowrap;}
+.file-dropdown-item:last-child{border-bottom:none;}
+.file-dropdown-item:hover{background:var(--accent);color:#fff;}
+.file-dropdown-item .file-remove{color:var(--danger);font-size:12px;cursor:pointer;padding:2px 4px;flex:0 0 auto;}
+.file-dropdown-empty{padding:8px 10px;font-size:11.5px;color:var(--muted);}
+.contact-dropdown{display:none;padding:12px;width:230px;position:absolute;top:calc(100% + 4px);left:0;background:var(--panel2);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,.5);z-index:56;}
+.contact-dropdown.show{display:block;}
+.contact-field{margin-bottom:8px;}
+.contact-field:last-child{margin-bottom:0;}
+.contact-field label{display:block;font-size:10.5px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;}
+.contact-field input{width:100%;background:var(--panel);border:1px solid var(--border);color:var(--text);padding:6px 8px;border-radius:5px;font-size:12.5px;}
+.status-wrap{justify-self:center;display:flex;align-items:center;gap:8px;}
+.status-wrap select,.status-wrap input[type=date]{
+  background:var(--panel2);border:1px solid var(--border);color:var(--text);
+  padding:7px 10px;border-radius:6px;font-size:12.5px;
+}
+.status-wrap select{
+  appearance:none;-webkit-appearance:none;-moz-appearance:none;
+  background-image:url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239aa6c0'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;padding-right:26px;cursor:pointer;min-width:190px;
+}
+.status-wrap input[type=date]{cursor:pointer;width:140px;}
+h2{font-size:16px;color:var(--accent);border-bottom:1px solid var(--border);padding-bottom:6px;margin-top:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+h2[data-tooltip]{cursor:help;}
+.h2-toggle{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);font-weight:400;border-bottom:none;padding-bottom:0;white-space:nowrap;cursor:help;}
+.grid{display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:start;}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:18px;min-width:0;}
+.panel.highlight{border:1.5px solid var(--gold);}
+.panel.negotiate{border:1.5px solid var(--accent2);}
+.field-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-bottom:10px;}
+.field-row label{font-size:12.5px;color:var(--muted);flex:1 1 140px;min-width:0;}
+.field-row label[data-tooltip]{cursor:help;}
+.field-row label a{color:inherit;text-decoration:underline;cursor:pointer;}
+.field-row label a:hover{color:var(--accent);}
+.field-row input,.field-row select{width:130px;flex:0 0 130px;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:6px 8px;border-radius:6px;font-size:13px;text-align:right;}
+.field-row select{
+  text-align:left;
+  appearance:none;-webkit-appearance:none;-moz-appearance:none;
+  background-image:url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239aa6c0'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;padding:6px 26px 6px 8px;
+}
+.field-row input[type=date],.field-row input[type=month],.field-row input[type=text]{text-align:left;width:150px;flex:0 0 150px;}
+.field-row.full-width{gap:0;}
+.field-row.full-width input{width:100%;flex:1 1 100%;text-align:left;}
+.field-row .switch{flex:0 0 40px;}
+#stadeCommercialisation{width:150px;flex:0 0 150px;}
+#prixM2Calc{width:130px;flex:0 0 130px;text-align:right;font-weight:700;}
+#ecartM2{font-weight:700;}
+#prixM2Calc:disabled,#ecartM2:disabled{opacity:1;-webkit-text-fill-color:currentColor;}
+#dateLivraisonEstimee{width:150px;flex:0 0 150px;text-align:left;}
+.field-row input:disabled{opacity:.55;cursor:not-allowed;}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{
+  opacity:0;
+  transition:opacity .15s;
+  cursor:pointer;
+}
+input[type=number]:hover::-webkit-inner-spin-button,
+input[type=number]:hover::-webkit-outer-spin-button,
+input[type=number]:focus::-webkit-inner-spin-button,
+input[type=number]:focus::-webkit-outer-spin-button{
+  opacity:1;
+}
+input[type=date]::-webkit-calendar-picker-indicator,
+input[type=month]::-webkit-calendar-picker-indicator{cursor:pointer;}
+.section-title{font-size:12px;text-transform:uppercase;color:var(--accent2);margin:14px 0 8px;font-weight:600;display:flex;align-items:center;gap:6px;}
+.section-title[data-tooltip]{cursor:help;}
+.section-title-row{display:flex;align-items:center;justify-content:space-between;margin:14px 0 8px;}
+.section-title .inline-link{margin-left:auto;text-transform:none;font-weight:400;font-size:11.5px;color:var(--accent);white-space:nowrap;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+th,td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:right;}
+th{color:var(--muted);font-weight:600;background:var(--panel2);}
+td:first-child,th:first-child{text-align:left;}
+table input[type=date],table input[type=number]{width:100%;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:4px 6px;border-radius:5px;font-size:12px;text-align:right;}
+.scrollbox{max-height:340px;overflow-y:auto;overflow-x:auto;border:1px solid var(--border);border-radius:8px;}
+.scrollbox table thead th{position:sticky;top:0;z-index:5;}
+.no-scroll-table{overflow:visible;max-height:none;border:1px solid var(--border);border-radius:8px;}
+.row-omitted td{text-align:center;color:var(--muted);font-style:italic;font-size:11px;background:var(--panel2);}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;margin-bottom:6px;}
+.kpi{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:10px;min-height:82px;display:flex;flex-direction:column;justify-content:space-between;}
+.kpi[data-tooltip]{cursor:help;}
+.kpi.gold{border-color:var(--gold);} .kpi.accent2{border-color:var(--accent2);}
+.kpi .label{font-size:10px;color:var(--muted);text-transform:uppercase;}
+.kpi .value{font-size:17px;font-weight:700;margin-top:6px;}
+.kpi .value.accent{color:var(--accent2);} .kpi .value.warn{color:var(--warn);}
+.kpi .value.danger{color:var(--danger);} .kpi .value.gold{color:var(--gold);}
+.note{font-size:11.5px;color:var(--muted);margin-top:2px;}
+.tag{display:inline-block;font-size:10.5px;padding:2px 7px;border-radius:20px;background:var(--panel2);border:1px solid var(--border);color:var(--muted);margin-left:2px;white-space:nowrap;cursor:help;}
+.row-ok{color:var(--accent2);} .row-short{color:var(--danger);font-weight:700;}
+.row-done{color:var(--accent2);font-style:italic;font-size:10.5px;}
+.row-intercalary{color:var(--warn);font-style:italic;font-size:10.5px;}
+.row-carried{color:var(--muted);opacity:.6;font-style:italic;}
+.deja-levee{font-size:9.5px;font-style:italic;color:var(--muted);white-space:nowrap;margin-left:2px;}
+.scrollbox table td{white-space:nowrap;}
+.checkbox-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.checkbox-row label{font-size:12.5px;color:var(--muted);}
+.checkbox-row label[data-tooltip]{cursor:help;}
+.btn{border:none;padding:9px 16px;border-radius:6px;font-size:13px;cursor:pointer;font-weight:600;white-space:nowrap;}
+.btn-secondary{background:var(--accent2);color:#08251a;} .btn-gold{background:var(--gold);color:#332600;}
+.btn-danger{background:var(--danger);color:#fff;} .btn:hover{opacity:.9;} .btn-sm{padding:5px 10px;font-size:11.5px;}
+.footer-note{font-size:11px;color:var(--muted);margin-top:24px;}
+.app-footer{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px 16px;font-size:11px;color:var(--muted);margin-top:24px;padding-top:12px;border-top:1px solid var(--border);}
+.app-footer a{color:var(--muted);text-decoration:underline;}
+.app-footer a:hover{color:var(--accent);}
+.app-footer-left{text-align:left;justify-self:start;}
+.app-footer-center{text-align:center;justify-self:center;white-space:nowrap;}
+.app-footer-right{text-align:right;justify-self:end;}
+@media (max-width:700px){.app-footer{grid-template-columns:1fr;justify-items:start;}.app-footer-center,.app-footer-right{text-align:left;justify-self:start;white-space:normal;}}
+.link-line{font-size:12px;margin-top:8px;} .link-line a{color:var(--accent);}
+.small-print{font-size:10.5px;color:var(--muted);margin-top:10px;} .small-print a{color:var(--muted);text-decoration:underline;}
+.eligible-yes{color:var(--accent2);font-weight:700;} .eligible-no{color:var(--danger);font-weight:700;}
+.bottom-section{display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:start;}
+.tabs{display:flex;gap:2px;}
+.tab-btn{background:var(--bg);border:1px solid var(--border);border-bottom:none;color:var(--muted);padding:8px 14px;border-radius:6px 6px 0 0;font-size:12.5px;cursor:pointer;font-weight:600;position:relative;top:1px;}
+.tab-btn.active{background:var(--panel2);color:var(--text);}
+.tab-panel{display:none;} .tab-panel.active{display:block;}
+.tab-panel .scrollbox{border-radius:0 8px 8px 8px;margin-top:0;}
+.nego-add-wrap{position:relative;}
+#negoAddDropdown{position:absolute;top:calc(100% + 4px);right:0;background:var(--panel2);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,.5);max-height:260px;overflow-y:auto;z-index:60;display:none;min-width:280px;}
+#negoAddDropdown.show{display:block;}
+.nego-add-item{padding:8px 12px;font-size:12.5px;cursor:pointer;color:var(--text);border-bottom:1px solid var(--border);}
+.nego-add-item:hover{background:var(--accent);color:#fff;}
+.nego-add-empty{padding:10px 12px;font-size:11.5px;color:var(--muted);}
+.nego-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:6px;}
+.nego-card{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;min-height:82px;display:flex;flex-direction:column;justify-content:space-between;position:relative;}
+.nego-card:hover{border-color:var(--muted);}
+.nego-card.active{border:1.5px solid var(--gold);background:rgba(255,209,102,0.08);}
+.nego-card .nego-remove{position:absolute;top:4px;right:6px;font-size:12px;color:var(--muted);cursor:pointer;padding:2px 4px;border-radius:4px;}
+.nego-card .nego-remove:hover{color:var(--danger);background:rgba(255,107,107,.12);}
+.nego-card .nego-label{font-size:12px;color:var(--text);font-weight:600;display:flex;align-items:center;gap:6px;padding-right:16px;cursor:help;}
+.nego-card .nego-status{font-size:9.5px;color:var(--muted);text-transform:uppercase;margin-top:2px;}
+.nego-card.active .nego-status{color:var(--gold);}
+.nego-value-row{display:flex;align-items:center;gap:4px;margin-top:8px;}
+.nego-value-row input{width:70px;flex:0 0 70px;background:var(--panel);border:1px solid var(--border);color:var(--text);padding:4px 6px;border-radius:5px;font-size:12px;text-align:right;}
+.nego-value-row span{font-size:12px;color:var(--muted);}
+#globalTooltip{position:fixed;max-width:320px;background:#05070d;color:#e8ecf5;padding:9px 11px;border-radius:7px;font-size:11.5px;line-height:1.45;border:1px solid var(--border);box-shadow:0 6px 18px rgba(0,0,0,.5);z-index:1000;pointer-events:none;display:none;}
+.switch{position:relative;display:inline-block;width:40px;height:22px;flex:0 0 40px;}
+.switch input{opacity:0;width:0;height:0;}
+.switch .slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:var(--panel2);border:1px solid var(--border);transition:.25s;border-radius:22px;}
+.switch .slider:before{position:absolute;content:"";height:14px;width:14px;left:3px;bottom:3px;background-color:var(--muted);transition:.25s;border-radius:50%;}
+.switch input:checked + .slider{background-color:var(--accent2);border-color:var(--accent2);}
+.switch input:checked + .slider:before{transform:translateX(18px);background-color:#08251a;}
+.switch.sm{width:30px;height:18px;flex:0 0 30px;}
+.switch.sm .slider:before{height:12px;width:12px;left:2px;bottom:2px;}
+.switch.sm input:checked + .slider:before{transform:translateX(12px);}
+@media (max-width:900px){.grid,.topbar,.bottom-section{grid-template-columns:1fr;}.topbar-right{grid-template-columns:1fr;}.status-wrap{justify-self:start;}.topbar-right-right{justify-self:start;}}
+@media (max-width:700px){.two-col{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<div id="globalTooltip"></div>
+<input type="file" id="planFileInput" accept="application/pdf,image/*" style="display:none">
+<input type="file" id="brochureFileInput" accept="application/pdf,image/*" style="display:none">
+
+<div class="topbar">
+  <div class="title-wrap">
+    <input type="text" id="pageTitle" spellcheck="false" autocomplete="off">
+    <span class="chevron">&#9660;</span>
+    <div id="projectDropdown"></div>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-right-left">
+      <button class="btn btn-secondary" onclick="newProject()">+ Nouveau projet</button>
+      <div class="file-btn-wrap" id="planBtnWrap">
+        <button class="btn btn-secondary" onclick="document.getElementById('planFileInput').click()">Plan</button>
+        <div class="file-dropdown" id="planDropdown"></div>
+      </div>
+      <div class="file-btn-wrap" id="brochureBtnWrap">
+        <button class="btn btn-secondary" onclick="document.getElementById('brochureFileInput').click()">Brochure</button>
+        <div class="file-dropdown" id="brochureDropdown"></div>
+      </div>
+      <div class="file-btn-wrap" id="contactBtnWrap">
+        <button class="btn btn-secondary" type="button" onclick="toggleContactDropdown()">Contact</button>
+        <div class="contact-dropdown" id="contactDropdown">
+          <div class="contact-field"><label for="contactPromoteur">Promoteur</label><input type="text" class="auto" id="contactPromoteur" placeholder="ex: Prim'Arte"></div>
+          <div class="contact-field"><label for="contactNom">Nom</label><input type="text" class="auto" id="contactNom" placeholder="Nom du contact"></div>
+          <div class="contact-field"><label for="contactTel">T&eacute;l&eacute;phone</label><input type="tel" class="auto" id="contactTel" placeholder="06 12 34 56 78"></div>
+          <div class="contact-field"><label for="contactEmail">Email</label><input type="email" class="auto" id="contactEmail" placeholder="contact@promoteur.fr"></div>
+        </div>
+      </div>
+      <span class="save-indicator" id="saveIndicator">enregistr&eacute;</span>
+    </div>
+    <div class="status-wrap" id="statusWrap">
+      <select class="auto" id="projectStatus" onchange="updateStatusDateLabel()">
+        <option value="plan_demande">Plan demand&eacute;</option>
+        <option value="premier_rdv">1er RDV</option>
+        <option value="optionne">Optionn&eacute;</option>
+        <option value="reserve">R&eacute;serv&eacute;</option>
+        <option value="demande_pret">Demande de pr&ecirc;t en cours</option>
+        <option value="offre_pret">Offre de pr&ecirc;t re&ccedil;ue</option>
+        <option value="signe">Sign&eacute; (acte authentique)</option>
+      </select>
+      <input type="date" class="auto" id="projectStatusDate">
+    </div>
+    <div class="topbar-right-right">
+      <button class="btn btn-secondary" onclick="exportPDF()">Export PDF</button>
+    </div>
+  </div>
+</div>
+
+<div class="grid">
+<div>
+  <div class="panel">
+    <h2>Projet</h2>
+    <div class="field-row"><label>Prix d'acquisition (&euro;)</label><input type="number" class="auto" id="price" value="568000" step="100" min="0"></div>
+    <div class="field-row"><label>Remise (%)</label><input type="number" class="auto" id="remise" value="1.2852" step="0.01" min="0"></div>
+    <div class="field-row"><label>Mois de d&eacute;marrage construction</label><input type="month" class="auto" id="startMonth" value="2026-12"></div>
+    <div class="field-row"><label data-tooltip="Estimation modifiable -- les programmes VEFA communiquent souvent un trimestre (ex: T4 2028) plut&ocirc;t qu'un mois pr&eacute;cis. Ce champ suit automatiquement la date de Livraison du calendrier des appels de fonds tant que vous ne l'avez pas modifi&eacute; manuellement.">Date de livraison estim&eacute;e</label><input type="month" class="auto" id="dateLivraisonEstimee" oninput="this.dataset.userSet='1'"></div>
+    <div class="section-title">Localisation et prix m&sup2;</div>
+    <div class="field-row"><label>Code postal</label><input type="text" class="auto" id="commune" value="92350"></div>
+    <div class="field-row"><label><a id="adresseLink" href="#" target="_blank" data-tooltip="Ouvre Google Maps pour l'adresse renseign&eacute;e">Adresse (rue)</a></label><input type="text" class="auto" id="adresse" value="Rue de Sceaux" placeholder="ex: Rue de Sceaux"></div>
+    <div class="field-row"><label>Surface habitable totale (m&sup2;)</label><input type="number" class="auto" id="surface" value="84.15" step="0.1" min="0"></div>
+    <div class="field-row"><label>Prix/m&sup2; calcul&eacute; (&euro;)</label><input type="text" id="prixM2Calc" value="" disabled></div>
+    <div class="field-row"><label><a id="prixM2MoyenLink" href="#" target="_blank" data-tooltip="Ouvre la r&eacute;f&eacute;rence SeLoger renseign&eacute;e ci-dessous">Prix moyen commune (&euro;/m&sup2;)</a></label><input type="number" class="auto" id="prixM2Moyen" value="5261" step="10" min="0"></div>
+    <div class="field-row full-width"><input type="text" class="auto" id="selogerUrl" value="https://www.seloger.com/prix-de-l-immo/vente/ile-de-france/hauts-de-seine/le-plessis-robinson/rue-de-sceaux/r92060_8520_29e180.htm" placeholder="Lien SeLoger (prix moyen au m2)"></div>
+    <div class="field-row"><label>&Eacute;cart vs moyenne commune</label><input type="text" id="ecartM2" value="" disabled></div>
+    <div class="field-row"><label>Stade de commercialisation</label>
+      <select class="auto" id="stadeCommercialisation">
+        <option value="lancement">Lancement</option>
+        <option value="mi" selected>Mi-commercialisation</option>
+        <option value="fin">Fin de programme</option>
+        <option value="invendu">Stock invendu</option>
+      </select>
+    </div>
+    <div class="section-title" data-tooltip="Co&ucirc;ts li&eacute;s au bien lui-m&ecirc;me (pas au cr&eacute;dit) : notaire, agence, mobilier. Comptent dans le co&ucirc;t total &agrave; financer mais pas dans le co&ucirc;t total du cr&eacute;dit.">Frais li&eacute;s &agrave; l'acquisition</div>
+    <div class="field-row">
+      <label id="fraisNotaireLabel" data-tooltip="FNO = Frais de Notaire Offerts par le promoteur. D&eacute;sactivez le bouton si ce n'est pas le cas sur votre contrat -- le champ devient alors modifiable et un montant par d&eacute;faut (2.5% du prix apr&egrave;s remise) est calcul&eacute; automatiquement.">Frais de notaire offerts</label>
+      <label class="switch"><input type="checkbox" class="auto" id="fraisNotaireFNO" checked><span class="slider"></span></label>
+      <input type="number" class="auto" id="fraisNotaire" value="0" step="100" min="0" disabled>
+    </div>
+    <div class="field-row"><label data-tooltip="G&eacute;n&eacute;ralement 0 &euro; en VEFA (vente directe par le promoteur, sans agence).">Frais d'agence (&euro;)</label><input type="number" class="auto" id="fraisAgence" value="0" step="100" min="0"></div>
+    <div class="field-row"><label data-tooltip="Meubles, &eacute;lectrom&eacute;nager, d&eacute;m&eacute;nagement. Certaines banques financent une part de mobilier (plafonn&eacute;e environ 10% du pr&ecirc;t), jamais automatique.">Mobilier / autres (&euro;)</label><input type="number" class="auto" id="fraisMobilier" value="0" step="1" min="0"></div>
+    <div class="section-title" data-tooltip="Ces montants sont vos hypoth&egrave;ses par d&eacute;faut. &Agrave; confirmer avec votre offre de pr&ecirc;t r&eacute;elle.">Frais li&eacute;s au cr&eacute;dit</div>
+    <div class="field-row"><label data-tooltip="Caution bancaire : g&eacute;n&eacute;ralement 1-2% du montant emprunt&eacute; ; une partie (environ 65-73%) est restituable en fin de pr&ecirc;t.">Frais de garantie (&euro;)</label><input type="number" class="auto" id="fraisGarantie" value="5533" step="1" min="0"></div>
+    <div class="field-row"><label data-tooltip="Moyenne nationale environ 1900 &euro; pour un pr&ecirc;t de 200 000 &euro;, mais l'&eacute;cart va de 0 &euro; (banques en ligne) &agrave; 2500 &euro;.">Frais de dossier (&euro;)</label><input type="number" class="auto" id="fraisDossier" value="1500" step="1" min="0"></div>
+    <div class="field-row"><label data-tooltip="Si vous passez par un courtier : g&eacute;n&eacute;ralement 1% du montant du pr&ecirc;t.">Frais de courtage (&euro;)</label><input type="number" class="auto" id="fraisCourtage" value="4454" step="1" min="0"></div>
+    <div class="field-row"><label data-tooltip="Due uniquement en cas de remboursement anticip&eacute;. Plafonn&eacute;e par la loi (Art. R313-25 Code conso) &agrave; MIN(3% du capital restant d&ucirc;, 6 mois d'int&eacute;r&ecirc;ts au taux moyen du pr&ecirc;t).">IRA remb. anticip&eacute; (&euro;)</label><input type="number" class="auto" id="fraisIRA" value="0" step="100" min="0"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Financement</h2>
+    <div class="field-row"><label data-tooltip="Objectif d'apport. Le tableau Diff&eacute;r&eacute; suppose que vous levez le compl&eacute;ment n&eacute;cessaire &agrave; chaque &eacute;tape pour que l'apport couvre en priorit&eacute; chaque appel jusqu'&agrave; ce plafond.">Apport cible total (&euro;)</label><input type="number" class="auto" id="apport" value="300000" step="1000" min="0"></div>
+    <div class="section-title">PTZ<a class="inline-link" href="https://www.anil.org/outils/outils-de-calcul/votre-pret-a-taux-zero/" target="_blank">Simulateur ANIL</a></div>
+    <div class="field-row"><label>Montant PTZ (&euro;)</label><input type="number" class="auto" id="ptzAmount" value="108000" step="1000" min="0"></div>
+    <div class="field-row"><label>Diff&eacute;r&eacute; PTZ (mois depuis livraison)</label><input type="number" class="auto" id="ptzDefer" value="0" step="1" min="0"></div>
+    <div class="field-row"><label>Dur&eacute;e totale PTZ (mois)</label><input type="number" class="auto" id="ptzTotalMonths" value="180" step="1" min="0"></div>
+    <div class="section-title">&Eacute;ligibilit&eacute; PTZ</div>
+    <div class="field-row"><label>RFR N-2 (&euro;)</label><input type="number" class="auto" id="rfr" value="70000" step="100" min="0"></div>
+    <div class="field-row"><label>Zone PTZ</label>
+      <select class="auto" id="ptzZone">
+        <option value="AbisA" selected>A bis / A</option>
+        <option value="B1">B1</option>
+        <option value="B2">B2</option>
+        <option value="C">C</option>
+      </select>
+    </div>
+    <div class="field-row"><label>Personnes du foyer</label><input type="number" class="auto" id="ptzPersonnes" value="3" step="1" min="0"></div>
+    <div class="note" id="ptzEligNote"></div>
+    <div class="section-title">Pr&ecirc;t principal</div>
+    <div class="field-row"><label>Dur&eacute;e amortissement post-livraison (ans)</label><input type="number" class="auto" id="loanYears" value="15" step="1" min="0"></div>
+    <div class="field-row"><label>Taux nominal du pr&ecirc;t (%)</label><input type="number" class="auto" id="loanRate" value="3.15" step="0.01" min="0"></div>
+    <div class="section-title">Assurance emprunteur</div>
+    <div class="field-row"><label>Taux annuel emprunteur 1 (%)</label><input type="number" class="auto" id="ins1Rate" value="0.55" step="0.01" min="0"></div>
+    <div class="field-row"><label>Quotit&eacute; emprunteur 1 (%)</label><input type="number" class="auto" id="ins1Quota" value="100" step="1" min="0"></div>
+    <div class="field-row"><label>Taux annuel emprunteur 2 (%)</label><input type="number" class="auto" id="ins2Rate" value="0.55" step="0.01" min="0"></div>
+    <div class="field-row"><label>Quotit&eacute; emprunteur 2 (%)</label><input type="number" class="auto" id="ins2Quota" value="100" step="1" min="0"></div>
+    <div class="checkbox-row">
+      <label class="switch"><input type="checkbox" class="auto" id="insDegressive"><span class="slider"></span></label>
+      <label for="insDegressive" data-tooltip="L'assurance d&eacute;gressive calcule la prime sur le capital restant d&ucirc; (qui diminue chaque mois) au lieu du capital initial emprunt&eacute; -- elle co&ucirc;te donc moins cher au total, mais votre couverture d&eacute;cro&icirc;t avec le capital. Pertinente si vous acceptez une protection qui diminue en fin de pr&ecirc;t (contrats individuels &agrave; capital d&eacute;croissant, ou certains contrats collectifs bancaires low-cost). &Agrave; l'inverse, l'assurance sur capital initial (non d&eacute;gressive, par d&eacute;faut ici) co&ucirc;te plus cher mais garde une couverture fixe du montant initial pendant toute la dur&eacute;e -- g&eacute;n&eacute;ralement recommand&eacute;e pour bien prot&eacute;ger vos proches/co-emprunteur en cas de d&eacute;c&egrave;s pr&eacute;coce dans le pr&ecirc;t.">Assurance d&eacute;gressive</label>
+    </div>
+    <div class="checkbox-row">
+      <label class="switch"><input type="checkbox" class="auto" id="insurePTZ" checked><span class="slider"></span></label>
+      <label for="insurePTZ" data-tooltip="Le PTZ reste un pr&ecirc;t r&eacute;el &agrave; remboursement : sans assurance sur son capital, en cas de d&eacute;c&egrave;s ou d'invalidit&eacute;, vos h&eacute;ritiers ou votre co-emprunteur devraient quand m&ecirc;me le rembourser. La plupart des banques exigent cette couverture au montage du dossier. Ne d&eacute;cochez que si ce risque est d&eacute;j&agrave; couvert autrement (assurance-vie d&eacute;di&eacute;e, garantie d&eacute;c&egrave;s collective employeur, etc.).">Assurer &eacute;galement le capital du PTZ</label>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Emprunteurs et &eacute;pargne</h2>
+    <div class="field-row"><label>Salaire net emprunteur 1 (&euro;/mois)</label><input type="number" class="auto" id="salary1" value="7030" step="10" min="0"></div>
+    <div class="field-row"><label>Salaire net emprunteur 2 (&euro;/mois)</label><input type="number" class="auto" id="salary2" value="3863" step="10" min="0"></div>
+    <div class="field-row"><label>% du salaire mis de c&ocirc;t&eacute; /mois</label><input type="number" class="auto" id="savingsRate" value="30" step="1" min="0"></div>
+    <div class="field-row"><label>Rendement Flex Fund (% APY)</label><input type="number" class="auto" id="flexFundRate" value="2.08" step="0.01" min="0"></div>
+    <div class="field-row"><label>Apport disponible aujourd'hui (&euro;)</label><input type="number" class="auto" id="apportDispo" value="150000" step="1000" min="0"></div>
+    <div class="field-row"><label>Date de r&eacute;f&eacute;rence "aujourd'hui"</label><input type="date" class="auto" id="refDate"></div>
+  </div>
+
+  <button class="btn btn-danger" style="width:100%" onclick="deleteCurrentProject()">Effacer ce projet</button>
+</div>
+
+<div>
+  <div class="panel">
+    <h2>R&eacute;sum&eacute; du financement</h2>
+    <div class="kpi-grid" id="kpiGrid"></div>
+    <div class="note" id="consistencyNote"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Co&ucirc;t total du cr&eacute;dit <span class="tag" id="scenarioTag" data-tooltip="Ce panneau calcule les int&eacute;r&ecirc;ts r&eacute;els selon le calendrier de tirage du pr&ecirc;t actif (onglet Diff&eacute;r&eacute;/Prorata) : int&eacute;r&ecirc;ts intercalaires pendant la construction, puis amortissement &agrave; partir de la livraison.">scenario Diff&eacute;r&eacute;</span>
+    </h2>
+    <div class="kpi-grid" id="totalCostKpi"></div>
+  </div>
+
+  <div class="panel negotiate">
+    <h2>Recommandation n&eacute;gociation prix</h2>
+    <div class="kpi-grid" id="negoKpi"></div>
+    <div class="note" id="negoNote"></div>
+    <div class="section-title-row">
+      <div class="section-title" style="margin:0" data-tooltip="Cliquez sur une carte pour l'activer une fois l'avantage obtenu du promoteur. Ajustez la valeur estim&eacute;e si besoin (le champ num&eacute;rique ne d&eacute;clenche pas le toggle). Survolez le nom de chaque option pour son contexte de co&ucirc;t r&eacute;el. Retirez une carte via son x, puis rajoutez-la via + Options.">Options fr&eacute;quemment n&eacute;goci&eacute;es</div>
+      <div class="nego-add-wrap">
+        <button class="btn btn-secondary btn-sm" onclick="toggleNegoAddDropdown()">+ Options</button>
+        <div id="negoAddDropdown"></div>
+      </div>
+    </div>
+    <div class="nego-grid" id="negoExtrasGrid"></div>
+    <div class="note" style="margin-top:10px">Total avantages n&eacute;goci&eacute;s obtenus : <b id="negoExtrasTotal" style="color:var(--gold);font-size:14px">0 &euro;</b></div>
+  </div>
+
+  <div class="panel">
+    <h2 data-tooltip="R&eacute;servation : le d&eacute;p&ocirc;t de garantie est plafonn&eacute; par la loi (Art. R261-28 CCH) &agrave; 5% si l'acte d&eacute;finitif est sign&eacute; sous 1 an, 2% entre 1 et 2 ans, et 0% au-del&agrave; de 2 ans -- et au-del&agrave; de ce d&eacute;lai, AUCUNE somme, m&ecirc;me forfaitaire, ne peut &ecirc;tre exig&eacute;e ou accept&eacute;e avant la signature de l'acte authentique (Art. L261-15 CCH). D&eacute;calages Fondations/Hors d'eau/Ach&egrave;vement/Livraison : +3/+12/+20/+24 mois par d&eacute;faut depuis le d&eacute;but des travaux.">Calendrier des appels de fonds VEFA <span class="tag">dates et % &eacute;ditables</span></h2>
+    <div class="note" style="margin-bottom:8px">Pour la R&eacute;servation uniquement, vous pouvez saisir soit le %, soit le montant directement (les deux se recalculent l'un l'autre).</div>
+    <div class="scrollbox">
+      <table>
+        <thead><tr><th>Palier</th><th>% cumul&eacute;</th><th>Date estim&eacute;e</th><th>Montant cumul&eacute;</th><th>Appel (montant d&ucirc;)</th></tr></thead>
+        <tbody>
+          <tr><td>0. R&eacute;servation</td><td><input type="number" class="auto" id="p0pct" value="0" step="0.5" min="0" oninput="onP0PctInput()"></td><td><input type="date" class="auto" id="p0date"></td><td id="p0cum"></td><td><input type="number" class="auto" id="p0amount" value="0" step="50" min="0" oninput="onP0AmountInput()" style="width:100%;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:4px 6px;border-radius:5px;font-size:12px;text-align:right;"></td></tr>
+          <tr><td>1. Fondations</td><td><input type="number" class="auto" id="p1pct" value="35" step="1" min="0"></td><td><input type="date" class="auto" id="p1date" oninput="cascadeFromP1()"></td><td id="p1cum"></td><td id="p1call"></td></tr>
+          <tr><td>2. Hors d'eau</td><td><input type="number" class="auto" id="p2pct" value="70" step="1" min="0"></td><td><input type="date" class="auto" id="p2date"></td><td id="p2cum"></td><td id="p2call"></td></tr>
+          <tr><td>3. Ach&egrave;vement</td><td><input type="number" class="auto" id="p3pct" value="95" step="1" min="0"></td><td><input type="date" class="auto" id="p3date"></td><td id="p3cum"></td><td id="p3call"></td></tr>
+          <tr><td>4. Livraison</td><td><input type="number" class="auto" id="p4pct" value="100" step="1" min="0"></td><td><input type="date" class="auto" id="p4date"></td><td id="p4cum"></td><td id="p4call"></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <button class="btn btn-secondary" style="margin-top:8px" onclick="resyncPalierDatesFromStart(true)">R&eacute;initialiser aux d&eacute;calages par d&eacute;faut</button>
+  </div>
+
+  <div class="panel">
+    <h2 data-tooltip="Diff&eacute;r&eacute; : apport (cash organique + vente d'actifs) couvre en priorit&eacute; jusqu'&agrave; &eacute;puisement de l'objectif ; &eacute;pargne restante r&eacute;duit ensuite le pr&ecirc;t directement -- sauf si d&eacute;sactiv&eacute; via le r&eacute;glage ci-contre. Prorata : la banque exige un financement proportionnel identique &agrave; chaque appel.">
+      Simulation d'&eacute;pargne
+      <span class="h2-toggle" data-tooltip="Si activ&eacute; (par d&eacute;faut) : une fois l'objectif d'apport atteint, toute &eacute;pargne organique restante continue de r&eacute;duire le pr&ecirc;t &agrave; chaque &eacute;tape suivante. Si d&eacute;sactiv&eacute; : l'&eacute;pargne au-del&agrave; de l'objectif s'accumule sans r&eacute;duire le pr&ecirc;t.">
+        <label class="switch sm"><input type="checkbox" class="auto" id="useCashBeyondObjectif" checked><span class="slider"></span></label> Utiliser cash au-del&agrave; objectif
+      </span>
+    </h2>
+    <div class="kpi-grid" id="savingsKpi" style="margin-bottom:12px"></div>
+    <div class="tabs">
+      <button class="tab-btn active" id="tabBtnDiffere" onclick="switchTab('differe')">Diff&eacute;r&eacute;</button>
+      <button class="tab-btn" id="tabBtnProrata" onclick="switchTab('prorata')">Prorata</button>
+    </div>
+    <div class="tab-panel active" id="tabDiffere">
+      <div class="scrollbox">
+        <table>
+          <thead><tr><th>Palier</th><th>Date</th><th>Appel</th><th>Pool avant</th><th>Cash apport</th><th>A lever</th><th>Au-del&agrave; objectif</th><th>PTZ</th><th>Pr&ecirc;t</th><th>Pool restant</th><th>Apport requis cum.</th><th>A lever cum.</th></tr></thead>
+          <tbody id="savingsTableDiffere"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="tab-panel" id="tabProrata">
+      <div class="scrollbox">
+        <table>
+          <thead><tr><th>Palier</th><th>Date</th><th>Part apport</th><th>Pool avant</th><th>Apport utilis&eacute;</th><th>A lever</th><th>Pr&ecirc;t</th><th>PTZ</th></tr></thead>
+          <tbody id="savingsTableProrata"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="note" id="aLeverSummary" style="margin-top:10px"></div>
+  </div>
+
+  <div class="two-col">
+    <div class="panel">
+      <h2>Pr&ecirc;t principal</h2>
+      <div class="kpi-grid" id="loanKpi"></div>
+    </div>
+    <div class="panel">
+      <h2>PTZ</h2>
+      <div class="kpi-grid" id="ptzKpi"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>D&eacute;tail de l'assurance emprunteur</h2>
+    <div class="kpi-grid" id="insuranceKpi"></div>
+    <div class="small-print">Comparer les offres : <a href="https://www.lesfurets.com/assurance-emprunteur" target="_blank">Les Furets - Assurance emprunteur (comparateur not&eacute; parmi les mieux class&eacute;s)</a></div>
+  </div>
+
+  <div class="panel">
+    <h2>&Eacute;ch&eacute;ancier mensuel combin&eacute;</h2>
+    <div class="note" style="margin-bottom:8px">Avant livraison : int&eacute;r&ecirc;ts intercalaires. Apr&egrave;s livraison : amortissement classique.</div>
+    <div class="scrollbox">
+      <table>
+        <thead><tr><th>Date</th><th>Phase</th><th>Pr&ecirc;t</th><th>PTZ</th><th>Assurance</th><th>Total</th></tr></thead>
+        <tbody id="scheduleTable"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="bottom-section">
+  <div class="panel highlight">
+    <h2>Param&egrave;tres de la recommandation</h2>
+    <div class="field-row"><label>Plafond mensualit&eacute; totale (&euro;/mois)</label><input type="number" class="auto" id="mensualiteCeiling" value="0" step="10" min="0"></div>
+    <div class="note" style="margin-bottom:8px" data-tooltip="Recalcul&eacute; automatiquement si vous changez les salaires. Modifiable manuellement pour tester un plafond plus prudent.">Auto = 35% des salaires nets</div>
+    <button class="btn btn-secondary" style="width:100%;margin-bottom:8px" onclick="resetCeilingTo35()">Recalculer 35%</button>
+    <div class="field-row"><label>Dur&eacute;e min. test&eacute;e (ann&eacute;es)</label><input type="number" class="auto" id="optMinYears" value="5" step="1" min="0"></div>
+    <div class="field-row"><label>Dur&eacute;e max. test&eacute;e (ann&eacute;es)</label><input type="number" class="auto" id="optMaxYears" value="25" step="1" min="0"></div>
+  </div>
+
+  <div class="panel highlight">
+    <h2>Recommandation optimale</h2>
+    <div class="kpi-grid" id="recoKpi" style="margin-bottom:10px"></div>
+    <div class="note" id="recoNote" style="margin-bottom:10px"></div>
+    <button class="btn btn-gold" onclick="applyRecommendation()">Appliquer aux champs</button>
+    <hr style="border:none;border-top:1px solid var(--border);margin:14px 0">
+    <div class="no-scroll-table">
+      <table>
+        <thead><tr><th>Apport</th><th>Dur&eacute;e</th><th>Pr&ecirc;t</th><th>Mensualit&eacute;</th><th>Co&ucirc;t total</th></tr></thead>
+        <tbody id="recoTable"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="app-footer">
+  <span class="app-footer-left">Simulateur indicatif, sans valeur contractuelle. Donn&eacute;es enregistr&eacute;es localement (localStorage + IndexedDB).</span>
+  <span class="app-footer-center">VEFA Simulator V1.0 by zedcade &ndash; <a href="https://github.com/zedcade/vefa-simulator" target="_blank" rel="noopener">Github</a></span>
+  <span class="app-footer-right"><a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">Licence MIT</a></span>
+</div>
+
+<script>
+let lastResults=null, lastReco=null, currentProjectName=null, defaultStateSnapshot=null, activeScenario='differe';
+const STORAGE_PREFIX='vefaSim_project_';
+const STORAGE_LIST_KEY='vefaSim_projectList';
+const STORAGE_LAST_ACTIVE='vefaSim_lastActive';
+const PTZ_CEILINGS={AbisA:[49000,73500,88200,102900,117600,132300,147000,161700],B1:[34500,51750,62100,72450,82800,93150,103500,113850],B2:[31500,47250,56700,66150,75600,85050,94500,103950],C:[28500,42750,51300,59850,68400,76950,85500,94050]};
+const PTZ_ZONE_LABELS={AbisA:"A bis / A",B1:"B1",B2:"B2",C:"C"};
+const DEFAULT_OFFSETS={p1date:3,p2date:12,p3date:20,p4date:24};
+const NEGO_RANGES={lancement:[0,2],mi:[2,5],fin:[5,10],invendu:[10,15]};
+const NEGO_LABELS={lancement:'Lancement',mi:'Mi-commercialisation',fin:'Fin de programme',invendu:'Stock invendu'};
+const STATUS_DATE_LABELS={
+  plan_demande:"Date de demande",
+  premier_rdv:"Date du 1er RDV",
+  optionne:"Optionn\u00e9 jusqu'au",
+  reserve:"Date de r\u00e9servation",
+  demande_pret:"Date de d\u00e9p\u00f4t du dossier",
+  offre_pret:"Date de r\u00e9ception de l'offre",
+  signe:"Date de signature"
+};
+
+const NEGO_CATALOG=[
+  {id:'cuisine', label:"Cuisine \u00e9quip\u00e9e offerte", defaultValue:8000,
+   tooltip:"Prend g\u00e9n\u00e9ralement la forme d'un avoir/bon d'achat chez un cuisiniste partenaire du promoteur plut\u00f4t qu'une remise en esp\u00e8ces -- v\u00e9rifiez les conditions d'utilisation et la date d'expiration. Co\u00fbt march\u00e9 d'une cuisine \u00e9quip\u00e9e : 5000-12000 \u20ac en moyenne (3000 \u20ac entr\u00e9e de gamme \u00e0 20000 \u20ac haut de gamme)."},
+  {id:'parquet', label:"Parquet bois massif (upgrade)", defaultValue:4000,
+   tooltip:"Surco\u00fbt par rapport au rev\u00eatement standard du programme (stratifi\u00e9 ou carrelage). Prix march\u00e9 du parquet massif pos\u00e9 : 80-160 \u20ac/m\u00b2, contre 65-130 \u20ac/m\u00b2 en contrecoll\u00e9 -- pensez \u00e0 raisonner en delta plut\u00f4t qu'en co\u00fbt plein."},
+  {id:'clim', label:"Climatisation r\u00e9versible incluse", defaultValue:4000,
+   tooltip:"Co\u00fbt march\u00e9 : 2000-4000 \u20ac pour un monosplit (une pi\u00e8ce), 3000-13000 \u20ac pour un multisplit (logement entier), soit environ 40-100 \u20ac/m\u00b2 pos\u00e9 selon la configuration."},
+  {id:'irve', label:"Pr\u00e9-c\u00e2blage recharge v\u00e9hicule \u00e9lectrique", defaultValue:600,
+   tooltip:"Le pr\u00e9-\u00e9quipement (gaine/fourreau tir\u00e9s pendant le chantier, sans la borne elle-m\u00eame) co\u00fbte nettement moins cher qu'une installation en retrofit apr\u00e8s livraison, car int\u00e9gr\u00e9 aux travaux collectifs du parking pendant que les murs/sols sont encore ouverts. Une fois le pr\u00e9-c\u00e2blage en place, l'ajout d'une borne murale compl\u00e8te co\u00fbte ensuite 800-1200 \u20ac (7,4kW) pos\u00e9e."},
+  {id:'terrasse', label:"Store banne / protection solaire terrasse", defaultValue:3000,
+   tooltip:"Pas de donn\u00e9e de march\u00e9 officielle v\u00e9rifi\u00e9e pour ce poste pr\u00e9cis -- le co\u00fbt varie beaucoup selon la surface \u00e0 couvrir et le niveau de motorisation (manuel vs \u00e9lectrique). \u00c0 faire chiffrer par le promoteur ou un installateur local."},
+  {id:'dressing', label:"Dressing / rangement suppl\u00e9mentaire (TMA)", defaultValue:1500,
+   tooltip:"Rel\u00e8ve typiquement d'une TMA (Travaux Modificatifs Acqu\u00e9reur) : frais de dossier/\u00e9tude 200-500 \u20ac factur\u00e9s par le promoteur m\u00eame si les travaux ne sont pas r\u00e9alis\u00e9s, plus le co\u00fbt de l'am\u00e9nagement lui-m\u00eame sur devis."},
+  {id:'tma_general', label:"TMA - modification cloison / prises", defaultValue:1500,
+   tooltip:"Travaux Modificatifs Acqu\u00e9reur : d\u00e9placement de cloison non porteuse, prises \u00e9lectriques suppl\u00e9mentaires. Frais de dossier 200-500 \u20ac + co\u00fbt des travaux sur devis. Cloison simple (placo) : environ 10-30 \u20ac/m\u00b2 pos\u00e9e."},
+  {id:'notaire', label:"Frais de notaire pris en charge", defaultValue:5000,
+   tooltip:"Levier commercial classique en phase de lancement/pr\u00e9-commercialisation. Dans le neuf, les frais de notaire r\u00e9els sont d\u00e9j\u00e0 r\u00e9duits (environ 2-3% du prix contre 7-8% dans l'ancien) -- les faire offrir repr\u00e9sente typiquement 5000-8000 \u20ac selon le prix du bien."},
+  {id:'garantie', label:"Frais de garantie pris en charge", defaultValue:2000,
+   tooltip:"La caution bancaire co\u00fbte g\u00e9n\u00e9ralement 1-2% du montant emprunt\u00e9. Une partie (environ 65-73%) est de toute fa\u00e7on restituable en fin de pr\u00eat sans incident."},
+  {id:'courtage', label:"Frais de courtage pris en charge", defaultValue:2000,
+   tooltip:"Honoraires de courtier g\u00e9n\u00e9ralement environ 1% du montant du pr\u00eat (souvent 900-3000 \u20ac en forfait), dus uniquement si le financement aboutit."},
+  {id:'delai', label:"Report d'\u00e9ch\u00e9ance / d\u00e9lai de paiement assoupli", defaultValue:0,
+   tooltip:"N'a pas de valeur en euros directe -- am\u00e9nagement du calendrier des appels de fonds plut\u00f4t qu'une remise chiffrable. Laissez \u00e0 0 \u20ac ou estimez les int\u00e9r\u00eats intercalaires \u00e9conomis\u00e9s."},
+  {id:'parking', label:"Place de parking / box suppl\u00e9mentaire", defaultValue:6000,
+   tooltip:"V\u00e9rifiez ce qui est d\u00e9j\u00e0 inclus en standard dans votre programme avant de consid\u00e9rer cette carte comme pertinente. Co\u00fbt march\u00e9 d'une place suppl\u00e9mentaire en sous-sol : 4000-8000 \u20ac selon la r\u00e9gion."},
+  {id:'volets', label:"Volets roulants \u00e9lectriques (vs manuels)", defaultValue:1500,
+   tooltip:"V\u00e9rifiez la notice descriptive de votre programme : certains incluent des volets motoris\u00e9s en standard, d'autres seulement des volets manuels. Surco\u00fbt march\u00e9 pour la motorisation : environ 150-300 \u20ac par fen\u00eatre."},
+  {id:'cave', label:"Cave / cellier suppl\u00e9mentaire", defaultValue:3000,
+   tooltip:"V\u00e9rifiez si une cave est d\u00e9j\u00e0 incluse en standard dans le prix de votre lot. Co\u00fbt march\u00e9 d'une cave suppl\u00e9mentaire : 2000-4000 \u20ac selon la surface et la localisation."},
+];
+const NEGO_DEFAULT_DISPLAYED=['cuisine','parquet','clim','irve','terrasse'];
+let negoData={displayedIds:[...NEGO_DEFAULT_DISPLAYED], items:{}};
+function negoCatalogItem(id){ return NEGO_CATALOG.find(c=>c.id===id); }
+function eur(x){ if(isNaN(x)) return '-'; return x.toLocaleString('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0}).replace(/\s/g,'\u00A0'); }
+function eur2(x){ if(isNaN(x)) return '-'; return x.toLocaleString('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:2}).replace(/\s/g,'\u00A0'); }
+function pdfInt(x){ if(isNaN(x)) return '-'; const rounded=Math.round(x); const neg=rounded<0; const str=Math.abs(rounded).toString(); const withSpaces=str.replace(/\B(?=(\d{3})+(?!\d))/g,'\u00A0'); return (neg?'-':'')+withSpaces; }
+function pdfEur(x){ if(isNaN(x)) return '-'; return pdfInt(x)+'\u00A0\u20ac'; }
+const PDF_DEJA_LEVE_SUFFIX = ' d\u00e9j\u00e0 lev\u00e9'; // marker (no parens) recognised by exportPDF's custom cell renderer
+function addMonths(dateObj,months){ const d=new Date(dateObj); d.setMonth(d.getMonth()+months); return d; }
+function fmtDate(d){ if(!d||isNaN(d.getTime())) return '-'; return d.toLocaleDateString('fr-FR',{month:'short',year:'numeric'}); }
+function dateToInputStr(d){ const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0'); return y+'-'+m+'-'+day; }
+function monthsBetween(d1,d2){ return (d2.getFullYear()-d1.getFullYear())*12 + (d2.getMonth()-d1.getMonth()); }
+function val(id){ return parseFloat(document.getElementById(id).value)||0; }
+function dateVal(id){ const s=document.getElementById(id).value; return s ? new Date(s+"T00:00:00") : null; }
+
+// ---- Reservation row: bidirectional % <-> montant editing ----
+function onP0PctInput(){ runSimulation(); }
+function onP0AmountInput(){
+  const priceAfterRemise=val('price')*(1-val('remise')/100);
+  if(priceAfterRemise>0){
+    const amt=val('p0amount');
+    document.getElementById('p0pct').value=(amt/priceAfterRemise*100).toFixed(2);
+  }
+  runSimulation();
+}
+
+// ---- Contact promoteur dropdown ----
+function toggleContactDropdown(){ document.getElementById('contactDropdown').classList.toggle('show'); }
+document.addEventListener('click', e=>{
+  const wrap=document.getElementById('contactBtnWrap');
+  if(wrap && !wrap.contains(e.target)) document.getElementById('contactDropdown').classList.remove('show');
+});
+
+// ---- Status indicator date label ----
+function statusDateLabel(status){ return STATUS_DATE_LABELS[status] || 'Date'; }
+function updateStatusDateLabel(){
+  const status=document.getElementById('projectStatus').value;
+  document.getElementById('projectStatusDate').setAttribute('data-tooltip', statusDateLabel(status));
+}
+
+function initNegoData(){
+  const raw=document.getElementById('negoDataJSON').value;
+  if(raw){ try{ negoData=JSON.parse(raw); return; }catch(e){} }
+  negoData={displayedIds:[...NEGO_DEFAULT_DISPLAYED], items:{}};
+  NEGO_DEFAULT_DISPLAYED.forEach(id=>{ const c=negoCatalogItem(id); negoData.items[id]={obtained:false, value:c.defaultValue}; });
+  persistNegoData();
+}
+function persistNegoData(){
+  document.getElementById('negoDataJSON').value=JSON.stringify(negoData);
+  if(currentProjectName) saveProject(currentProjectName, serializeState());
+}
+function renderNegoExtrasGrid(){
+  const grid=document.getElementById('negoExtrasGrid');
+  grid.innerHTML=negoData.displayedIds.map(id=>{
+    const c=negoCatalogItem(id);
+    if(!c) return '';
+    const state=negoData.items[id]||{obtained:false,value:c.defaultValue};
+    const tt=c.tooltip.replace(/"/g,'&quot;');
+    return '<div class="nego-card '+(state.obtained?'active':'')+'" id="negoCard_'+id+'" data-id="'+id+'">'
+      +'<span class="nego-remove" data-id="'+id+'" title="Retirer">x</span>'
+      +'<div><div class="nego-label" data-tooltip="'+tt+'">'+c.label+'</div>'
+      +'<div class="nego-status" id="negoStatus_'+id+'">'+(state.obtained?'Obtenu':'Non obtenu')+'</div></div>'
+      +'<div class="nego-value-row"><input type="number" id="negoValue_'+id+'" value="'+state.value+'" min="0"><span>\u20ac estim\u00e9</span></div>'
+      +'</div>';
+  }).join('');
+  negoData.displayedIds.forEach(id=>{
+    const card=document.getElementById('negoCard_'+id);
+    if(!card) return;
+    card.addEventListener('click', e=>{ if(e.target.tagName==='INPUT' || e.target.classList.contains('nego-remove')) return; toggleNegoCard(id); });
+    card.querySelector('.nego-remove').addEventListener('click', e=>{ e.stopPropagation(); removeNegoCard(id); });
+    const valueInput=document.getElementById('negoValue_'+id);
+    valueInput.addEventListener('click', e=>e.stopPropagation());
+    valueInput.addEventListener('input', ()=>{ negoData.items[id].value=Math.max(0,parseFloat(valueInput.value)||0); persistNegoData(); updateNegoExtrasTotal(); });
+  });
+}
+function toggleNegoCard(id){
+  negoData.items[id].obtained=!negoData.items[id].obtained;
+  document.getElementById('negoCard_'+id).classList.toggle('active', negoData.items[id].obtained);
+  document.getElementById('negoStatus_'+id).textContent = negoData.items[id].obtained ? 'Obtenu' : 'Non obtenu';
+  persistNegoData(); updateNegoExtrasTotal();
+}
+function removeNegoCard(id){
+  negoData.displayedIds=negoData.displayedIds.filter(x=>x!==id);
+  delete negoData.items[id];
+  persistNegoData(); renderNegoExtrasGrid(); updateNegoExtrasTotal();
+}
+function addNegoCard(id){
+  if(negoData.displayedIds.includes(id)) return;
+  const c=negoCatalogItem(id);
+  negoData.displayedIds.push(id);
+  negoData.items[id]={obtained:false, value:c.defaultValue};
+  persistNegoData(); renderNegoExtrasGrid(); updateNegoExtrasTotal(); hideNegoAddDropdown();
+}
+function toggleNegoAddDropdown(){
+  const dd=document.getElementById('negoAddDropdown');
+  if(dd.classList.contains('show')){ hideNegoAddDropdown(); return; }
+  const available=NEGO_CATALOG.filter(c=>!negoData.displayedIds.includes(c.id));
+  dd.innerHTML = available.length
+    ? available.map(c=>'<div class="nego-add-item" data-id="'+c.id+'" data-tooltip="'+c.tooltip.replace(/"/g,'&quot;')+'">'+c.label+'</div>').join('')
+    : '<div class="nego-add-empty">Toutes les options sont d\u00e9j\u00e0 affich\u00e9es</div>';
+  dd.querySelectorAll('.nego-add-item').forEach(item=>item.addEventListener('click', ()=>addNegoCard(item.getAttribute('data-id'))));
+  dd.classList.add('show');
+}
+function hideNegoAddDropdown(){ document.getElementById('negoAddDropdown').classList.remove('show'); }
+document.addEventListener('click', e=>{ const wrap=document.querySelector('.nego-add-wrap'); if(wrap && !wrap.contains(e.target)) hideNegoAddDropdown(); });
+function updateNegoExtrasTotal(){
+  let total=0;
+  negoData.displayedIds.forEach(id=>{ const it=negoData.items[id]; if(it && it.obtained) total+=it.value||0; });
+  document.getElementById('negoExtrasTotal').textContent=eur(total);
+  return total;
+}
+
+function positionAndShowTooltip(el){
+  const text=el.getAttribute('data-tooltip');
+  if(!text) return;
+  const tip=document.getElementById('globalTooltip');
+  tip.innerHTML=text; tip.style.display='block'; tip.style.left='0px'; tip.style.top='0px';
+  const rect=el.getBoundingClientRect(); const tipRect=tip.getBoundingClientRect(); const margin=10;
+  let left=rect.left + rect.width/2 - tipRect.width/2;
+  left=Math.max(margin, Math.min(left, window.innerWidth-tipRect.width-margin));
+  let top=rect.top - tipRect.height - 8;
+  if(top < margin){ top=rect.bottom + 8; }
+  if(top + tipRect.height > window.innerHeight - margin){ top=Math.max(margin, window.innerHeight-tipRect.height-margin); }
+  tip.style.left=left+'px'; tip.style.top=top+'px';
+}
+function hideTooltip(){ document.getElementById('globalTooltip').style.display='none'; }
+function bindTooltipDelegation(){
+  document.body.addEventListener('mouseover', e=>{ const el=e.target.closest('[data-tooltip]'); if(el) positionAndShowTooltip(el); });
+  document.body.addEventListener('mouseout', e=>{
+    const el=e.target.closest('[data-tooltip]');
+    const related=e.relatedTarget && e.relatedTarget.closest ? e.relatedTarget.closest('[data-tooltip]') : null;
+    if(el && el!==related) hideTooltip();
+  });
+  window.addEventListener('scroll', hideTooltip, true);
+}
+// ---- Global guard: block negative values on any number input (including dynamically created ones) ----
+document.addEventListener('input', e=>{
+  if(e.target && e.target.tagName==='INPUT' && e.target.type==='number'){
+    if(e.target.value!=='' && parseFloat(e.target.value)<0) e.target.value='0';
+  }
+});
+function getProjectList(){ try{ return JSON.parse(localStorage.getItem(STORAGE_LIST_KEY)||'[]'); }catch(e){ return []; } }
+function setProjectList(list){ localStorage.setItem(STORAGE_LIST_KEY, JSON.stringify(list)); }
+function serializeState(){
+  const state={};
+  document.querySelectorAll('.auto').forEach(el=>{ if(el.type==='checkbox') state[el.id]=el.checked; else state[el.id]=el.value; });
+  return state;
+}
+function applyState(state){
+  document.querySelectorAll('.auto').forEach(el=>{ if(state.hasOwnProperty(el.id)){ if(el.type==='checkbox') el.checked=state[el.id]; else el.value=state[el.id]; } });
+  document.getElementById('fraisNotaire').disabled=document.getElementById('fraisNotaireFNO').checked;
+  updateFraisNotaireLabel();
+  if(document.getElementById('dateLivraisonEstimee').value) document.getElementById('dateLivraisonEstimee').dataset.userSet='1';
+  updateStatusDateLabel();
+  initNegoData(); renderNegoExtrasGrid(); updateNegoExtrasTotal();
+}
+function setLastActive(name){ localStorage.setItem(STORAGE_LAST_ACTIVE, name); }
+function saveProject(name, state){
+  if(!name) return;
+  localStorage.setItem(STORAGE_PREFIX+name, JSON.stringify(state));
+  let list=getProjectList();
+  if(!list.includes(name)){ list.push(name); setProjectList(list); }
+  setLastActive(name); flashSaveIndicator();
+}
+function loadProjectState(name){ const raw=localStorage.getItem(STORAGE_PREFIX+name); return raw?JSON.parse(raw):null; }
+function deleteProjectStorage(name){ localStorage.removeItem(STORAGE_PREFIX+name); setProjectList(getProjectList().filter(n=>n!==name)); }
+let saveFlashTimeout=null;
+function flashSaveIndicator(){ const el=document.getElementById('saveIndicator'); el.classList.add('show'); clearTimeout(saveFlashTimeout); saveFlashTimeout=setTimeout(()=>el.classList.remove('show'),1200); }
+
+// ---- Multi-file storage (Plan + Brochure), per project, with hover dropdown ----
+const FILES_DB_NAME='vefaSimFilesDB', FILES_DB_VERSION=2, FILES_STORE='files', LEGACY_PLAN_STORE='plans';
+function openFilesDB(){
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open(FILES_DB_NAME, FILES_DB_VERSION);
+    req.onupgradeneeded=e=>{ const db=e.target.result; if(!db.objectStoreNames.contains(FILES_STORE)) db.createObjectStore(FILES_STORE); };
+    req.onsuccess=e=>resolve(e.target.result); req.onerror=e=>reject(e);
+  });
+}
+function fileKey(category, projectName){ return category+'::'+projectName; }
+async function getLegacyPlanEntry(projectName){
+  const db=await openFilesDB();
+  if(!db.objectStoreNames.contains(LEGACY_PLAN_STORE)) return null;
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(LEGACY_PLAN_STORE,'readonly');
+    const req=tx.objectStore(LEGACY_PLAN_STORE).get(projectName);
+    req.onsuccess=()=>resolve(req.result||null); req.onerror=e=>reject(e);
+  });
+}
+async function getFileEntries(category, projectName){
+  const db=await openFilesDB();
+  const entries=await new Promise((resolve,reject)=>{
+    const tx=db.transaction(FILES_STORE,'readonly');
+    const req=tx.objectStore(FILES_STORE).get(fileKey(category,projectName));
+    req.onsuccess=()=>resolve(req.result||[]); req.onerror=e=>reject(e);
+  });
+  if(entries.length===0 && category==='plan'){
+    const legacy=await getLegacyPlanEntry(projectName);
+    if(legacy && legacy.blob){
+      const migrated=[{id:'legacy_'+Date.now(), name:legacy.name, type:legacy.type, blob:legacy.blob, uploadedAt:legacy.uploadedAt||Date.now()}];
+      await setFileEntries('plan', projectName, migrated);
+      return migrated;
+    }
+  }
+  return entries;
+}
+async function setFileEntries(category, projectName, entries){
+  const db=await openFilesDB();
+  return new Promise((resolve,reject)=>{ const tx=db.transaction(FILES_STORE,'readwrite'); tx.objectStore(FILES_STORE).put(entries, fileKey(category,projectName)); tx.oncomplete=()=>resolve(); tx.onerror=e=>reject(e); });
+}
+async function addFileEntry(category, projectName, file){
+  const entries=await getFileEntries(category, projectName);
+  entries.push({id:Date.now()+'_'+Math.random().toString(36).slice(2), name:file.name, type:file.type, blob:file, uploadedAt:Date.now()});
+  await setFileEntries(category, projectName, entries);
+}
+async function removeFileEntry(category, projectName, id){
+  const entries=await getFileEntries(category, projectName);
+  await setFileEntries(category, projectName, entries.filter(e=>e.id!==id));
+}
+async function renameFileCategoryProject(category, oldName, newName){
+  const entries=await getFileEntries(category, oldName);
+  if(entries.length){ await setFileEntries(category, newName, entries); await setFileEntries(category, oldName, []); }
+}
+async function deleteFileCategoryProject(category, projectName){ await setFileEntries(category, projectName, []); }
+async function refreshFileDropdown(category){
+  const dd=document.getElementById(category+'Dropdown');
+  if(!dd) return;
+  if(!currentProjectName){ dd.innerHTML='<div class="file-dropdown-empty">Aucun fichier</div>'; return; }
+  const entries=await getFileEntries(category, currentProjectName);
+  if(!entries.length){ dd.innerHTML='<div class="file-dropdown-empty">Aucun fichier</div>'; return; }
+  dd.innerHTML=entries.map(e=>'<div class="file-dropdown-item" data-id="'+e.id+'"><span class="file-open" data-id="'+e.id+'">'+e.name+'</span><span class="file-remove" data-id="'+e.id+'" title="Supprimer">x</span></div>').join('');
+  dd.querySelectorAll('.file-open').forEach(el=>el.addEventListener('click', async ()=>{
+    const entries2=await getFileEntries(category, currentProjectName);
+    const entry=entries2.find(x=>x.id===el.getAttribute('data-id'));
+    if(entry) window.open(URL.createObjectURL(entry.blob),'_blank');
+  }));
+  dd.querySelectorAll('.file-remove').forEach(el=>el.addEventListener('click', async ev=>{
+    ev.stopPropagation();
+    if(!confirm('Supprimer ce fichier ?')) return;
+    await removeFileEntry(category, currentProjectName, el.getAttribute('data-id'));
+    refreshFileDropdown(category);
+  }));
+}
+function refreshAllFileDropdowns(){ refreshFileDropdown('plan'); refreshFileDropdown('brochure'); }
+document.getElementById('planFileInput').addEventListener('change', async e=>{
+  const file=e.target.files[0]; if(!file || !currentProjectName) return;
+  await addFileEntry('plan', currentProjectName, file);
+  refreshFileDropdown('plan'); e.target.value='';
+});
+document.getElementById('brochureFileInput').addEventListener('change', async e=>{
+  const file=e.target.files[0]; if(!file || !currentProjectName) return;
+  await addFileEntry('brochure', currentProjectName, file);
+  refreshFileDropdown('brochure'); e.target.value='';
+});
+
+// ---- Frais de notaire offerts (FNO) toggle ----
+function updateFraisNotaireLabel(){
+  const fno=document.getElementById('fraisNotaireFNO').checked;
+  document.getElementById('fraisNotaireLabel').textContent = fno ? 'Frais de notaire offerts' : 'Frais de notaire (\u20ac)';
+}
+function updateFraisNotaireFNO(){
+  const fno=document.getElementById('fraisNotaireFNO').checked;
+  const fraisEl=document.getElementById('fraisNotaire');
+  fraisEl.disabled=fno;
+  updateFraisNotaireLabel();
+  if(fno){ fraisEl.value=0; }
+  else if(parseFloat(fraisEl.value)===0){
+    const price=val('price'), remise=val('remise');
+    fraisEl.value=Math.round(price*(1-remise/100)*0.025);
+  }
+  runSimulation();
+}
+
+function renderProjectDropdown(){
+  const dd=document.getElementById('projectDropdown'); const list=getProjectList();
+  if(list.length===0){ dd.innerHTML='<div class="dropdown-empty">Aucun autre projet enregistr\u00e9</div>'; return; }
+  dd.innerHTML=list.map(n=>'<div class="dropdown-item '+(n===currentProjectName?'current':'')+'" data-name="'+n.replace(/"/g,'&quot;')+'">'+n+(n===currentProjectName?' (actuel)':'')+'</div>').join('');
+  dd.querySelectorAll('.dropdown-item').forEach(item=>item.addEventListener('mousedown', e=>{ e.preventDefault(); loadProjectByName(item.getAttribute('data-name')); hideProjectDropdown(); }));
+}
+function showProjectDropdown(){ renderProjectDropdown(); document.getElementById('projectDropdown').classList.add('show'); }
+function hideProjectDropdown(){ document.getElementById('projectDropdown').classList.remove('show'); }
+function loadProjectByName(name){
+  if(name===currentProjectName) return;
+  const state=loadProjectState(name); if(!state) return;
+  applyState(state); currentProjectName=name; document.getElementById('pageTitle').value=name;
+  setLastActive(name); switchTab('differe', true); runSimulation(); refreshAllFileDropdowns();
+}
+function commitTitleChange(){
+  const titleEl=document.getElementById('pageTitle'); const newName=titleEl.value.trim();
+  if(!newName){ titleEl.value=currentProjectName; return; }
+  if(newName===currentProjectName) return;
+  const list=getProjectList();
+  if(list.includes(newName)){ loadProjectByName(newName); return; }
+  const oldName=currentProjectName;
+  if(currentProjectName) deleteProjectStorage(currentProjectName);
+  currentProjectName=newName;
+  saveProject(currentProjectName, serializeState());
+  Promise.all([renameFileCategoryProject('plan', oldName, newName), renameFileCategoryProject('brochure', oldName, newName)]).then(refreshAllFileDropdowns);
+}
+function nextAvailableName(base){
+  const m=base.match(/^(.*?)(\d+)$/); let root=m?m[1]:base; let n=m?parseInt(m[2])+1:2;
+  const list=getProjectList(); let candidate=root+n;
+  while(list.includes(candidate)){ n++; candidate=root+n; }
+  return candidate;
+}
+function newProject(){
+  if(currentProjectName) saveProject(currentProjectName, serializeState());
+  const newName=nextAvailableName(currentProjectName||'Mon projet VEFA');
+  if(defaultStateSnapshot) applyState(defaultStateSnapshot);
+  currentProjectName=newName; document.getElementById('pageTitle').value=newName;
+  switchTab('differe', true); runSimulation(); saveProject(currentProjectName, serializeState()); refreshAllFileDropdowns();
+}
+function deleteCurrentProject(){
+  if(!currentProjectName){ return; }
+  if(!confirm('Cette action est irr\u00e9versible. Supprimer d\u00e9finitivement le projet "'+currentProjectName+'" et toutes ses donn\u00e9es ?')) return;
+  const nameToDelete=currentProjectName;
+  deleteProjectStorage(nameToDelete); deleteFileCategoryProject('plan', nameToDelete); deleteFileCategoryProject('brochure', nameToDelete);
+  const remaining=getProjectList();
+  if(remaining.length>0){
+    currentProjectName=remaining[0]; applyState(loadProjectState(remaining[0]));
+    document.getElementById('pageTitle').value=currentProjectName; setLastActive(currentProjectName);
+    switchTab('differe', true); runSimulation();
+  } else {
+    if(defaultStateSnapshot) applyState(defaultStateSnapshot);
+    currentProjectName='Mon projet VEFA'; document.getElementById('pageTitle').value=currentProjectName;
+    switchTab('differe', true); runSimulation(); saveProject(currentProjectName, serializeState());
+  }
+  refreshAllFileDropdowns();
+}
+function switchTab(name, skipRun){
+  activeScenario=name;
+  document.getElementById('tabDiffere').classList.toggle('active', name==='differe');
+  document.getElementById('tabProrata').classList.toggle('active', name==='prorata');
+  document.getElementById('tabBtnDiffere').classList.toggle('active', name==='differe');
+  document.getElementById('tabBtnProrata').classList.toggle('active', name==='prorata');
+  document.getElementById('scenarioTag').textContent = name==='differe' ? 'scenario Diff\u00e9r\u00e9' : 'scenario Prorata';
+  if(!skipRun) runSimulation();
+}
+function amortizationSchedule(principal, annualRatePct, years, insMonthlyFn){
+  const n=Math.round(years*12); const r=annualRatePct/100/12;
+  const payment = r>0 ? principal*r/(1-Math.pow(1+r,-n)) : principal/n;
+  let balance=principal; const rows=[]; let totalInterest=0, totalInsurance=0;
+  for(let m=1;m<=n;m++){
+    const interest=balance*r; let capital=payment-interest;
+    if(capital>balance) capital=balance;
+    balance=Math.max(0,balance-capital);
+    const insurance=insMonthlyFn(balance,principal);
+    totalInterest+=interest; totalInsurance+=insurance;
+    rows.push({month:m,payment,interest,capital,balance,insurance});
+  }
+  return {rows,payment,n,totalInterest,totalInsurance};
+}
+function ptzSchedule(ptzAmount, deferMonths, totalMonths){
+  const repayMonths=Math.max(1,totalMonths-deferMonths); const monthlyPayment=ptzAmount/repayMonths; const rows=[];
+  for(let m=1;m<=totalMonths;m++){ rows.push({month:m,payment: m>deferMonths ? monthlyPayment : 0}); }
+  return {rows,monthlyPayment,deferMonths,repayMonths,totalMonths};
+}
+function stagedLoanCost(drawEvents, livraisonDate, annualRatePct, postYears, insMonthlyFn){
+  const validDraws=drawEvents.filter(d=>d.date && d.amount>0.5).sort((a,b)=>a.date-b.date);
+  const monthlyRate=annualRatePct/100/12; const intercalaryRows=[];
+  let totalIntercalaryInterest=0, totalIntercalaryInsurance=0;
+  if(validDraws.length>0 && livraisonDate){
+    let cumDrawn=0, di=0;
+    const monthsTotal=Math.max(0, monthsBetween(validDraws[0].date, livraisonDate));
+    for(let m=0;m<monthsTotal;m++){
+      const monthDate=addMonths(validDraws[0].date, m);
+      while(di<validDraws.length && validDraws[di].date<=monthDate){ cumDrawn+=validDraws[di].amount; di++; }
+      const interest=cumDrawn*monthlyRate; const insurance=insMonthlyFn(cumDrawn,cumDrawn);
+      totalIntercalaryInterest+=interest; totalIntercalaryInsurance+=insurance;
+      intercalaryRows.push({date:monthDate, payment:interest, interest, insurance, cumDrawn});
+    }
+    while(di<validDraws.length){ cumDrawn+=validDraws[di].amount; di++; }
+  }
+  const totalDrawn=validDraws.reduce((s,d)=>s+d.amount,0);
+  const postSched=amortizationSchedule(totalDrawn, annualRatePct, postYears, insMonthlyFn);
+  return {intercalaryRows, totalIntercalaryInterest, totalIntercalaryInsurance, postSched, totalDrawn,
+           totalInterest: totalIntercalaryInterest+postSched.totalInterest,
+           totalInsurance: totalIntercalaryInsurance+postSched.totalInsurance};
+}
+function futureValueWithSavings(initial, monthlyContribution, annualRatePct, months){
+  let balance=initial; const monthlyRate=Math.pow(1+annualRatePct/100,1/12)-1;
+  for(let m=0;m<months;m++){ balance = balance*(1+monthlyRate) + monthlyContribution; }
+  return balance;
+}
+function resyncPalierDatesFromStart(forceReset){
+  const startMonthStr=document.getElementById('startMonth').value;
+  const startDate=startMonthStr ? new Date(startMonthStr+"-01") : new Date();
+  if(forceReset){
+    Object.keys(DEFAULT_OFFSETS).forEach(id=>{ document.getElementById(id).value=dateToInputStr(addMonths(startDate,DEFAULT_OFFSETS[id])); });
+    if(!document.getElementById('p0date').dataset.userSet){ document.getElementById('p0date').value=document.getElementById('refDate').value||dateToInputStr(new Date()); }
+  } else {
+    Object.keys(DEFAULT_OFFSETS).forEach(id=>{ if(!document.getElementById(id).value) document.getElementById(id).value=dateToInputStr(addMonths(startDate,DEFAULT_OFFSETS[id])); });
+  }
+  runSimulation();
+}
+function cascadeFromP1(){
+  const startMonthStr=document.getElementById('startMonth').value;
+  const startDate=startMonthStr ? new Date(startMonthStr+"-01") : new Date();
+  const defaultP1=addMonths(startDate,DEFAULT_OFFSETS.p1date);
+  const newP1=dateVal('p1date'); if(!newP1) return;
+  const deltaMonths=monthsBetween(defaultP1,newP1);
+  document.getElementById('p2date').value=dateToInputStr(addMonths(addMonths(startDate,DEFAULT_OFFSETS.p2date),deltaMonths));
+  document.getElementById('p3date').value=dateToInputStr(addMonths(addMonths(startDate,DEFAULT_OFFSETS.p3date),deltaMonths));
+  document.getElementById('p4date').value=dateToInputStr(addMonths(addMonths(startDate,DEFAULT_OFFSETS.p4date),deltaMonths));
+  runSimulation();
+}
+function getPtzCeiling(zone,persons){ const arr=PTZ_CEILINGS[zone]||PTZ_CEILINGS.AbisA; const idx=Math.min(Math.max(1,persons),8)-1; return arr[idx]; }
+function resetCeilingTo35(skipRun){
+  const s1=val('salary1'), s2=val('salary2');
+  document.getElementById('mensualiteCeiling').value=Math.round((s1+s2)*0.35);
+  if(!skipRun) runSimulation();
+}
+
+function computeScenarioMetrics(apport, years, ctx){
+  const loanAmount=Math.max(0, ctx.totalProjectCost - apport - ctx.ptzAmount);
+  function insMonthlyFn(balance,principal){ const base = ctx.degressive ? balance : principal; return base*ctx.combinedAnnualPctOfCapital/100/12; }
+  const sched=amortizationSchedule(loanAmount, ctx.loanRate, years, insMonthlyFn);
+  const ptzSched2=ptzSchedule(ctx.ptzAmount, ctx.ptzDefer, ctx.ptzTotalMonths);
+  const ptzInsMonthly = ctx.insurePTZChecked ? ctx.ptzAmount*ctx.combinedAnnualPctOfCapital/100/12 : 0;
+  const ptzInsTotal = ptzInsMonthly*ctx.ptzTotalMonths;
+  const loanInsMonthly = sched.rows.length ? sched.rows[0].insurance : 0;
+  const totalInsurance = sched.totalInsurance + ptzInsTotal;
+  const totalCost = sched.totalInterest + totalInsurance + ctx.totalFeesCredit;
+  const monthlyDuringDefer = sched.payment + loanInsMonthly;
+  const monthlyPostPTZ = sched.payment + ptzSched2.monthlyPayment + loanInsMonthly + ptzInsMonthly;
+  return {apport, years, loanAmount, payment:sched.payment, totalInterest:sched.totalInterest, totalInsurance, totalCost, monthlyDuringDefer, monthlyPostPTZ, ptzMonthly:ptzSched2.monthlyPayment};
+}
+function runOptimizer(ctx, apportDispo, monthlySavings, flexFundRate, monthsToLastPalier, ceiling, minYears, maxYears){
+  const apportMin=apportDispo;
+  const apportMaxAchievable=Math.min(ctx.totalProjectCost-ctx.ptzAmount, futureValueWithSavings(apportDispo, monthlySavings, flexFundRate, Math.max(0,monthsToLastPalier)));
+  const apportMax=Math.max(apportMin, apportMaxAchievable);
+  const steps=40; const apportStep=Math.max(500, (apportMax-apportMin)/steps);
+  let best=null; const allResults=[];
+  for(let apport=apportMin; apport<=apportMax+0.01; apport+=apportStep){
+    for(let years=minYears; years<=maxYears; years++){
+      const m=computeScenarioMetrics(apport, years, ctx);
+      const feasible = m.monthlyPostPTZ<=ceiling && m.monthlyDuringDefer<=ceiling;
+      allResults.push({...m, feasible});
+      if(feasible && (!best || m.totalCost<best.totalCost)) best=m;
+    }
+  }
+  return {best, apportMin, apportMax, allResults};
+}
+function priceGradientColor(pct){
+  if(isNaN(pct)) return '';
+  if(pct<=-15) return '#2ecc71';
+  if(pct<=-5) return '#8bd450';
+  if(pct<=5) return '#ffd166';
+  if(pct<=15) return '#ffa454';
+  return '#ff5f5f';
+}
+
+function runSimulation(){
+  updateNegoExtrasTotal();
+  const price=val('price'), remise=val('remise');
+  const commune=document.getElementById('commune').value;
+  const adresse=document.getElementById('adresse').value;
+  const surface=val('surface'), prixM2Moyen=val('prixM2Moyen');
+  const stade=document.getElementById('stadeCommercialisation').value;
+  const fraisNotaire=val('fraisNotaire'), fraisAgence=val('fraisAgence'), fraisMobilier=val('fraisMobilier');
+  const fraisGarantie=val('fraisGarantie'), fraisDossier=val('fraisDossier'), fraisCourtage=val('fraisCourtage'), fraisIRA=val('fraisIRA');
+  const apportTarget=val('apport');
+  const ptzAmount=val('ptzAmount'), ptzDefer=val('ptzDefer'), ptzTotalMonths=val('ptzTotalMonths');
+  const rfr=val('rfr'); const ptzZone=document.getElementById('ptzZone').value; const ptzPersonnes=val('ptzPersonnes');
+  const loanYears=val('loanYears'), loanRate=val('loanRate');
+  const ins1Rate=val('ins1Rate'), ins1Quota=val('ins1Quota'), ins2Rate=val('ins2Rate'), ins2Quota=val('ins2Quota');
+  const degressive=document.getElementById('insDegressive').checked;
+  const insurePTZChecked=document.getElementById('insurePTZ').checked;
+  const useCashBeyond=document.getElementById('useCashBeyondObjectif').checked;
+  const salary1=val('salary1'), salary2=val('salary2'), savingsRate=val('savingsRate');
+  const flexFundRate=val('flexFundRate'), apportDispo=val('apportDispo');
+  const refDate=dateVal('refDate')||new Date();
+  const mensualiteCeiling=val('mensualiteCeiling');
+  const optMinYears=val('optMinYears')||5, optMaxYears=val('optMaxYears')||25;
+
+  const gmapsParts=[adresse, commune, 'France'].filter(x=>x && x.trim());
+  const adresseLinkEl=document.getElementById('adresseLink');
+  if(gmapsParts.length){ adresseLinkEl.href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(gmapsParts.join(', ')); }
+  else { adresseLinkEl.removeAttribute('href'); }
+
+  const selogerUrl=document.getElementById('selogerUrl').value.trim();
+  const prixM2MoyenLinkEl=document.getElementById('prixM2MoyenLink');
+  if(selogerUrl){ prixM2MoyenLinkEl.href=selogerUrl; }
+  else { prixM2MoyenLinkEl.removeAttribute('href'); }
+
+  const priceAfterRemise=price*(1-remise/100);
+  const totalProjectCost=priceAfterRemise+fraisNotaire+fraisAgence+fraisMobilier+fraisGarantie+fraisDossier+fraisCourtage+fraisIRA;
+  let loanAmount=totalProjectCost-apportTarget-ptzAmount;
+  const overFunded=loanAmount<0;
+  if(loanAmount<0) loanAmount=0;
+
+  const prixM2Calc = surface>0 ? priceAfterRemise/surface : NaN;
+  const prixM2CalcEl=document.getElementById('prixM2Calc');
+  prixM2CalcEl.value = surface>0 ? Math.round(prixM2Calc).toLocaleString('fr-FR')+' \u20ac/m\u00b2' : '';
+  let ecartEur=NaN, ecartPct=NaN;
+  if(surface>0 && prixM2Moyen>0){ ecartEur=prixM2Calc-prixM2Moyen; ecartPct=ecartEur/prixM2Moyen*100; }
+  const gradColor=priceGradientColor(ecartPct);
+  prixM2CalcEl.style.color = gradColor || '';
+  const ecartM2El=document.getElementById('ecartM2');
+  ecartM2El.value = isFinite(ecartEur) ? (ecartEur>=0?'+':'')+Math.round(ecartEur).toLocaleString('fr-FR')+' \u20ac/m\u00b2 ('+(ecartPct>=0?'+':'')+ecartPct.toFixed(1)+'%)' : '';
+  ecartM2El.style.color = gradColor || '';
+
+  const negoRange=NEGO_RANGES[stade]; const negoMin=negoRange[0], negoMax=negoRange[1];
+  const remiseEurLive = priceAfterRemise>0 ? (price - priceAfterRemise) : 0;
+  let negoHtml='', negoNoteHtml='';
+  if(isFinite(ecartPct)){
+    const remainingRoomMin=Math.max(0,negoMin-remise); const remainingRoomMax=Math.max(0,negoMax-remise);
+    const targetDiscountEur=priceAfterRemise*remainingRoomMax/100;
+    negoHtml=''
+      +'<div class="kpi"><div class="label">\u00c9cart vs moyenne commune</div><div class="value '+(ecartPct>0?'warn':'accent')+'">'+(ecartPct>=0?'+':'')+ecartPct.toFixed(1)+'%</div></div>'
+      +'<div class="kpi"><div class="label">Marge typique VEFA ('+NEGO_LABELS[stade]+')</div><div class="value">'+negoMin+'-'+negoMax+'%</div></div>'
+      +'<div class="kpi"><div class="label">Remise d\u00e9j\u00e0 obtenue</div><div class="value accent">'+eur(remiseEurLive)+' ('+remise.toFixed(2)+'%)</div></div>'
+      +'<div class="kpi accent2"><div class="label">Marge r\u00e9siduelle estim\u00e9e</div><div class="value accent">'+remainingRoomMin.toFixed(1)+'-'+remainingRoomMax.toFixed(1)+'%</div></div>'
+      +'<div class="kpi accent2"><div class="label">Remise additionnelle vis\u00e9e</div><div class="value accent">'+eur(targetDiscountEur)+'</div></div>';
+    let stadeAdvice='';
+    if(ecartPct>15) stadeAdvice='Le prix affich\u00e9 est nettement au-dessus ('+ecartPct.toFixed(1)+'%) de la moyenne du secteur -- argument de poids.';
+    else if(ecartPct>5) stadeAdvice='L\'\u00e9cart ('+ecartPct.toFixed(1)+'%) est mod\u00e9r\u00e9 mais reste un argument recevable.';
+    else stadeAdvice='L\'\u00e9cart vs la moyenne commune est faible -- misez sur les prestations plut\u00f4t que sur le prix affich\u00e9.';
+    negoNoteHtml=stadeAdvice+' Leviers r\u00e9alistes : frais de notaire/garantie offerts, options incluses, d\u00e9lai de paiement plus souple.';
+  } else {
+    negoHtml='<div class="kpi"><div class="label">\u00c9cart vs moyenne commune</div><div class="value">Renseignez prix moyen/m\u00b2 et surface</div></div>';
+    negoNoteHtml='Renseignez le prix moyen au m\u00b2 de la commune pour obtenir une recommandation.';
+  }
+  document.getElementById('negoKpi').innerHTML=negoHtml;
+  document.getElementById('negoNote').innerHTML=negoNoteHtml;
+
+  const ceilingPtz=getPtzCeiling(ptzZone,ptzPersonnes);
+  const eligible=rfr<=ceilingPtz;
+  document.getElementById('ptzEligNote').innerHTML = rfr>0
+    ? (eligible ? '<span class="eligible-yes">\u2713 \u00c9ligible</span> \u2013 RFR '+eur(rfr)+' \u2264 plafond '+eur(ceilingPtz)
+                : '<span class="eligible-no">Non \u00e9ligible</span> \u2013 RFR '+eur(rfr)+' &gt; plafond '+eur(ceilingPtz))
+    : 'Plafond applicable : '+eur(ceilingPtz);
+
+  const combinedAnnualPctOfCapital = ins1Rate*ins1Quota/100 + ins2Rate*ins2Quota/100;
+  function insMonthlyFn(balance,principal){ const base=degressive?balance:principal; return base*combinedAnnualPctOfCapital/100/12; }
+  const totalFeesCredit = fraisGarantie+fraisDossier+fraisCourtage+fraisIRA;
+  const totalFeesAcquisition = fraisNotaire+fraisAgence+fraisMobilier;
+
+  const paliers=[
+    {id:'0',name:'R\u00e9servation',pct:val('p0pct'),date:dateVal('p0date')},
+    {id:'1',name:'Fondations',pct:val('p1pct'),date:dateVal('p1date')},
+    {id:'2',name:"Hors d'eau",pct:val('p2pct'),date:dateVal('p2date')},
+    {id:'3',name:'Ach\u00e8vement',pct:val('p3pct'),date:dateVal('p3date')},
+    {id:'4',name:'Livraison',pct:val('p4pct'),date:dateVal('p4date')},
+  ];
+  let prevCum=0;
+  const vefaRows=paliers.map(p=>{
+    const cumAmount=priceAfterRemise*p.pct/100; const callAmount=cumAmount-prevCum; prevCum=cumAmount;
+    document.getElementById('p'+p.id+'cum').textContent=eur(cumAmount);
+    if(p.id==='0'){
+      if(document.activeElement !== document.getElementById('p0amount')) document.getElementById('p0amount').value=Math.round(callAmount);
+    } else {
+      document.getElementById('p'+p.id+'call').textContent=eur(callAmount);
+    }
+    return {name:p.name, date:p.date, pct:p.pct, cumAmount, callAmount};
+  });
+  const livraisonDate=paliers[paliers.length-1].date;
+  const dleEl=document.getElementById('dateLivraisonEstimee');
+  if(!dleEl.dataset.userSet && livraisonDate){ dleEl.value=dateToInputStr(livraisonDate).slice(0,7); }
+
+  const monthlySavings=(salary1+salary2)*savingsRate/100;
+  const monthlyFlexRate=Math.pow(1+flexFundRate/100,1/12)-1;
+  let poolD=apportDispo, curD=refDate, apportBudgetUsed=0, ptzBudgetUsed=0, aLeverCumule=0;
+  const savingsRowsDiffere = vefaRows.map(r=>{
+    const months = r.date ? Math.max(0, monthsBetween(curD, r.date)) : 0;
+    for(let i=0;i<months;i++){ poolD = poolD*(1+monthlyFlexRate) + monthlySavings; }
+    curD = r.date || curD;
+    const poolAvant=poolD;
+    const apportNecessaire = Math.min(r.callAmount, Math.max(0, apportTarget - apportBudgetUsed));
+    const cashApport = Math.min(poolD, apportNecessaire);
+    const aLeverEtape = apportNecessaire - cashApport;
+    poolD -= cashApport;
+    const afterApportCall = r.callAmount - apportNecessaire;
+    const cashBeyondObjectif = useCashBeyond ? Math.min(poolD, afterApportCall) : 0;
+    poolD -= cashBeyondObjectif;
+    const afterExtraCash = afterApportCall - cashBeyondObjectif;
+    const remainingPtzBudget = Math.max(0, ptzAmount - ptzBudgetUsed);
+    const ptzEtape = Math.min(afterExtraCash, remainingPtzBudget);
+    const financeParPret = afterExtraCash - ptzEtape;
+    apportBudgetUsed += apportNecessaire; ptzBudgetUsed += ptzEtape; aLeverCumule += aLeverEtape;
+    return {name:r.name, date:r.date, callAmount:r.callAmount, poolAvant, cashApport, aLeverEtape, cashBeyondObjectif, ptzEtape, financeParPret, poolRestant:poolD, apportRequisCumule:apportBudgetUsed, aLeverCumule};
+  });
+  const apportShortfallVsCible = savingsRowsDiffere.length ? savingsRowsDiffere[savingsRowsDiffere.length-1].aLeverCumule : 0;
+  const apportUtiliseCumule = apportBudgetUsed;
+
+  const apportPct = totalProjectCost>0 ? apportTarget/totalProjectCost : 0;
+  const ptzPct = totalProjectCost>0 ? ptzAmount/totalProjectCost : 0;
+  const pretPct = totalProjectCost>0 ? loanAmount/totalProjectCost : 0;
+  let poolP=apportDispo, curP=refDate; let apportShareSum=0, apportOrganicSum=0, aLeverProrataSum=0;
+  const savingsRowsProrata = vefaRows.map(r=>{
+    const months = r.date ? Math.max(0, monthsBetween(curP, r.date)) : 0;
+    for(let i=0;i<months;i++){ poolP = poolP*(1+monthlyFlexRate) + monthlySavings; }
+    curP = r.date || curP;
+    const poolAvant=poolP;
+    const apportShare = r.callAmount*apportPct;
+    const usedFromPool = Math.min(poolP, apportShare);
+    poolP -= usedFromPool;
+    const aLever = apportShare - usedFromPool;
+    apportShareSum+=apportShare; apportOrganicSum+=usedFromPool; aLeverProrataSum+=aLever;
+    return {name:r.name, date:r.date, apportShare, poolAvant, usedFromPool, aLever, pretEtape:r.callAmount*pretPct, ptzEtape:r.callAmount*ptzPct};
+  });
+  const feesShareOfApport = Math.max(0, apportTarget - apportShareSum);
+
+  const activeDrawEvents = activeScenario==='differe'
+    ? savingsRowsDiffere.map(r=>({date:r.date, amount:r.financeParPret}))
+    : savingsRowsProrata.map(r=>({date:r.date, amount:r.pretEtape}));
+  const staged = stagedLoanCost(activeDrawEvents, livraisonDate, loanRate, loanYears, insMonthlyFn);
+
+  const ptzSched=ptzSchedule(ptzAmount, ptzDefer, ptzTotalMonths);
+  const ptzInsuranceMonthly = insurePTZChecked ? ptzAmount*combinedAnnualPctOfCapital/100/12 : 0;
+  const ptzInsuranceTotal = ptzInsuranceMonthly*ptzTotalMonths;
+  const totalInsuranceAll = staged.totalInsurance + ptzInsuranceTotal;
+  const avgMonthlyPostLivraison = staged.postSched.payment + ptzSched.monthlyPayment + (staged.postSched.rows.length ? staged.postSched.rows[0].insurance : 0) + ptzInsuranceMonthly;
+
+  const lastPalierDate=livraisonDate;
+  const monthsToLastPalier = lastPalierDate ? Math.max(0, monthsBetween(refDate,lastPalierDate)) : 0;
+  const ctx={totalProjectCost, ptzAmount, ptzDefer, ptzTotalMonths, loanRate, degressive, insurePTZChecked, combinedAnnualPctOfCapital, totalFeesCredit};
+  const optResult=runOptimizer(ctx, apportDispo, monthlySavings, flexFundRate, monthsToLastPalier, mensualiteCeiling, optMinYears, optMaxYears);
+  lastReco=optResult;
+
+  if(optResult.best){
+    const b=optResult.best;
+    document.getElementById('recoKpi').innerHTML=''
+      +'<div class="kpi gold"><div class="label">Apport recommand\u00e9</div><div class="value gold">'+eur(b.apport)+'</div></div>'
+      +'<div class="kpi gold"><div class="label">Dur\u00e9e recommand\u00e9e</div><div class="value gold">'+b.years+' ans</div></div>'
+      +'<div class="kpi"><div class="label">Pr\u00eat r\u00e9sultant</div><div class="value">'+eur(b.loanAmount)+'</div></div>'
+      +'<div class="kpi"><div class="label">Mensualit\u00e9 apr\u00e8s diff\u00e9r\u00e9 PTZ</div><div class="value">'+eur2(b.monthlyPostPTZ)+'</div></div>'
+      +'<div class="kpi"><div class="label">Co\u00fbt total</div><div class="value warn">'+eur(b.totalCost)+'</div></div>';
+    document.getElementById('recoNote').innerHTML='Apport max. envisageable d\'ici Livraison ('+fmtDate(lastPalierDate)+') : '+eur(optResult.apportMax)+'. Plafond mensualit\u00e9 utilis\u00e9 : '+eur(mensualiteCeiling)+'/mois.';
+    const top=optResult.allResults.filter(r=>r.feasible).sort((a,b2)=>a.totalCost-b2.totalCost).slice(0,8);
+    document.getElementById('recoTable').innerHTML=top.map(r=>{
+      const isBest = r===b;
+      return '<tr style="'+(isBest?'color:var(--gold);font-weight:700':'')+'"><td>'+eur(r.apport)+'</td><td>'+r.years+' ans</td><td>'+eur(r.loanAmount)+'</td><td>'+eur2(r.monthlyPostPTZ)+'</td><td>'+eur(r.totalCost)+'</td></tr>';
+    }).join('');
+  } else {
+    document.getElementById('recoKpi').innerHTML='<div class="kpi"><div class="label">R\u00e9sultat</div><div class="value danger">Aucune combinaison faisable</div></div>';
+    document.getElementById('recoNote').innerHTML='Aucune combinaison ne respecte le plafond de mensualit\u00e9 ('+eur(mensualiteCeiling)+'/mois).';
+    document.getElementById('recoTable').innerHTML='';
+  }
+
+  document.getElementById('kpiGrid').innerHTML=''
+    +'<div class="kpi"><div class="label">Prix apr\u00e8s remise</div><div class="value">'+eur(priceAfterRemise)+'</div></div>'
+    +'<div class="kpi" data-tooltip="= prix apr\u00e8s remise + frais li\u00e9s \u00e0 l acquisition + frais li\u00e9s au cr\u00e9dit. C est le montant r\u00e9el que apport + PTZ + pr\u00eat doivent couvrir ensemble."><div class="label">Co\u00fbt total \u00e0 financer</div><div class="value">'+eur(totalProjectCost)+'</div></div>'
+    +'<div class="kpi"><div class="label">Apport cible</div><div class="value accent">'+eur(apportTarget)+'</div></div>'
+    +'<div class="kpi"><div class="label">PTZ</div><div class="value accent">'+eur(ptzAmount)+'</div></div>'
+    +'<div class="kpi"><div class="label">Pr\u00eat principal</div><div class="value '+(overFunded?'danger':'')+'">'+eur(loanAmount)+'</div></div>'
+    +'<div class="kpi" data-tooltip="Mensualit\u00e9 repr\u00e9sentative une fois la livraison effectu\u00e9e et le diff\u00e9r\u00e9 PTZ termin\u00e9 : pr\u00eat principal + PTZ + assurance emprunteur."><div class="label">Mensualit\u00e9 moyenne (post-livraison, PTZ actif)</div><div class="value">'+eur2(avgMonthlyPostLivraison)+'</div></div>'
+    +'<div class="kpi"><div class="label">Dur\u00e9e amortissement</div><div class="value">'+loanYears+' ans</div></div>'
+    +'<div class="kpi"><div class="label">Taux nominal</div><div class="value">'+loanRate.toFixed(2)+'%</div></div>';
+  document.getElementById('consistencyNote').innerHTML = overFunded
+    ? 'Apport + PTZ d\u00e9passent le co\u00fbt total \u00e0 financer de '+eur(Math.abs(totalProjectCost-apportTarget-ptzAmount))+'.'
+    : 'Coh\u00e9rent : Apport ('+eur(apportTarget)+') + PTZ ('+eur(ptzAmount)+') + Pr\u00eat ('+eur(loanAmount)+') = '+eur(apportTarget+ptzAmount+loanAmount)+' ~= Co\u00fbt total \u00e0 financer ('+eur(totalProjectCost)+')';
+
+  const totalCreditCost=staged.totalInterest+totalInsuranceAll+totalFeesCredit;
+  document.getElementById('totalCostKpi').innerHTML=''
+    +'<div class="kpi"><div class="label">Int\u00e9r\u00eats intercalaires</div><div class="value warn">'+eur(staged.totalIntercalaryInterest)+'</div></div>'
+    +'<div class="kpi"><div class="label">Int\u00e9r\u00eats post-livraison</div><div class="value warn">'+eur(staged.postSched.totalInterest)+'</div></div>'
+    +'<div class="kpi"><div class="label">Assurance totale pr\u00eat + PTZ</div><div class="value warn">'+eur(totalInsuranceAll)+'</div></div>'
+    +'<div class="kpi"><div class="label">Frais li\u00e9s au cr\u00e9dit</div><div class="value">'+eur(totalFeesCredit)+'</div></div>'
+    +'<div class="kpi"><div class="label">Frais li\u00e9s \u00e0 l acquisition</div><div class="value">'+eur(totalFeesAcquisition)+'</div></div>'
+    +'<div class="kpi" data-tooltip="= int\u00e9r\u00eats intercalaires + int\u00e9r\u00eats post-livraison + assurance + frais li\u00e9s au cr\u00e9dit. Change selon le sc\u00e9nario Diff\u00e9r\u00e9/Prorata et selon le r\u00e9glage Utiliser cash au-del\u00e0 objectif. Les frais li\u00e9s \u00e0 l acquisition notaire, agence, mobilier ne sont volontairement pas inclus ici -- voir Co\u00fbt total \u00e0 financer -- mais leur financement via le pr\u00eat augmente d\u00e9j\u00e0 les int\u00e9r\u00eats ci-dessus au prorata du montant emprunt\u00e9."><div class="label">Co\u00fbt total du cr\u00e9dit</div><div class="value danger">'+eur(totalCreditCost)+'</div></div>'
+    +'<div class="kpi" data-tooltip="= pr\u00eat + int\u00e9r\u00eats + assurance + PTZ. Exclut volontairement les frais (total '+eur(totalFeesCredit+totalFeesAcquisition)+'), pay\u00e9s une fois, jamais rembours\u00e9s via mensualit\u00e9s -- contrairement au capital, aux int\u00e9r\u00eats et \u00e0 l assurance qui s \u00e9talent sur toute la dur\u00e9e."><div class="label">Montant total rembours\u00e9</div><div class="value">'+eur(staged.totalDrawn+staged.totalInterest+totalInsuranceAll+ptzAmount)+'</div></div>';
+
+  document.getElementById('savingsKpi').innerHTML=''
+    +'<div class="kpi"><div class="label">\u00c9pargne mensuelle</div><div class="value accent">'+eur2(monthlySavings)+'</div></div>'
+    +'<div class="kpi"><div class="label">Apport dispo. aujourd hui</div><div class="value">'+eur(apportDispo)+'</div></div>'
+    +'<div class="kpi"><div class="label">Apport cumul\u00e9 (cash+lev\u00e9e)</div><div class="value">'+eur(apportUtiliseCumule)+'</div></div>'
+    +'<div class="kpi"><div class="label">Total lev\u00e9 (vente d actifs)</div><div class="value '+(apportShortfallVsCible>0?'warn':'accent')+'">'+eur(apportShortfallVsCible)+'</div></div>';
+
+  let prevApportRequisCumule=-1, prevALeverCumule=-1;
+  document.getElementById('savingsTableDiffere').innerHTML=savingsRowsDiffere.map(r=>{
+    const objectifTag = r.apportRequisCumule>=apportTarget-0.5 ? ' <span class="row-done">(objectif atteint)</span>' : '';
+    const apportCumUnchanged = Math.abs(r.apportRequisCumule-prevApportRequisCumule)<0.5;
+    const aLeverCumUnchanged = Math.abs(r.aLeverCumule-prevALeverCumule)<0.5;
+    const dejaLeve = r.aLeverCumule>=0.5 && aLeverCumUnchanged;
+    const apportCumText = (apportCumUnchanged ? '= ' : '') + eur(r.apportRequisCumule);
+    const apportCumCell = (apportCumUnchanged || dejaLeve) ? '<span class="row-carried">'+apportCumText+'</span>' : apportCumText;
+    const aLeverCumCell = r.aLeverCumule<0.5
+      ? 'OK'
+      : (dejaLeve ? eur(r.aLeverCumule)+' <span class="deja-levee">d\u00e9j\u00e0 lev\u00e9</span>' : eur(r.aLeverCumule));
+    prevApportRequisCumule=r.apportRequisCumule; prevALeverCumule=r.aLeverCumule;
+    return '<tr><td>'+r.name+objectifTag+'</td><td>'+fmtDate(r.date)+'</td><td>'+eur(r.callAmount)+'</td><td>'+eur(r.poolAvant)+'</td><td>'+eur(r.cashApport)+'</td><td>'+(r.aLeverEtape>0.5?'<span class="row-short">'+eur(r.aLeverEtape)+'</span>':'<span class="row-ok">-</span>')+'</td><td>'+(r.cashBeyondObjectif>0.5?eur(r.cashBeyondObjectif):'-')+'</td><td>'+eur(r.ptzEtape)+'</td><td>'+(r.financeParPret>0.5?'<span class="row-short">'+eur(r.financeParPret)+'</span>':'<span class="row-ok">-</span>')+'</td><td>'+eur(r.poolRestant)+'</td><td>'+apportCumCell+'</td><td>'+aLeverCumCell+'</td></tr>';
+  }).join('');
+  document.getElementById('savingsTableProrata').innerHTML=savingsRowsProrata.map(r=>{
+    return '<tr><td>'+r.name+'</td><td>'+fmtDate(r.date)+'</td><td>'+eur(r.apportShare)+'</td><td>'+eur(r.poolAvant)+'</td><td>'+eur(r.usedFromPool)+'</td><td>'+(r.aLever>0.5?'<span class="row-short">'+eur(r.aLever)+'</span>':'<span class="row-ok">-</span>')+'</td><td>'+eur(r.pretEtape)+'</td><td>'+eur(r.ptzEtape)+'</td></tr>';
+  }).join('');
+  document.getElementById('aLeverSummary').innerHTML = activeScenario==='differe'
+    ? 'Lecture (Diff\u00e9r\u00e9) : l\'apport couvre en priorit\u00e9 jusqu\'\u00e0 \u00e9puisement de l\'objectif de '+eur(apportTarget)+'. Une fois atteint, les colonnes cumul\u00e9es restent affich\u00e9es en gris (d\u00e9j\u00e0 r\u00e8gl\u00e9, pas une nouvelle demande).'
+    : 'Lecture (Prorata) : "Part apport" est calcul\u00e9e au prorata du co\u00fbt des travaux (hors frais) -- \u00e9cart de '+eur(feesShareOfApport)+' correspondant \u00e0 la part th\u00e9orique affect\u00e9e aux frais, r\u00e8gl\u00e9s s\u00e9par\u00e9ment.';
+
+  document.getElementById('loanKpi').innerHTML=''
+    +'<div class="kpi"><div class="label">Montant total tir\u00e9</div><div class="value">'+eur(staged.totalDrawn)+'</div></div>'
+    +'<div class="kpi"><div class="label">Mensualit\u00e9 post-livraison</div><div class="value">'+eur2(staged.postSched.payment)+'</div></div>'
+    +'<div class="kpi"><div class="label">Dur\u00e9e amortissement</div><div class="value">'+loanYears+' ans</div></div>'
+    +'<div class="kpi"><div class="label">Total int\u00e9r\u00eats</div><div class="value warn">'+eur(staged.totalInterest)+'</div></div>';
+  document.getElementById('ptzKpi').innerHTML=''
+    +'<div class="kpi"><div class="label">Montant PTZ</div><div class="value">'+eur(ptzAmount)+'</div></div>'
+    +'<div class="kpi"><div class="label">Diff\u00e9r\u00e9 depuis livraison</div><div class="value">'+ptzDefer+' mois</div></div>'
+    +'<div class="kpi"><div class="label">Dur\u00e9e remboursement</div><div class="value">'+ptzSched.repayMonths+' mois</div></div>'
+    +'<div class="kpi"><div class="label">Mensualit\u00e9 apr\u00e8s diff\u00e9r\u00e9</div><div class="value accent">'+eur2(ptzSched.monthlyPayment)+'</div></div>';
+  document.getElementById('insuranceKpi').innerHTML=''
+    +'<div class="kpi"><div class="label">Taux combin\u00e9 annuel</div><div class="value">'+combinedAnnualPctOfCapital.toFixed(3)+'%</div></div>'
+    +'<div class="kpi"><div class="label">Assurance pr\u00eat</div><div class="value warn">'+eur(staged.totalInsurance)+'</div></div>'
+    +'<div class="kpi"><div class="label">Assurance PTZ</div><div class="value warn">'+eur(ptzInsuranceTotal)+'</div></div>'
+    +'<div class="kpi"><div class="label">Assurance totale</div><div class="value danger">'+eur(totalInsuranceAll)+'</div></div>';
+
+  const ptzRowsAnchored = ptzSched.rows.map(r=>({date: livraisonDate ? addMonths(livraisonDate, r.month-1) : null, payment:r.payment}));
+  const postRowsAnchored = staged.postSched.rows.map(r=>({date: livraisonDate ? addMonths(livraisonDate, r.month-1) : null, payment:r.payment, insurance:r.insurance}));
+  const setDates=new Set();
+  staged.intercalaryRows.forEach(r=>setDates.add(r.date.getTime()));
+  postRowsAnchored.forEach(r=>{ if(r.date) setDates.add(r.date.getTime()); });
+  ptzRowsAnchored.forEach(r=>{ if(r.date) setDates.add(r.date.getTime()); });
+  const uniqueSorted=Array.from(setDates).sort((a,b)=>a-b).map(t=>new Date(t));
+  const maxDisplay=60;
+  let displayDates;
+  if(uniqueSorted.length<=maxDisplay){ displayDates=uniqueSorted.map(d=>({date:d,omitMarker:false})); }
+  else {
+    const head=uniqueSorted.slice(0,40).map(d=>({date:d,omitMarker:false}));
+    const tail=uniqueSorted.slice(-20).map(d=>({date:d,omitMarker:false}));
+    const omittedCount=uniqueSorted.length-60;
+    displayDates=head.concat([{omitMarker:true, count:omittedCount}], tail);
+  }
+  let rowsHtml='';
+  displayDates.forEach(item=>{
+    if(item.omitMarker){ rowsHtml+='<tr class="row-omitted"><td colspan="6">('+item.count+' lignes omises, valeurs inchang\u00e9es)</td></tr>'; return; }
+    const d=item.date;
+    const inter=staged.intercalaryRows.find(r=>r.date.getTime()===d.getTime());
+    const post=postRowsAnchored.find(r=>r.date && r.date.getTime()===d.getTime());
+    const ptzR=ptzRowsAnchored.find(r=>r.date && r.date.getTime()===d.getTime());
+    const loanPay = inter ? inter.payment : (post ? post.payment : 0);
+    const loanIns = inter ? inter.insurance : (post ? post.insurance : 0);
+    const ptzPay = ptzR ? ptzR.payment : 0;
+    const ptzIns = (insurePTZChecked && ptzR) ? ptzInsuranceMonthly : 0;
+    const phase = inter ? '<span class="row-intercalary">Intercalaire</span>' : (livraisonDate && d>=livraisonDate ? '<span class="row-ok">Amortissement</span>' : '-');
+    const total=loanPay+ptzPay+loanIns+ptzIns;
+    rowsHtml+='<tr><td>'+fmtDate(d)+'</td><td>'+phase+'</td><td>'+eur2(loanPay)+'</td><td>'+eur2(ptzPay)+'</td><td>'+eur2(loanIns+ptzIns)+'</td><td><strong>'+eur2(total)+'</strong></td></tr>';
+  });
+  document.getElementById('scheduleTable').innerHTML=rowsHtml;
+
+  lastResults={projectName:currentProjectName, commune, adresse, price, surface, prixM2Calc, prixM2Moyen, ecartEur, ecartPct, stade, remise, priceAfterRemise, totalProjectCost, apportTarget, ptzAmount, loanAmount, overFunded, loanYears, loanRate, ptzDefer, ptzRepayMonths:ptzSched.repayMonths, ptzMonthlyPayment:ptzSched.monthlyPayment, avgMonthlyPostLivraison, rfr, ptzZone, ptzPersonnes, ptzCeiling:ceilingPtz, ptzEligible:eligible, combinedAnnualPctOfCapital, totalInsuranceAll, totalFeesCredit, totalFeesAcquisition, totalCreditCost, vefaRows, savingsRowsDiffere, savingsRowsProrata, monthlySavings, apportDispo, flexFundRate, salary1, salary2, savingsRate, reco:optResult.best, mensualiteCeiling, apportMaxAchievable:optResult.apportMax, staged, activeScenario, apportUtiliseCumule, apportShortfallVsCible, negoExtrasTotal:updateNegoExtrasTotal()};
+
+  if(currentProjectName) saveProject(currentProjectName, serializeState());
+}
+
+function applyRecommendation(){
+  if(!lastReco || !lastReco.best) return;
+  document.getElementById('apport').value=Math.round(lastReco.best.apport);
+  document.getElementById('loanYears').value=lastReco.best.years;
+  runSimulation();
+}
+function buildDiffereTableForPDF(r){
+  const needsFullDetail = r.apportTarget > r.apportDispo;
+
+  if(needsFullDetail){
+    const head = [['Palier','Date','Appel','Pool avant','Cash apport','A lever','Au-del\u00e0 objectif','PTZ','Pr\u00eat','Pool restant','Apport requis cum.','A lever cum.']];
+    let prevApportCum = -1, prevALeverCum = -1;
+    const body = r.savingsRowsDiffere.map(row=>{
+      const apportCumUnchanged = Math.abs(row.apportRequisCumule - prevApportCum) < 0.5;
+      const aLeverCumUnchanged = Math.abs(row.aLeverCumule - prevALeverCum) < 0.5;
+      const objectifDone = row.apportRequisCumule >= r.apportTarget - 0.5;
+      const dejaLeve = row.aLeverCumule >= 0.5 && aLeverCumUnchanged;
+
+      const apportCumCell = objectifDone
+        ? (apportCumUnchanged ? '= ' + pdfEur(r.apportTarget) : pdfEur(row.apportRequisCumule))
+        : pdfEur(row.apportRequisCumule);
+
+      const aLeverCumCell = row.aLeverCumule < 0.5
+        ? 'OK'
+        : (dejaLeve ? pdfEur(row.aLeverCumule) + PDF_DEJA_LEVE_SUFFIX : pdfEur(row.aLeverCumule));
+
+      prevApportCum = row.apportRequisCumule;
+      prevALeverCum = row.aLeverCumule;
+
+      return [
+        row.name,
+        fmtDate(row.date),
+        pdfEur(row.callAmount),
+        pdfEur(row.poolAvant),
+        pdfEur(row.cashApport),
+        row.aLeverEtape > 0.5 ? pdfEur(row.aLeverEtape) : '-',
+        row.cashBeyondObjectif > 0.5 ? pdfEur(row.cashBeyondObjectif) : '-',
+        pdfEur(row.ptzEtape),
+        row.financeParPret > 0.5 ? pdfEur(row.financeParPret) : '-',
+        pdfEur(row.poolRestant),
+        apportCumCell,
+        aLeverCumCell
+      ];
+    });
+    return {head, body};
+  }
+
+  // Simplified set: apport dispo already covers the target, so cash-apport/aLever-etape/apport-requis-cum
+  // columns are always trivial -- show pool/au-dela/a-lever-cumule instead, which stay informative.
+  const head = [['Palier','Date','Appel','Pool avant','Au-del\u00e0 obj.','PTZ','Pr\u00eat','A lever cum.']];
+  let prevALeverCumSimple = -1;
+  const body = r.savingsRowsDiffere.map(row=>{
+    const aLeverCumUnchanged = Math.abs(row.aLeverCumule - prevALeverCumSimple) < 0.5;
+    const dejaLeve = row.aLeverCumule >= 0.5 && aLeverCumUnchanged;
+    const aLeverCumCell = row.aLeverCumule < 0.5
+      ? 'OK'
+      : (dejaLeve ? pdfEur(row.aLeverCumule) + PDF_DEJA_LEVE_SUFFIX : pdfEur(row.aLeverCumule));
+    prevALeverCumSimple = row.aLeverCumule;
+    return [
+      row.name,
+      fmtDate(row.date),
+      pdfEur(row.callAmount),
+      pdfEur(row.poolAvant),
+      row.cashBeyondObjectif > 0.5 ? pdfEur(row.cashBeyondObjectif) : '-',
+      pdfEur(row.ptzEtape),
+      row.financeParPret > 0.5 ? pdfEur(row.financeParPret) : '-',
+      aLeverCumCell
+    ];
+  });
+  return {head, body};
+}
+function buildSummaryTableBody(r){
+  const remiseEur = r.price - r.priceAfterRemise;
+  return [
+    ['Prix initial', pdfEur(r.price)],
+    ['Remise', pdfEur(remiseEur) + ' (' + r.remise.toFixed(2) + '%)'],
+    ['Prix apr\u00e8s remise', pdfEur(r.priceAfterRemise)],
+    ['Co\u00fbt total \u00e0 financer', pdfEur(r.totalProjectCost)],
+    ['Apport cible', pdfEur(r.apportTarget)],
+    ['PTZ', pdfEur(r.ptzAmount)],
+    ['Pr\u00eat principal', pdfEur(r.loanAmount)],
+    ['Dur\u00e9e amortissement', r.loanYears + ' ans'],
+    ['Taux nominal', r.loanRate.toFixed(2) + '%'],
+    ['Mensualit\u00e9 moyenne (post-livraison, PTZ actif)', pdfEur(r.avgMonthlyPostLivraison)],
+    ['Co\u00fbt total du cr\u00e9dit', pdfEur(r.totalCreditCost)],
+    ['Assurance totale (pr\u00eat+PTZ)', pdfEur(r.totalInsuranceAll)],
+  ];
+}
+function addNegotiationPage(doc, r, y){
+  doc.addPage('a4','portrait'); y = 15;
+  doc.setFontSize(14); doc.setFont('helvetica','bold');
+  doc.text('N\u00e9gociation prix', 14, y); y += 8;
+
+  const remiseEur = r.price - r.priceAfterRemise;
+  const ecartEur = r.ecartEur, ecartPct = r.ecartPct;
+  const range = NEGO_RANGES[r.stade] || [0,0];
+  const remainingRoomMax = Math.max(0, range[1] - r.remise);
+  const targetDiscountEur = r.priceAfterRemise * remainingRoomMax/100;
+
+  const negoBody = [
+    ['Prix/m\u00b2 calcul\u00e9', isFinite(r.prixM2Calc) ? pdfInt(r.prixM2Calc)+'\u00A0\u20ac/m\u00b2' : '-'],
+    ['Prix moyen commune (m\u00b2)', r.prixM2Moyen ? pdfInt(r.prixM2Moyen)+'\u00A0\u20ac/m\u00b2' : '-'],
+    ['\u00c9cart vs moyenne commune', isFinite(ecartEur) ? pdfEur(ecartEur)+' ('+(ecartPct>=0?'+':'')+ecartPct.toFixed(1)+'%)' : '-'],
+    ['Marge typique VEFA (' + (NEGO_LABELS[r.stade]||r.stade) + ')', range[0]+'\u2013'+range[1]+' %'],
+    ['Remise d\u00e9j\u00e0 obtenue', pdfEur(remiseEur) + ' (' + r.remise.toFixed(2) + '%)'],
+    ['Marge r\u00e9siduelle estim\u00e9e', remainingRoomMax.toFixed(1) + ' %'],
+    ['Remise additionnelle vis\u00e9e', pdfEur(targetDiscountEur)],
+  ];
+  doc.autoTable({startY:y, head:[['Indicateur','Valeur']], body: negoBody});
+  y = doc.lastAutoTable.finalY + 8;
+
+  // Frais de notaire offerts - always listed as a reference, even though it's already granted
+  const fnoChecked = document.getElementById('fraisNotaireFNO').checked;
+  const fnoValue = r.priceAfterRemise * 0.025; // same default calc used elsewhere in the tool
+  const fnoRow = fnoChecked
+    ? ['Frais de notaire', 'Inclus (FNO)', pdfEur(fnoValue) + ' \u2013 valeur de r\u00e9f\u00e9rence']
+    : ['Frais de notaire', 'Non obtenu', '-'];
+
+  if(y > 250){ doc.addPage(); y = 15; }
+  doc.setFontSize(11); doc.setFont('helvetica','bold');
+  doc.text('Options n\u00e9goci\u00e9es', 14, y); y += 3;
+  const extrasBody = negoData.displayedIds.map(id=>{
+    const c = negoCatalogItem(id);
+    const state = negoData.items[id] || {obtained:false, value:c.defaultValue};
+    return [c.label, state.obtained ? 'Obtenu' : 'Non obtenu', pdfEur(state.value)];
+  });
+  extrasBody.push(fnoRow);
+  doc.autoTable({startY:y, head:[['Option','Statut','Valeur estim\u00e9e']], body: extrasBody});
+  y = doc.lastAutoTable.finalY + 6;
+
+  const totalObtenu = updateNegoExtrasTotal();
+  doc.setFontSize(10); doc.setFont('helvetica','bold');
+  doc.text('Total avantages n\u00e9goci\u00e9s obtenus : ' + pdfEur(totalObtenu), 14, y);
+  return y;
+}
+function addReportFooter(doc){
+  // Stamped on every page, after all content is drawn. Uses doc.internal.pageSize on each existing
+  // page (all created as portrait A4 throughout this file) -- this never adds a page or changes
+  // orientation, it only writes into the existing bottom margin of each page.
+  const pageCount=doc.internal.getNumberOfPages();
+  for(let i=1;i<=pageCount;i++){
+    doc.setPage(i);
+    const pageWidth=doc.internal.pageSize.getWidth();
+    const pageHeight=doc.internal.pageSize.getHeight();
+    const footerY=pageHeight-7;
+    doc.setFontSize(7); doc.setFont('helvetica','normal'); doc.setTextColor(130);
+    doc.text('Simulation indicative, sans valeur contractuelle.', 10, footerY, {align:'left'});
+    doc.setTextColor(90);
+    doc.textWithLink('VEFA Simulator V1.0 by zedcade \u2013 Github', pageWidth/2, footerY, {align:'center', url:'https://github.com/zedcade/vefa-simulator'});
+    doc.textWithLink('Licence MIT', pageWidth-10, footerY, {align:'right', url:'https://opensource.org/licenses/MIT'});
+    doc.setTextColor(0);
+  }
+}
+function exportPDF(){
+  if(!lastResults) runSimulation();
+  const r=lastResults;
+  const { jsPDF } = window.jspdf;
+  const doc=new jsPDF();
+  let y=15;
+  doc.setFontSize(14); doc.setFont('helvetica','bold');
+  doc.text('Simulateur VEFA \u2013 '+(r.projectName||'Projet'), 14, y); y+=8;
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text('Commune : '+(r.commune||'-')+(r.adresse?(' \u2013 '+r.adresse):''), 14, y); y+=6;
+  doc.text('G\u00e9n\u00e9r\u00e9 le '+new Date().toLocaleDateString('fr-FR'), 14, y); y+=4;
+
+  doc.autoTable({
+    startY:y,
+    head:[['Indicateur','Valeur']],
+    body: buildSummaryTableBody(r),
+  });
+  y=doc.lastAutoTable.finalY+8;
+  if(y>230){ doc.addPage(); y=15; }
+
+  doc.setFontSize(11); doc.setFont('helvetica','bold');
+  doc.text('Calendrier des appels de fonds VEFA', 14, y); y+=3;
+  doc.autoTable({
+    startY:y,
+    head:[['Palier','Date','% cumul\u00e9','Montant cumul\u00e9','Appel']],
+    body:r.vefaRows.map(row=>[row.name, fmtDate(row.date), row.pct+'%', pdfEur(row.cumAmount), pdfEur(row.callAmount)]),
+  });
+  y=doc.lastAutoTable.finalY+8;
+
+  if(y>230){ doc.addPage(); y=15; }
+  doc.setFontSize(11); doc.setFont('helvetica','bold');
+  doc.text('Simulation \u00e9pargne \u2013 Diff\u00e9r\u00e9', 14, y); y+=3;
+  const differeTable = buildDiffereTableForPDF(r);
+  const differeIsFullDetail = differeTable.head[0].length > 8;
+  function isDejaLeveCell(cell){
+    return typeof cell.raw === 'string' && cell.raw.indexOf(PDF_DEJA_LEVE_SUFFIX) !== -1;
+  }
+  function isCarriedCell(cell){
+    return typeof cell.raw === 'string' && cell.raw.charAt(0) === '=';
+  }
+  // Measure each column's real text width at a given font size so columns can be sized to fit
+  // their content instead of letting autoTable auto-shrink them and wrap mid-amount. Deja-leve /
+  // carried cells are measured at the same single font size they're actually drawn at (italic) --
+  // no split font-size trick, so there is nothing for autoTable's own row centering to disagree with.
+  function measureDiffereColumnWidths(pdfDoc, table, fontSize){
+    const cols = table.head[0].length;
+    const widths = new Array(cols).fill(0);
+    pdfDoc.setFont('helvetica','bold'); pdfDoc.setFontSize(fontSize);
+    table.head[0].forEach((h,i)=>{ widths[i]=Math.max(widths[i], pdfDoc.getTextWidth(h)); });
+    table.body.forEach(row=>{
+      row.forEach((raw,i)=>{
+        const text=String(raw);
+        const isItalic = text.indexOf(PDF_DEJA_LEVE_SUFFIX)!==-1 || text.charAt(0)==='=';
+        pdfDoc.setFont('helvetica', isItalic ? 'italic' : 'normal');
+        pdfDoc.setFontSize(fontSize);
+        widths[i]=Math.max(widths[i], pdfDoc.getTextWidth(text));
+      });
+    });
+    return widths;
+  }
+  // Shrink the font (down to a readable floor) until every column's natural content width fits
+  // the printable page width -- guaranteeing no cell needs to wrap, without switching to landscape.
+  function fitDiffereTableLayout(pdfDoc, table, startFontSize, availableWidth, cellPadding){
+    let fontSize=startFontSize, widths=[], total=0;
+    const minFontSize=5.0;
+    while(true){
+      const raw=measureDiffereColumnWidths(pdfDoc, table, fontSize);
+      widths=raw.map(w=>w+cellPadding*2);
+      total=widths.reduce((a,b)=>a+b,0);
+      if(total<=availableWidth || fontSize<=minFontSize) break;
+      fontSize=Math.round((fontSize-0.25)*100)/100;
+    }
+    // Always rescale to exactly fill the page width -- both shrinking oversized content (so nothing
+    // wraps) AND stretching undersized content (e.g. the simplified 8-column table), so every variant
+    // of this table always spans the full portrait page width rather than leaving a gap on the right.
+    if(total>0){
+      const scale=availableWidth/total;
+      widths=widths.map(w=>w*scale);
+    }
+    return {fontSize, widths};
+  }
+  const differeCellPadding=1.5;
+  const differeMarginLR=14;
+  const differeAvailableWidth=doc.internal.pageSize.getWidth()-differeMarginLR*2;
+  const differeLayout=fitDiffereTableLayout(doc, differeTable, differeIsFullDetail?6.5:8.5, differeAvailableWidth, differeCellPadding);
+  const differeColumnStyles={};
+  differeLayout.widths.forEach((w,i)=>{ differeColumnStyles[i]={cellWidth:w}; });
+  doc.autoTable({
+    startY:y,
+    head: differeTable.head,
+    body: differeTable.body,
+    styles:{fontSize: differeLayout.fontSize, cellPadding:differeCellPadding},
+    headStyles:{fontSize: differeLayout.fontSize},
+    columnStyles: differeColumnStyles,
+    tableWidth:'wrap',
+    margin:{left:differeMarginLR, right:differeMarginLR},
+    // "22 480 \u20ac d\u00e9j\u00e0 lev\u00e9" and "= 200 000 \u20ac" cells: rendered as a single plain
+    // string in italic, through autoTable's own normal cell-drawing path (same as every other cell) --
+    // this is what guarantees they line up vertically with the rest of the row.
+    didParseCell: function(data){
+      if(data.section==='body' && (isDejaLeveCell(data.cell) || isCarriedCell(data.cell))){
+        data.cell.styles.fontStyle='italic';
+        data.cell.styles.textColor=[130,130,130]; // lighter grey than the default body text, still legible on white
+      }
+    },
+  });
+  y=doc.lastAutoTable.finalY+8;
+
+  y = addNegotiationPage(doc, r, y);
+
+  addReportFooter(doc);
+
+  const filename=(r.projectName||'simulation').replace(/[^a-z0-9]+/gi,'-').toLowerCase()+'-simulation.pdf';
+  doc.save(filename);
+}
+
+function bindAutoRecalc(){
+  document.querySelectorAll('input.auto, select.auto').forEach(el=>{
+    el.addEventListener('input', runSimulation);
+    el.addEventListener('change', runSimulation);
+  });
+  const titleEl=document.getElementById('pageTitle');
+  titleEl.addEventListener('focus', showProjectDropdown);
+  titleEl.addEventListener('click', showProjectDropdown);
+  titleEl.addEventListener('input', showProjectDropdown);
+  titleEl.addEventListener('keydown', e=>{
+    if(e.key==='Enter'){ e.preventDefault(); hideProjectDropdown(); titleEl.blur(); }
+    if(e.key==='Escape'){ hideProjectDropdown(); }
+  });
+  titleEl.addEventListener('blur', ()=>{ commitTitleChange(); setTimeout(hideProjectDropdown, 150); });
+  document.getElementById('p0date').addEventListener('input', ()=>{ document.getElementById('p0date').dataset.userSet='1'; });
+  document.getElementById('startMonth').addEventListener('change', ()=>resyncPalierDatesFromStart(true));
+  ['salary1','salary2'].forEach(id=>document.getElementById(id).addEventListener('input', ()=>resetCeilingTo35()));
+  document.getElementById('fraisNotaireFNO').addEventListener('change', updateFraisNotaireFNO);
+  document.getElementById('adresseLink').addEventListener('click', e=>{ if(!e.currentTarget.getAttribute('href')) e.preventDefault(); });
+  document.getElementById('prixM2MoyenLink').addEventListener('click', e=>{ if(!e.currentTarget.getAttribute('href')) e.preventDefault(); });
+}
+
+function initDefaults(){
+  const refEl=document.getElementById('refDate');
+  if(!refEl.value) refEl.value=dateToInputStr(new Date());
+  document.getElementById('p0date').value=refEl.value;
+  document.getElementById('fraisNotaire').disabled=document.getElementById('fraisNotaireFNO').checked;
+  updateFraisNotaireLabel();
+  updateStatusDateLabel();
+  resyncPalierDatesFromStart(true);
+  resetCeilingTo35(true);
+  defaultStateSnapshot=serializeState();
+}
+
+window.onload=function(){
+  const hidden=document.createElement('input');
+  hidden.type='hidden'; hidden.className='auto'; hidden.id='negoDataJSON';
+  document.body.appendChild(hidden);
+
+  initDefaults();
+  bindAutoRecalc();
+  bindTooltipDelegation();
+
+  const list=getProjectList();
+  const lastActive=localStorage.getItem(STORAGE_LAST_ACTIVE);
+  if(lastActive && list.includes(lastActive)){
+    currentProjectName=lastActive; applyState(loadProjectState(lastActive));
+  } else if(list.includes('Mon projet VEFA')){
+    currentProjectName='Mon projet VEFA'; applyState(loadProjectState('Mon projet VEFA'));
+  } else {
+    currentProjectName='Mon projet VEFA';
+    initNegoData(); renderNegoExtrasGrid();
+  }
+  document.getElementById('pageTitle').value=currentProjectName;
+  setLastActive(currentProjectName);
+  switchTab('differe', true);
+  runSimulation();
+  refreshAllFileDropdowns();
+};
+</script>
+</body>
+</html>
