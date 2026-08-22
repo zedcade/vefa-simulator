@@ -33,7 +33,7 @@ body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color
 .save-indicator.show{opacity:1;}
 .file-btn-wrap{position:relative;display:inline-flex;align-items:center;gap:2px;}
 .file-dropdown{position:absolute;top:calc(100% + 4px);left:0;background:var(--panel2);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,.5);max-height:220px;overflow-y:auto;z-index:55;display:none;min-width:220px;}
-.file-btn-wrap:hover .file-dropdown{display:block;}
+.file-btn-wrap:hover .file-dropdown,.file-btn-wrap:hover .contact-dropdown{display:block;}
 .file-dropdown.show{display:block;}
 .file-dropdown-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;font-size:12px;color:var(--text);border-bottom:1px solid var(--border);cursor:pointer;white-space:nowrap;}
 .file-dropdown-item:last-child{border-bottom:none;}
@@ -46,6 +46,8 @@ body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color
 .contact-field{margin-bottom:8px;}
 .contact-field:last-child{margin-bottom:0;}
 .contact-field label{display:block;font-size:10.5px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;}
+.contact-field label a{color:inherit;text-decoration:underline;cursor:pointer;}
+.contact-field label a:hover{color:var(--accent);}
 .contact-field input{width:100%;background:var(--panel);border:1px solid var(--border);color:var(--text);padding:6px 8px;border-radius:5px;font-size:12.5px;}
 .status-wrap{justify-self:center;display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
 .status-wrap select,.status-wrap input[type=date]{
@@ -124,7 +126,7 @@ table input[type=date],table input[type=number]{width:100%;background:var(--pane
 .kpi{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:10px;min-height:82px;display:flex;flex-direction:column;justify-content:space-between;}
 .kpi[data-tooltip]{cursor:help;}
 .kpi.gold{border-color:var(--gold);} .kpi.accent2{border-color:var(--accent2);}
-.kpi .label{font-size:10px;color:var(--muted);text-transform:uppercase;}
+.kpi .label{font-size:10px;color:var(--muted);text-transform:uppercase;overflow-wrap:break-word;word-break:break-word;}
 .kpi .value{font-size:17px;font-weight:700;margin-top:6px;}
 .kpi .value.accent{color:var(--accent2);} .kpi .value.warn{color:var(--warn);}
 .kpi .value.danger{color:var(--danger);} .kpi .value.gold{color:var(--gold);}
@@ -256,8 +258,8 @@ table input[type=date],table input[type=number]{width:100%;background:var(--pane
         <div class="contact-dropdown" id="contactDropdown">
           <div class="contact-field"><label for="contactPromoteur">Promoteur</label><input type="text" class="auto" id="contactPromoteur" placeholder="ex: Prim'Arte"></div>
           <div class="contact-field"><label for="contactNom">Nom</label><input type="text" class="auto" id="contactNom" placeholder="Nom du contact"></div>
-          <div class="contact-field"><label for="contactTel">T&eacute;l&eacute;phone</label><input type="tel" class="auto" id="contactTel" placeholder="06 12 34 56 78"></div>
-          <div class="contact-field"><label for="contactEmail">Email</label><input type="email" class="auto" id="contactEmail" placeholder="contact@promoteur.fr"></div>
+          <div class="contact-field"><label><a id="contactTelLink" href="#" data-tooltip="Appeler ce num&eacute;ro">T&eacute;l&eacute;phone</a></label><input type="tel" class="auto" id="contactTel" placeholder="06 12 34 56 78"></div>
+          <div class="contact-field"><label><a id="contactEmailLink" href="#" data-tooltip="Envoyer un email">Email</a></label><input type="email" class="auto" id="contactEmail" placeholder="contact@promoteur.fr"></div>
         </div>
       </div>
       <span class="save-indicator" id="saveIndicator">enregistr&eacute;</span>
@@ -337,7 +339,15 @@ table input[type=date],table input[type=number]{width:100%;background:var(--pane
       </select>
     </div>
     <div class="field-row"><label>Personnes du foyer</label><input type="number" class="auto" id="ptzPersonnes" value="2" step="1" min="0"></div>
+    <div class="field-row"><label data-tooltip="La quotit&eacute; PTZ (part finan&ccedil;able du co&ucirc;t d'op&eacute;ration) est deux fois plus &eacute;lev&eacute;e pour un appartement en immeuble collectif neuf que pour une maison individuelle neuve (d&eacute;cret n&deg; 2025-299 du 29 mars 2025).">Type de logement</label>
+      <select class="auto" id="ptzLogementType">
+        <option value="collectif" selected>Appartement (collectif)</option>
+        <option value="individuel">Maison individuelle</option>
+      </select>
+    </div>
     <div class="note" id="ptzEligNote"></div>
+    <div class="note" id="ptzBaremeNote" style="margin-top:6px"></div>
+    <button class="btn btn-gold btn-sm" id="ptzApplyBtn" type="button" style="margin-top:6px;display:none" onclick="applyPtzBareme()">Appliquer le PTZ calcul&eacute; aux champs</button>
     <div class="section-title">Pr&ecirc;t principal</div>
     <div class="field-row"><label>Dur&eacute;e amortissement post-livraison (ans)</label><input type="number" class="auto" id="loanYears" value="15" step="1" min="0"></div>
     <div class="field-row"><label>Taux nominal du pr&ecirc;t (%)</label><input type="number" class="auto" id="loanRate" value="3.5" step="0.01" min="0"></div>
@@ -508,11 +518,33 @@ table input[type=date],table input[type=number]{width:100%;background:var(--pane
 </div>
 
 <script>
-let lastResults=null, lastReco=null, currentProjectName=null, defaultStateSnapshot=null, activeScenario='differe';
+let lastResults=null, lastReco=null, lastPtzBareme=null, currentProjectName=null, defaultStateSnapshot=null, activeScenario='differe';
 const STORAGE_PREFIX='vefaSim_project_';
 const STORAGE_LIST_KEY='vefaSim_projectList';
 const STORAGE_LAST_ACTIVE='vefaSim_lastActive';
 const PTZ_CEILINGS={AbisA:[49000,73500,88200,102900,117600,132300,147000,161700],B1:[34500,51750,62100,72450,82800,93150,103500,113850],B2:[31500,47250,56700,66150,75600,85050,94500,103950],C:[28500,42750,51300,59850,68400,76950,85500,94050]};
+// Official PTZ barème, Décret n° 2025-299 du 29 mars 2025 (en vigueur depuis le 1er avril 2025, prolongé jusqu'au
+// 31/12/2027, confirmé sans modification par la loi de finances 2026). Sources: art. D31-10-9 et D31-10-10 du CCH.
+const PTZ_COEFF_FAMILIAL=[1.0,1.5,1.8,2.1,2.4,2.7,3.0,3.3]; // index 0 = 1 personne ... index 7 = 8 personnes et plus
+// Seuils de tranche par zone, pour 1 personne (coefficient 1.0) -- à multiplier par le coefficient familial du foyer.
+const PTZ_TRANCHE_SEUILS={AbisA:{t1:25000,t2:31000,t3:37000},B1:{t1:21500,t2:26000,t3:30000},B2:{t1:18000,t2:22500,t3:27000},C:{t1:15000,t2:19500,t3:24000}};
+// Plafonds d'opération par zone et taille de foyer (1, 2, 3, 4, 5 et plus).
+const PTZ_OPERATION_CEILINGS={AbisA:[150000,225000,270000,315000,360000],B1:[135000,202500,243000,283500,324000],B2:[110000,165000,198000,231000,264000],C:[100000,150000,180000,210000,240000]};
+// Quotité (part du coût d'opération retenu finançable à taux zéro), par tranche (1 à 4) et type de logement.
+const PTZ_QUOTITE={collectif:{1:0.50,2:0.40,3:0.40,4:0.20},individuel:{1:0.30,2:0.20,3:0.20,4:0.10}};
+// Différé de remboursement / durée de remboursement / durée totale (en années), par tranche.
+const PTZ_DUREE={1:{differe:10,remb:15,total:25},2:{differe:8,remb:12,total:20},3:{differe:2,remb:13,total:15},4:{differe:0,remb:10,total:10}};
+function ptzCoefficientFamilial(persons){ const idx=Math.min(Math.max(1,Math.round(persons)),8)-1; return PTZ_COEFF_FAMILIAL[idx]; }
+function ptzOperationCeiling(zone,persons){ const arr=PTZ_OPERATION_CEILINGS[zone]||PTZ_OPERATION_CEILINGS.AbisA; const idx=Math.min(Math.max(1,Math.round(persons)),5)-1; return arr[idx]; }
+function ptzTranche(zone,persons,revenuRetenu){
+  const seuils=PTZ_TRANCHE_SEUILS[zone]||PTZ_TRANCHE_SEUILS.AbisA;
+  const coeff=ptzCoefficientFamilial(persons);
+  const quotient=coeff>0 ? revenuRetenu/coeff : 0;
+  if(quotient<=seuils.t1) return 1;
+  if(quotient<=seuils.t2) return 2;
+  if(quotient<=seuils.t3) return 3;
+  return 4;
+}
 const PTZ_ZONE_LABELS={AbisA:"A bis / A",B1:"B1",B2:"B2",C:"C"};
 const DEFAULT_OFFSETS={p1date:3,p2date:12,p3date:20,p4date:24};
 const NEGO_RANGES={lancement:[0,2],mi:[2,5],fin:[5,10],invendu:[10,15]};
@@ -583,8 +615,36 @@ function onP0AmountInput(){
   runSimulation();
 }
 
+// ---- Keep popover dropdowns (file lists, contact card, nego-add) fully on-screen ----
+// These are positioned via CSS relative to their trigger button. On narrow screens a button near
+// the right edge (Brochure, Contact, + Options) would otherwise open a dropdown that spills off
+// the viewport. Rather than fight the CSS anchor (left:0 here, right:0 there), we measure the
+// rendered box after it's shown and nudge it back on-screen with a transform, leaving the anchor
+// (and therefore the desktop-default look) untouched when there's no overflow.
+function clampDropdownToViewport(dd){
+  if(!dd) return;
+  dd.style.transform='';
+  const margin=8;
+  const rect=dd.getBoundingClientRect();
+  let shift=0;
+  if(rect.right>window.innerWidth-margin) shift=(window.innerWidth-margin)-rect.right;
+  if(rect.left+shift<margin) shift=margin-rect.left;
+  if(shift) dd.style.transform='translateX('+shift+'px)';
+}
+function clampOpenDropdowns(){
+  document.querySelectorAll('.file-dropdown.show,.contact-dropdown.show,#negoAddDropdown.show').forEach(clampDropdownToViewport);
+}
+window.addEventListener('resize', clampOpenDropdowns);
+document.querySelectorAll('.file-btn-wrap').forEach(wrap=>{
+  wrap.addEventListener('mouseenter', ()=>{ clampDropdownToViewport(wrap.querySelector('.file-dropdown, .contact-dropdown')); });
+});
+
 // ---- Contact promoteur dropdown ----
-function toggleContactDropdown(){ document.getElementById('contactDropdown').classList.toggle('show'); }
+function toggleContactDropdown(){
+  const dd=document.getElementById('contactDropdown');
+  dd.classList.toggle('show');
+  if(dd.classList.contains('show')) clampDropdownToViewport(dd);
+}
 document.addEventListener('click', e=>{
   const wrap=document.getElementById('contactBtnWrap');
   if(wrap && !wrap.contains(e.target)) document.getElementById('contactDropdown').classList.remove('show');
@@ -597,7 +657,7 @@ function toggleFileDropdown(category){
   const wasShown=dd.classList.contains('show');
   document.getElementById('planDropdown').classList.remove('show');
   document.getElementById('brochureDropdown').classList.remove('show');
-  if(!wasShown) dd.classList.add('show');
+  if(!wasShown){ dd.classList.add('show'); clampDropdownToViewport(dd); }
 }
 document.addEventListener('click', e=>{
   if(!e.target.closest('.file-btn-wrap')){
@@ -675,6 +735,7 @@ function toggleNegoAddDropdown(){
     : '<div class="nego-add-empty">Toutes les options sont d\u00e9j\u00e0 affich\u00e9es</div>';
   dd.querySelectorAll('.nego-add-item').forEach(item=>item.addEventListener('click', ()=>addNegoCard(item.getAttribute('data-id'))));
   dd.classList.add('show');
+  clampDropdownToViewport(dd);
 }
 function hideNegoAddDropdown(){ document.getElementById('negoAddDropdown').classList.remove('show'); }
 document.addEventListener('click', e=>{ const wrap=document.querySelector('.nego-add-wrap'); if(wrap && !wrap.contains(e.target)) hideNegoAddDropdown(); });
@@ -1098,6 +1159,16 @@ function runSimulation(){
   if(selogerUrl){ prixM2MoyenLinkEl.href=selogerUrl; }
   else { prixM2MoyenLinkEl.removeAttribute('href'); }
 
+  const contactTelVal=document.getElementById('contactTel').value.trim();
+  const contactTelLinkEl=document.getElementById('contactTelLink');
+  if(contactTelVal){ contactTelLinkEl.href='tel:'+contactTelVal.replace(/[^0-9+]/g,''); }
+  else { contactTelLinkEl.removeAttribute('href'); }
+
+  const contactEmailVal=document.getElementById('contactEmail').value.trim();
+  const contactEmailLinkEl=document.getElementById('contactEmailLink');
+  if(contactEmailVal){ contactEmailLinkEl.href='mailto:'+contactEmailVal; }
+  else { contactEmailLinkEl.removeAttribute('href'); }
+
   const priceAfterRemise=price*(1-remise/100);
   const totalProjectCost=priceAfterRemise+fraisNotaire+fraisAgence+fraisMobilier+fraisGarantie+fraisDossier+fraisCourtage+fraisIRA;
   let loanAmount=totalProjectCost-apportTarget-ptzAmount;
@@ -1142,9 +1213,31 @@ function runSimulation(){
   const ceilingPtz=getPtzCeiling(ptzZone,ptzPersonnes);
   const eligible=rfr<=ceilingPtz;
   document.getElementById('ptzEligNote').innerHTML = rfr>0
-    ? (eligible ? '<span class="eligible-yes">\u2713 \u00c9ligible</span> \u2013 RFR '+eur(rfr)+' \u2264 plafond '+eur(ceilingPtz)
-                : '<span class="eligible-no">Non \u00e9ligible</span> \u2013 RFR '+eur(rfr)+' &gt; plafond '+eur(ceilingPtz))
-    : 'Plafond applicable : '+eur(ceilingPtz);
+    ? (eligible ? '<span class="eligible-yes">\u2713 \u00c9ligible</span> \u2013 RFR '+eur(rfr)+' \u2264 plafond de ressources '+eur(ceilingPtz)
+                : '<span class="eligible-no">Non \u00e9ligible</span> \u2013 RFR '+eur(rfr)+' &gt; plafond de ressources '+eur(ceilingPtz))
+    : 'Plafond de ressources applicable : '+eur(ceilingPtz);
+
+  // Barème officiel PTZ (décret n° 2025-299) : tranche de revenus -> quotité -> montant, différé, durée.
+  const ptzLogementType=document.getElementById('ptzLogementType').value;
+  const ptzOperationCeil=ptzOperationCeiling(ptzZone,ptzPersonnes);
+  const coutOperationRetenu=Math.min(priceAfterRemise, ptzOperationCeil);
+  const revenuRetenuPtz=Math.max(rfr, priceAfterRemise>0 ? priceAfterRemise/9 : 0);
+  const coeffFamilial=ptzCoefficientFamilial(ptzPersonnes);
+  const quotientFamilial=coeffFamilial>0 ? revenuRetenuPtz/coeffFamilial : 0;
+  const trancheNum=ptzTranche(ptzZone,ptzPersonnes,revenuRetenuPtz);
+  const quotitePct=PTZ_QUOTITE[ptzLogementType][trancheNum];
+  const dureeInfo=PTZ_DUREE[trancheNum];
+  const ptzMontantCalcule=eligible ? quotitePct*coutOperationRetenu : 0;
+  lastPtzBareme={amount:ptzMontantCalcule, deferMonths:dureeInfo.differe*12, totalMonths:dureeInfo.total*12, tranche:trancheNum, quotite:quotitePct};
+  const ptzBaremeNoteEl=document.getElementById('ptzBaremeNote');
+  const ptzApplyBtnEl=document.getElementById('ptzApplyBtn');
+  if(eligible && priceAfterRemise>0){
+    ptzBaremeNoteEl.innerHTML='Tranche <b>T'+trancheNum+'</b> (quotient familial '+eur(Math.round(quotientFamilial))+', RFR/'+coeffFamilial.toFixed(1)+') \u2192 quotit\u00e9 <b>'+Math.round(quotitePct*100)+'%</b> du co\u00fbt d\'op\u00e9ration retenu ('+eur(coutOperationRetenu)+', plafonn\u00e9 \u00e0 '+eur(ptzOperationCeil)+') = <b>'+eur(ptzMontantCalcule)+'</b> de PTZ selon le bar\u00e8me officiel. Diff\u00e9r\u00e9 '+dureeInfo.differe+' ans + remboursement '+dureeInfo.remb+' ans = '+dureeInfo.total+' ans au total (d\u00e9cret n\u00b0 2025-299).';
+    ptzApplyBtnEl.style.display='';
+  } else {
+    ptzBaremeNoteEl.innerHTML='';
+    ptzApplyBtnEl.style.display='none';
+  }
 
   const combinedAnnualPctOfCapital = ins1Rate*ins1Quota/100 + ins2Rate*ins2Quota/100;
   function insMonthlyFn(balance,principal){ const base=degressive?balance:principal; return base*combinedAnnualPctOfCapital/100/12; }
@@ -1361,6 +1454,13 @@ function applyRecommendation(){
   if(!lastReco || !lastReco.best) return;
   document.getElementById('apport').value=Math.round(lastReco.best.apport);
   document.getElementById('loanYears').value=lastReco.best.years;
+  runSimulation();
+}
+function applyPtzBareme(){
+  if(!lastPtzBareme) return;
+  document.getElementById('ptzAmount').value=Math.round(lastPtzBareme.amount);
+  document.getElementById('ptzDefer').value=lastPtzBareme.deferMonths;
+  document.getElementById('ptzTotalMonths').value=lastPtzBareme.totalMonths;
   runSimulation();
 }
 function buildDiffereTableForPDF(r){
@@ -1646,6 +1746,8 @@ function bindAutoRecalc(){
   document.getElementById('fraisNotaireFNO').addEventListener('change', updateFraisNotaireFNO);
   document.getElementById('adresseLink').addEventListener('click', e=>{ if(!e.currentTarget.getAttribute('href')) e.preventDefault(); });
   document.getElementById('prixM2MoyenLink').addEventListener('click', e=>{ if(!e.currentTarget.getAttribute('href')) e.preventDefault(); });
+  document.getElementById('contactTelLink').addEventListener('click', e=>{ if(!e.currentTarget.getAttribute('href')) e.preventDefault(); e.stopPropagation(); });
+  document.getElementById('contactEmailLink').addEventListener('click', e=>{ if(!e.currentTarget.getAttribute('href')) e.preventDefault(); e.stopPropagation(); });
 }
 
 function initDefaults(){
