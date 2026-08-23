@@ -1560,6 +1560,8 @@ function buildDiffereTableForPDF(r){
 }
 function buildSummaryTableBody(r){
   const remiseEur = r.price - r.priceAfterRemise;
+  const ptzUsed = r.ptzAmount > 0.5;
+  const ptzSuffix = ptzUsed ? '+PTZ' : '';
   return [
     ['Prix initial', pdfEur(r.price)],
     ['Remise', pdfEur(remiseEur) + ' (' + r.remise.toFixed(2) + '%)'],
@@ -1570,9 +1572,11 @@ function buildSummaryTableBody(r){
     ['Pr\u00eat principal', pdfEur(r.loanAmount)],
     ['Dur\u00e9e amortissement', r.loanYears + ' ans'],
     ['Taux nominal', r.loanRate.toFixed(2) + '%'],
-    ['Mensualit\u00e9 moyenne (post-livraison, PTZ actif)', pdfEur(r.avgMonthlyPostLivraison)],
-    ['Co\u00fbt total du cr\u00e9dit', pdfEur(r.totalCreditCost)],
-    ['Assurance totale (pr\u00eat+PTZ)', pdfEur(r.totalInsuranceAll)],
+    ['Mensualit\u00e9 moyenne (post-livraison'+(ptzUsed?', PTZ actif':'')+')', pdfEur(r.avgMonthlyPostLivraison)],
+    ['Int\u00e9r\u00eats totaux (pr\u00eat'+ptzSuffix+')', pdfEur(r.staged.totalInterest)],
+    ['Assurance totale (pr\u00eat'+ptzSuffix+')', pdfEur(r.totalInsuranceAll)],
+    ['Frais li\u00e9s au cr\u00e9dit', pdfEur(r.totalFeesCredit)],
+    ['= Co\u00fbt total du cr\u00e9dit', pdfEur(r.totalCreditCost)],
   ];
 }
 function addNegotiationPage(doc, r, y){
