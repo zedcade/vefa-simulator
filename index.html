@@ -324,13 +324,9 @@ table input[type=date],table input[type=number]{width:100%;background:var(--pane
   <div class="panel">
     <h2>Financement</h2>
     <div class="field-row"><label data-tooltip="Objectif d'apport. Le tableau Diff&eacute;r&eacute; suppose que vous levez le compl&eacute;ment n&eacute;cessaire &agrave; chaque &eacute;tape pour que l'apport couvre en priorit&eacute; chaque appel jusqu'&agrave; ce plafond.">Apport cible total (&euro;)</label><input type="number" class="auto" id="apport" value="150000" step="1000" min="0"></div>
-    <div class="section-title">PTZ<a class="inline-link" href="https://www.anil.org/outils/outils-de-calcul/votre-pret-a-taux-zero/" target="_blank">Simulateur ANIL</a></div>
-    <div class="field-row"><label>Montant PTZ (&euro;)</label><input type="number" class="auto" id="ptzAmount" value="50000" step="1000" min="0"></div>
-    <div class="field-row"><label>Diff&eacute;r&eacute; PTZ (mois depuis livraison)</label><input type="number" class="auto" id="ptzDefer" value="0" step="1" min="0"></div>
-    <div class="field-row"><label>Dur&eacute;e totale PTZ (mois)</label><input type="number" class="auto" id="ptzTotalMonths" value="180" step="1" min="0"></div>
-    <div class="section-title">&Eacute;ligibilit&eacute; PTZ</div>
-    <div class="field-row"><label>RFR N-2 (&euro;)</label><input type="number" class="auto" id="rfr" value="45000" step="100" min="0"></div>
-    <div class="field-row"><label>Zone PTZ</label>
+    <div class="section-title">PTZ<span class="tag" id="ptzEligTag" data-tooltip="Renseignez le RFR pour calculer l'&eacute;ligibilit&eacute;.">&hellip;</span><a class="inline-link" href="https://www.anil.org/outils/outils-de-calcul/votre-pret-a-taux-zero/" target="_blank">Simulateur ANIL</a></div>
+    <div class="field-row"><label id="rfrLabel" data-tooltip="Le PTZ retient le revenu fiscal de r&eacute;f&eacute;rence de l'ann&eacute;e N-2 par rapport &agrave; la date de la demande de pr&ecirc;t.">RFR N-2 (&euro;)</label><input type="number" class="auto" id="rfr" value="45000" step="100" min="0"></div>
+    <div class="field-row"><label><a id="ptzZoneLink" href="https://www.service-public.gouv.fr/simulateur/calcul/zonage-abc" target="_blank" data-tooltip="Ouvre le simulateur officiel service-public.fr pour v&eacute;rifier la zone PTZ (A bis, A, B1, B2, C) de la commune du bien -- non calcul&eacute;e automatiquement ici, le zonage complet portant sur plus de 34 000 communes.">Zone PTZ</a></label>
       <select class="auto" id="ptzZone">
         <option value="AbisA" selected>A bis / A</option>
         <option value="B1">B1</option>
@@ -345,9 +341,9 @@ table input[type=date],table input[type=number]{width:100%;background:var(--pane
         <option value="individuel">Maison individuelle</option>
       </select>
     </div>
-    <div class="note" id="ptzEligNote"></div>
-    <div class="note" id="ptzBaremeNote" style="margin-top:6px"></div>
-    <button class="btn btn-gold btn-sm" id="ptzApplyBtn" type="button" style="margin-top:6px;display:none" onclick="applyPtzBareme()">Appliquer le PTZ calcul&eacute; aux champs</button>
+    <div class="field-row"><label data-tooltip="Calcul&eacute; automatiquement selon le bar&egrave;me officiel d&egrave;s que le RFR, la zone, le foyer et le type de logement sont renseign&eacute;s. Modifiable manuellement pour tester une offre bancaire r&eacute;elle.">Montant PTZ (&euro;)</label><input type="number" class="auto" id="ptzAmount" value="50000" step="1000" min="0" oninput="this.dataset.userSet='1'"></div>
+    <div class="field-row"><label data-tooltip="Calcul&eacute; automatiquement selon le bar&egrave;me officiel. Modifiable manuellement pour tester une offre bancaire r&eacute;elle.">Diff&eacute;r&eacute; PTZ (mois depuis livraison)</label><input type="number" class="auto" id="ptzDefer" value="0" step="1" min="0" oninput="this.dataset.userSet='1'"></div>
+    <div class="field-row"><label data-tooltip="Calcul&eacute; automatiquement selon le bar&egrave;me officiel. Modifiable manuellement pour tester une offre bancaire r&eacute;elle.">Dur&eacute;e totale PTZ (mois)</label><input type="number" class="auto" id="ptzTotalMonths" value="180" step="1" min="0" oninput="this.dataset.userSet='1'"></div>
     <div class="section-title">Pr&ecirc;t principal</div>
     <div class="field-row"><label>Dur&eacute;e amortissement post-livraison (ans)</label><input type="number" class="auto" id="loanYears" value="15" step="1" min="0"></div>
     <div class="field-row"><label>Taux nominal du pr&ecirc;t (%)</label><input type="number" class="auto" id="loanRate" value="3.5" step="0.01" min="0"></div>
@@ -462,7 +458,7 @@ table input[type=date],table input[type=number]{width:100%;background:var(--pane
       <div class="kpi-grid" id="loanKpi"></div>
     </div>
     <div class="panel">
-      <h2>PTZ</h2>
+      <h2>PTZ<span id="ptzPanelEligTag"></span></h2>
       <div class="kpi-grid" id="ptzKpi"></div>
     </div>
   </div>
@@ -792,9 +788,11 @@ document.addEventListener('input', e=>{
 });
 function getProjectList(){ try{ return JSON.parse(localStorage.getItem(STORAGE_LIST_KEY)||'[]'); }catch(e){ return []; } }
 function setProjectList(list){ localStorage.setItem(STORAGE_LIST_KEY, JSON.stringify(list)); }
+const PTZ_AUTOCALC_FIELDS=['ptzAmount','ptzDefer','ptzTotalMonths'];
 function serializeState(){
   const state={};
   document.querySelectorAll('.auto').forEach(el=>{ if(el.type==='checkbox') state[el.id]=el.checked; else state[el.id]=el.value; });
+  PTZ_AUTOCALC_FIELDS.forEach(id=>{ if(document.getElementById(id).dataset.userSet) state[id+'_userSet']=true; });
   return state;
 }
 function applyState(state){
@@ -809,6 +807,10 @@ function applyState(state){
   });
   document.getElementById('fraisNotaire').disabled=document.getElementById('fraisNotaireFNO').checked;
   updateFraisNotaireLabel();
+  PTZ_AUTOCALC_FIELDS.forEach(id=>{
+    const el=document.getElementById(id);
+    if(state[id+'_userSet']) el.dataset.userSet='1'; else delete el.dataset.userSet;
+  });
   if(document.getElementById('dateLivraisonEstimee').value) document.getElementById('dateLivraisonEstimee').dataset.userSet='1';
   updateStatusDateLabel();
   initNegoData(); renderNegoExtrasGrid(); updateNegoExtrasTotal();
@@ -1027,7 +1029,7 @@ function amortizationSchedule(principal, annualRatePct, years, insMonthlyFn){
   return {rows,payment,n,totalInterest,totalInsurance};
 }
 function ptzSchedule(ptzAmount, deferMonths, totalMonths){
-  const repayMonths=Math.max(1,totalMonths-deferMonths); const monthlyPayment=ptzAmount/repayMonths; const rows=[];
+  const repayMonths= totalMonths>0 ? Math.max(1,totalMonths-deferMonths) : 0; const monthlyPayment= repayMonths>0 ? ptzAmount/repayMonths : 0; const rows=[];
   for(let m=1;m<=totalMonths;m++){ rows.push({month:m,payment: m>deferMonths ? monthlyPayment : 0}); }
   return {rows,monthlyPayment,deferMonths,repayMonths,totalMonths};
 }
@@ -1136,7 +1138,6 @@ function runSimulation(){
   const fraisNotaire=val('fraisNotaire'), fraisAgence=val('fraisAgence'), fraisMobilier=val('fraisMobilier');
   const fraisGarantie=val('fraisGarantie'), fraisDossier=val('fraisDossier'), fraisCourtage=val('fraisCourtage'), fraisIRA=val('fraisIRA');
   const apportTarget=val('apport');
-  const ptzAmount=val('ptzAmount'), ptzDefer=val('ptzDefer'), ptzTotalMonths=val('ptzTotalMonths');
   const rfr=val('rfr'); const ptzZone=document.getElementById('ptzZone').value; const ptzPersonnes=val('ptzPersonnes');
   const loanYears=val('loanYears'), loanRate=val('loanRate');
   const ins1Rate=val('ins1Rate'), ins1Quota=val('ins1Quota'), ins2Rate=val('ins2Rate'), ins2Quota=val('ins2Quota');
@@ -1170,6 +1171,60 @@ function runSimulation(){
   else { contactEmailLinkEl.removeAttribute('href'); }
 
   const priceAfterRemise=price*(1-remise/100);
+
+  // Barème officiel PTZ (décret n° 2025-299) : tranche de revenus -> quotité -> montant, différé, durée.
+  // Doit s'exécuter AVANT la lecture de ptzAmount/ptzDefer/ptzTotalMonths ci-dessous, afin que les
+  // champs auto-calculés soient à jour avant d'être utilisés dans le reste du plan de financement.
+  const ceilingPtz=getPtzCeiling(ptzZone,ptzPersonnes);
+  const eligible=rfr<=ceilingPtz;
+
+  // RFR year label: PTZ uses RFR N-2 relative to the loan-application year (approximated by "refDate").
+  const purchaseYear=(refDate&&!isNaN(refDate.getTime())) ? refDate.getFullYear() : new Date().getFullYear();
+  const rfrYear=purchaseYear-2;
+  const rfrLabelEl=document.getElementById('rfrLabel');
+  rfrLabelEl.textContent='RFR '+rfrYear+' (\u20ac)';
+  rfrLabelEl.setAttribute('data-tooltip','Pourquoi N-2\u00a0? Le PTZ retient le revenu fiscal de r\u00e9f\u00e9rence de l\'ann\u00e9e N-2 par rapport \u00e0 la date de la demande de pr\u00eat. Pour une demande en '+purchaseYear+', il s\'agit du RFR '+rfrYear+' (revenus per\u00e7us en '+rfrYear+'), tel qu\'il figure sur l\'avis d\'imposition '+(rfrYear+1)+'.');
+
+  const ptzLogementType=document.getElementById('ptzLogementType').value;
+  const ptzOperationCeil=ptzOperationCeiling(ptzZone,ptzPersonnes);
+  const coutOperationRetenu=Math.min(priceAfterRemise, ptzOperationCeil);
+  const revenuRetenuPtz=Math.max(rfr, priceAfterRemise>0 ? priceAfterRemise/9 : 0);
+  const coeffFamilial=ptzCoefficientFamilial(ptzPersonnes);
+  const quotientFamilial=coeffFamilial>0 ? revenuRetenuPtz/coeffFamilial : 0;
+  const trancheNum=ptzTranche(ptzZone,ptzPersonnes,revenuRetenuPtz);
+  const quotitePct=PTZ_QUOTITE[ptzLogementType][trancheNum];
+  const dureeInfo=PTZ_DUREE[trancheNum];
+  const ptzMontantCalcule=eligible ? quotitePct*coutOperationRetenu : 0;
+  lastPtzBareme={amount:ptzMontantCalcule, deferMonths:dureeInfo.differe*12, totalMonths:dureeInfo.total*12, tranche:trancheNum, quotite:quotitePct};
+
+  const ptzEligTagEl=document.getElementById('ptzEligTag');
+  if(rfr>0 && priceAfterRemise>0){
+    if(eligible){
+      ptzEligTagEl.textContent='\u2713 \u00c9ligible';
+      ptzEligTagEl.style.borderColor='var(--accent2)'; ptzEligTagEl.style.color='var(--accent2)';
+      ptzEligTagEl.setAttribute('data-tooltip',
+        'RFR '+eur(rfr)+' \u2264 plafond de ressources '+eur(ceilingPtz)+'<br>'+
+        'Tranche T'+trancheNum+' (quotient familial '+eur(Math.round(quotientFamilial))+', RFR/'+coeffFamilial.toFixed(1)+') \u2192 quotit\u00e9 '+Math.round(quotitePct*100)+'% du co\u00fbt d\'op\u00e9ration retenu ('+eur(coutOperationRetenu)+', plafonn\u00e9 \u00e0 '+eur(ptzOperationCeil)+') = '+eur(ptzMontantCalcule)+' de PTZ selon le bar\u00e8me officiel. Diff\u00e9r\u00e9 '+dureeInfo.differe+' ans + remboursement '+dureeInfo.remb+' ans = '+dureeInfo.total+' ans au total (d\u00e9cret n\u00b0 2025-299).');
+    } else {
+      ptzEligTagEl.textContent='\u2717 Non \u00e9ligible';
+      ptzEligTagEl.style.borderColor='var(--danger)'; ptzEligTagEl.style.color='var(--danger)';
+      ptzEligTagEl.setAttribute('data-tooltip','RFR '+eur(rfr)+' &gt; plafond de ressources '+eur(ceilingPtz)+' (zone, '+ptzPersonnes+' personne(s)). Au-del\u00e0 de ce plafond, aucun PTZ n\'est accord\u00e9, quelle que soit la tranche.');
+    }
+  } else {
+    ptzEligTagEl.textContent='\u2026';
+    ptzEligTagEl.style.borderColor=''; ptzEligTagEl.style.color='';
+    ptzEligTagEl.setAttribute('data-tooltip','Renseignez le RFR et le prix pour calculer l\'\u00e9ligibilit\u00e9 et le montant PTZ.');
+  }
+
+  // Auto-remplissage du PTZ selon le barème officiel -- sauf si l'utilisateur a modifié le champ à la main.
+  const ptzAmountEl=document.getElementById('ptzAmount'), ptzDeferEl=document.getElementById('ptzDefer'), ptzTotalMonthsEl=document.getElementById('ptzTotalMonths');
+  if(rfr>0 && priceAfterRemise>0){
+    if(!ptzAmountEl.dataset.userSet) ptzAmountEl.value=Math.round(ptzMontantCalcule);
+    if(!ptzDeferEl.dataset.userSet) ptzDeferEl.value= eligible ? dureeInfo.differe*12 : 0;
+    if(!ptzTotalMonthsEl.dataset.userSet) ptzTotalMonthsEl.value= eligible ? dureeInfo.total*12 : 0;
+  }
+  const ptzAmount=val('ptzAmount'), ptzDefer=val('ptzDefer'), ptzTotalMonths=val('ptzTotalMonths');
+
   const totalProjectCost=priceAfterRemise+fraisNotaire+fraisAgence+fraisMobilier+fraisGarantie+fraisDossier+fraisCourtage+fraisIRA;
   let loanAmount=totalProjectCost-apportTarget-ptzAmount;
   const overFunded=loanAmount<0;
@@ -1209,35 +1264,6 @@ function runSimulation(){
   }
   document.getElementById('negoKpi').innerHTML=negoHtml;
   document.getElementById('negoNote').innerHTML=negoNoteHtml;
-
-  const ceilingPtz=getPtzCeiling(ptzZone,ptzPersonnes);
-  const eligible=rfr<=ceilingPtz;
-  document.getElementById('ptzEligNote').innerHTML = rfr>0
-    ? (eligible ? '<span class="eligible-yes">\u2713 \u00c9ligible</span> \u2013 RFR '+eur(rfr)+' \u2264 plafond de ressources '+eur(ceilingPtz)
-                : '<span class="eligible-no">Non \u00e9ligible</span> \u2013 RFR '+eur(rfr)+' &gt; plafond de ressources '+eur(ceilingPtz))
-    : 'Plafond de ressources applicable : '+eur(ceilingPtz);
-
-  // Barème officiel PTZ (décret n° 2025-299) : tranche de revenus -> quotité -> montant, différé, durée.
-  const ptzLogementType=document.getElementById('ptzLogementType').value;
-  const ptzOperationCeil=ptzOperationCeiling(ptzZone,ptzPersonnes);
-  const coutOperationRetenu=Math.min(priceAfterRemise, ptzOperationCeil);
-  const revenuRetenuPtz=Math.max(rfr, priceAfterRemise>0 ? priceAfterRemise/9 : 0);
-  const coeffFamilial=ptzCoefficientFamilial(ptzPersonnes);
-  const quotientFamilial=coeffFamilial>0 ? revenuRetenuPtz/coeffFamilial : 0;
-  const trancheNum=ptzTranche(ptzZone,ptzPersonnes,revenuRetenuPtz);
-  const quotitePct=PTZ_QUOTITE[ptzLogementType][trancheNum];
-  const dureeInfo=PTZ_DUREE[trancheNum];
-  const ptzMontantCalcule=eligible ? quotitePct*coutOperationRetenu : 0;
-  lastPtzBareme={amount:ptzMontantCalcule, deferMonths:dureeInfo.differe*12, totalMonths:dureeInfo.total*12, tranche:trancheNum, quotite:quotitePct};
-  const ptzBaremeNoteEl=document.getElementById('ptzBaremeNote');
-  const ptzApplyBtnEl=document.getElementById('ptzApplyBtn');
-  if(eligible && priceAfterRemise>0){
-    ptzBaremeNoteEl.innerHTML='Tranche <b>T'+trancheNum+'</b> (quotient familial '+eur(Math.round(quotientFamilial))+', RFR/'+coeffFamilial.toFixed(1)+') \u2192 quotit\u00e9 <b>'+Math.round(quotitePct*100)+'%</b> du co\u00fbt d\'op\u00e9ration retenu ('+eur(coutOperationRetenu)+', plafonn\u00e9 \u00e0 '+eur(ptzOperationCeil)+') = <b>'+eur(ptzMontantCalcule)+'</b> de PTZ selon le bar\u00e8me officiel. Diff\u00e9r\u00e9 '+dureeInfo.differe+' ans + remboursement '+dureeInfo.remb+' ans = '+dureeInfo.total+' ans au total (d\u00e9cret n\u00b0 2025-299).';
-    ptzApplyBtnEl.style.display='';
-  } else {
-    ptzBaremeNoteEl.innerHTML='';
-    ptzApplyBtnEl.style.display='none';
-  }
 
   const combinedAnnualPctOfCapital = ins1Rate*ins1Quota/100 + ins2Rate*ins2Quota/100;
   function insMonthlyFn(balance,principal){ const base=degressive?balance:principal; return base*combinedAnnualPctOfCapital/100/12; }
@@ -1350,9 +1376,9 @@ function runSimulation(){
     +'<div class="kpi"><div class="label">Prix apr\u00e8s remise</div><div class="value">'+eur(priceAfterRemise)+'</div></div>'
     +'<div class="kpi" data-tooltip="= prix apr\u00e8s remise + frais li\u00e9s \u00e0 l acquisition + frais li\u00e9s au cr\u00e9dit. C est le montant r\u00e9el que apport + PTZ + pr\u00eat doivent couvrir ensemble."><div class="label">Co\u00fbt total \u00e0 financer</div><div class="value">'+eur(totalProjectCost)+'</div></div>'
     +'<div class="kpi"><div class="label">Apport cible</div><div class="value accent">'+eur(apportTarget)+'</div></div>'
-    +'<div class="kpi"><div class="label">PTZ</div><div class="value accent">'+eur(ptzAmount)+'</div></div>'
+    +'<div class="kpi"><div class="label">PTZ'+(!eligible && rfr>0 && priceAfterRemise>0 ? ' <span style="color:var(--danger)">\u2717 Non \u00e9ligible</span>' : '')+'</div><div class="value accent">'+eur(ptzAmount)+'</div></div>'
     +'<div class="kpi"><div class="label">Pr\u00eat principal</div><div class="value '+(overFunded?'danger':'')+'">'+eur(loanAmount)+'</div></div>'
-    +'<div class="kpi" data-tooltip="Mensualit\u00e9 repr\u00e9sentative une fois la livraison effectu\u00e9e et le diff\u00e9r\u00e9 PTZ termin\u00e9 : pr\u00eat principal + PTZ + assurance emprunteur."><div class="label">Mensualit\u00e9 moyenne (post-livraison, PTZ actif)</div><div class="value">'+eur2(avgMonthlyPostLivraison)+'</div></div>'
+    +'<div class="kpi" data-tooltip="Mensualit\u00e9 repr\u00e9sentative une fois la livraison effectu\u00e9e'+(eligible?' et le diff\u00e9r\u00e9 PTZ termin\u00e9 : pr\u00eat principal + PTZ + assurance emprunteur.':' : pr\u00eat principal + assurance emprunteur.')+'"><div class="label">Mensualit\u00e9 moyenne (post-livraison'+(eligible?', PTZ actif':'')+')</div><div class="value">'+eur2(avgMonthlyPostLivraison)+'</div></div>'
     +'<div class="kpi"><div class="label">Dur\u00e9e amortissement</div><div class="value">'+loanYears+' ans</div></div>'
     +'<div class="kpi"><div class="label">Taux nominal</div><div class="value">'+loanRate.toFixed(2)+'%</div></div>';
   document.getElementById('consistencyNote').innerHTML = overFunded
@@ -1401,6 +1427,9 @@ function runSimulation(){
     +'<div class="kpi"><div class="label">Mensualit\u00e9 post-livraison</div><div class="value">'+eur2(staged.postSched.payment)+'</div></div>'
     +'<div class="kpi"><div class="label">Dur\u00e9e amortissement</div><div class="value">'+loanYears+' ans</div></div>'
     +'<div class="kpi"><div class="label">Total int\u00e9r\u00eats</div><div class="value warn">'+eur(staged.totalInterest)+'</div></div>';
+  document.getElementById('ptzPanelEligTag').innerHTML = (!eligible && rfr>0 && priceAfterRemise>0)
+    ? ' <span class="tag" style="border-color:var(--danger);color:var(--danger)">\u2717 Non \u00e9ligible</span>'
+    : '';
   document.getElementById('ptzKpi').innerHTML=''
     +'<div class="kpi"><div class="label">Montant PTZ</div><div class="value">'+eur(ptzAmount)+'</div></div>'
     +'<div class="kpi"><div class="label">Diff\u00e9r\u00e9 depuis livraison</div><div class="value">'+ptzDefer+' mois</div></div>'
@@ -1454,13 +1483,6 @@ function applyRecommendation(){
   if(!lastReco || !lastReco.best) return;
   document.getElementById('apport').value=Math.round(lastReco.best.apport);
   document.getElementById('loanYears').value=lastReco.best.years;
-  runSimulation();
-}
-function applyPtzBareme(){
-  if(!lastPtzBareme) return;
-  document.getElementById('ptzAmount').value=Math.round(lastPtzBareme.amount);
-  document.getElementById('ptzDefer').value=lastPtzBareme.deferMonths;
-  document.getElementById('ptzTotalMonths').value=lastPtzBareme.totalMonths;
   runSimulation();
 }
 function buildDiffereTableForPDF(r){
