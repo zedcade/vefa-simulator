@@ -1587,22 +1587,22 @@ function buildSummaryTableBody(r){
     ['Prix initial', pdfEur(r.price)],
     ['Remise', pdfEur(remiseEur) + ' (' + r.remise.toFixed(2) + '%)'],
     ['Prix apr\u00e8s remise', pdfEur(r.priceAfterRemise)],
-    ['Frais et co\u00fbt total \u00e0 financer', pdfEur(totalFrais)],
+    ['Frais total', pdfEur(totalFrais)],
 
     totalRow('Total financement (apport + PTZ + pr\u00eat)', pdfEur(totalFinancement)),
     subRow('Apport cible'+(r.apportPctOfPrice!=null ? ' ('+Math.round(r.apportPctOfPrice)+'% du prix apr\u00e8s remise)' : ''), pdfEur(r.apportTarget)),
-    subRow('PTZ', pdfEur(r.ptzAmount)),
-    subRow('Pr\u00eat principal', pdfEur(r.loanAmount)),
+    subRow(ptzUsed ? ('Total emprunt\u00e9 : PTZ '+pdfEur(r.ptzAmount)+' + Pr\u00eat principal '+pdfEur(r.loanAmount)) : 'Pr\u00eat principal', pdfEur(r.ptzAmount + r.loanAmount)),
 
     ['Dur\u00e9e amortissement', r.loanYears + ' ans'],
     ['Taux nominal', r.loanRate.toFixed(2) + '%'],
     ['Mensualit\u00e9 moyenne (post-livraison'+(ptzUsed?', PTZ actif':'')+')', pdfEur(r.avgMonthlyPostLivraison)],
 
     totalRow('Co\u00fbt total du cr\u00e9dit', pdfEur(r.totalCreditCost)),
-    subRow('Int\u00e9r\u00eats totaux (pr\u00eat'+ptzSuffix+')', pdfEur(r.staged.totalInterest)),
+    subRow('Int\u00e9r\u00eats totaux (pr\u00eat)', pdfEur(r.staged.totalInterest)),
     subRow('Assurance totale (pr\u00eat'+ptzSuffix+')', pdfEur(r.totalInsuranceAll)),
     subRow('Frais li\u00e9s au cr\u00e9dit', pdfEur(r.totalFeesCredit)),
-    subRow('Frais li\u00e9s \u00e0 l\'acquisition (notaire, agence, mobilier) \u2013 pour info, non inclus ci-dessus', pdfEur(r.totalFeesAcquisition)),
+
+    ['Frais li\u00e9s \u00e0 l\'acquisition (notaire, agence, mobilier)', pdfEur(r.totalFeesAcquisition)],
   ];
 }
 function addNegotiationPage(doc, r, y){
