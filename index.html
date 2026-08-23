@@ -325,7 +325,7 @@ table input[type=date],table input[type=number]{width:100%;background:var(--pane
 
   <div class="panel">
     <h2>Financement</h2>
-    <div class="field-row"><label data-tooltip="Objectif d'apport. Le tableau Diff&eacute;r&eacute; suppose que vous levez le compl&eacute;ment n&eacute;cessaire &agrave; chaque &eacute;tape pour que l'apport couvre en priorit&eacute; chaque appel jusqu'&agrave; ce plafond.<br><br>Rep&egrave;re courant : l'apport personnel repr&eacute;sente g&eacute;n&eacute;ralement 10 &agrave; 30% du prix d'achat -- de quoi couvrir a minima les frais de notaire, de garantie et de dossier, rarement financ&eacute;s par le pr&ecirc;t. Un apport proche de 30% est souvent recherch&eacute; pour obtenir de meilleures conditions de taux.<br><br>Champ laiss&eacute; vide = apport cible de 0&nbsp;&euro; dans tous les calculs. Le montant gris&eacute; affich&eacute; en italique dans le champ n'est qu'une suggestion (30% du prix apr&egrave;s remise) -- il n'est pas appliqu&eacute; tant que vous ne le saisissez pas vous-m&ecirc;me.">Apport cible total (&euro;)</label><input type="number" class="auto" id="apport" value="150000" step="1000" min="0"></div>
+    <div class="field-row"><label id="apportLabel" data-tooltip="Objectif d'apport. Le tableau Diff&eacute;r&eacute; suppose que vous levez le compl&eacute;ment n&eacute;cessaire &agrave; chaque &eacute;tape pour que l'apport couvre en priorit&eacute; chaque appel jusqu'&agrave; ce plafond.<br><br>Rep&egrave;re courant : l'apport personnel repr&eacute;sente g&eacute;n&eacute;ralement 10 &agrave; 30% du prix d'achat -- de quoi couvrir a minima les frais de notaire, de garantie et de dossier, rarement financ&eacute;s par le pr&ecirc;t. Un apport proche de 30% est souvent recherch&eacute; pour obtenir de meilleures conditions de taux.<br><br>Champ laiss&eacute; vide = apport cible de 0&nbsp;&euro; dans tous les calculs. Le montant gris&eacute; affich&eacute; en italique dans le champ n'est qu'une suggestion (30% du prix apr&egrave;s remise) -- il n'est pas appliqu&eacute; tant que vous ne le saisissez pas vous-m&ecirc;me.">Apport cible total (&euro;)</label><input type="number" class="auto" id="apport" value="150000" step="1000" min="0"></div>
     <div class="section-title">PTZ<span class="tag" id="ptzEligTag" data-tooltip="Renseignez le RFR pour calculer l'&eacute;ligibilit&eacute;.">&hellip;</span><a class="inline-link" href="https://www.anil.org/outils/outils-de-calcul/votre-pret-a-taux-zero/" target="_blank">Simulateur ANIL</a></div>
     <div class="field-row"><label id="rfrLabel" data-tooltip="Le PTZ retient le revenu fiscal de r&eacute;f&eacute;rence de l'ann&eacute;e N-2 par rapport &agrave; la date de la demande de pr&ecirc;t.">RFR N-2 (&euro;)</label><input type="number" class="auto" id="rfr" value="45000" step="100" min="0"></div>
     <div class="field-row"><label><a id="ptzZoneLink" href="https://www.service-public.gouv.fr/simulateur/calcul/zonage-abc" target="_blank" data-tooltip="Ouvre le simulateur officiel service-public.fr pour v&eacute;rifier la zone PTZ (A bis, A, B1, B2, C) de la commune du bien -- non calcul&eacute;e automatiquement ici, le zonage complet portant sur plus de 34 000 communes.">Zone PTZ</a></label>
@@ -1174,6 +1174,10 @@ function runSimulation(){
 
   const priceAfterRemise=price*(1-remise/100);
 
+  // % de l'apport cible vs prix d'achat après remise -- affiché à côté du label et repris dans le PDF.
+  const apportPctOfPrice = priceAfterRemise>0 ? (apportTarget/priceAfterRemise*100) : null;
+  document.getElementById('apportLabel').innerHTML = "Apport cible total (\u20ac)" + (apportPctOfPrice!=null ? ' <span style="color:var(--muted);font-weight:400">('+apportPctOfPrice.toFixed(0)+'%)</span>' : '');
+
   // Suggestion d'apport cible = 30% du prix après remise (repère courant, cf. tooltip du champ).
   // Affichée uniquement comme placeholder (grisé/italique) : jamais écrite dans le champ ni utilisée
   // dans les calculs -- un champ vide vaut toujours 0€ d'apport (cf. val()).
@@ -1482,7 +1486,7 @@ function runSimulation(){
   });
   document.getElementById('scheduleTable').innerHTML=rowsHtml;
 
-  lastResults={projectName:currentProjectName, commune, adresse, price, surface, prixM2Calc, prixM2Moyen, ecartEur, ecartPct, stade, remise, priceAfterRemise, totalProjectCost, apportTarget, ptzAmount, loanAmount, overFunded, loanYears, loanRate, ptzDefer, ptzRepayMonths:ptzSched.repayMonths, ptzMonthlyPayment:ptzSched.monthlyPayment, avgMonthlyPostLivraison, rfr, ptzZone, ptzPersonnes, ptzCeiling:ceilingPtz, ptzEligible:eligible, combinedAnnualPctOfCapital, totalInsuranceAll, totalFeesCredit, totalFeesAcquisition, totalCreditCost, vefaRows, savingsRowsDiffere, savingsRowsProrata, monthlySavings, apportDispo, flexFundRate, salary1, salary2, savingsRate, reco:optResult.best, mensualiteCeiling, apportMaxAchievable:optResult.apportMax, staged, activeScenario, apportUtiliseCumule, apportShortfallVsCible, negoExtrasTotal:updateNegoExtrasTotal()};
+  lastResults={projectName:currentProjectName, commune, adresse, price, surface, prixM2Calc, prixM2Moyen, ecartEur, ecartPct, stade, remise, priceAfterRemise, totalProjectCost, apportTarget, apportPctOfPrice, ptzAmount, loanAmount, overFunded, loanYears, loanRate, ptzDefer, ptzRepayMonths:ptzSched.repayMonths, ptzMonthlyPayment:ptzSched.monthlyPayment, avgMonthlyPostLivraison, rfr, ptzZone, ptzPersonnes, ptzCeiling:ceilingPtz, ptzEligible:eligible, combinedAnnualPctOfCapital, totalInsuranceAll, totalFeesCredit, totalFeesAcquisition, totalCreditCost, vefaRows, savingsRowsDiffere, savingsRowsProrata, monthlySavings, apportDispo, flexFundRate, salary1, salary2, savingsRate, reco:optResult.best, mensualiteCeiling, apportMaxAchievable:optResult.apportMax, staged, activeScenario, apportUtiliseCumule, apportShortfallVsCible, negoExtrasTotal:updateNegoExtrasTotal()};
 
   if(currentProjectName) saveProject(currentProjectName, serializeState());
 }
@@ -1567,7 +1571,7 @@ function buildSummaryTableBody(r){
     ['Remise', pdfEur(remiseEur) + ' (' + r.remise.toFixed(2) + '%)'],
     ['Prix apr\u00e8s remise', pdfEur(r.priceAfterRemise)],
     ['Co\u00fbt total \u00e0 financer', pdfEur(r.totalProjectCost)],
-    ['Apport cible', pdfEur(r.apportTarget)],
+    ['Apport cible'+(r.apportPctOfPrice!=null ? ' ('+Math.round(r.apportPctOfPrice)+'%)' : ''), pdfEur(r.apportTarget)],
     ['PTZ', pdfEur(r.ptzAmount)],
     ['Pr\u00eat principal', pdfEur(r.loanAmount)],
     ['Dur\u00e9e amortissement', r.loanYears + ' ans'],
