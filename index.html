@@ -1566,21 +1566,43 @@ function buildSummaryTableBody(r){
   const remiseEur = r.price - r.priceAfterRemise;
   const ptzUsed = r.ptzAmount > 0.5;
   const ptzSuffix = ptzUsed ? '+PTZ' : '';
+  const totalFinancement = r.apportTarget + r.ptzAmount + r.loanAmount;
+  const totalFrais = r.totalFeesAcquisition + r.totalFeesCredit;
+  const INDENT = '\u00A0\u00A0\u00A0\u00A0'; // 4 non-breaking spaces -- visually nests a line under the bold total above it
+
+  // Bold total/heading line: the label itself doubles as the section heading, so no separate banner row.
+  function totalRow(label, value){
+    return [{content: label, styles:{fontStyle:'bold'}}, {content: value, styles:{fontStyle:'bold'}}];
+  }
+  // Indented breakdown line under a total row above it, in a smaller greyed font so it visually
+  // reads as "this is what makes up the total above" rather than another top-level line item.
+  function subRow(label, value){
+    return [
+      {content: INDENT+'\u2013 '+label, styles:{textColor:120, fontSize:7.5}},
+      {content: value, styles:{textColor:120, fontSize:7.5}}
+    ];
+  }
+
   return [
     ['Prix initial', pdfEur(r.price)],
     ['Remise', pdfEur(remiseEur) + ' (' + r.remise.toFixed(2) + '%)'],
     ['Prix apr\u00e8s remise', pdfEur(r.priceAfterRemise)],
-    ['Co\u00fbt total \u00e0 financer', pdfEur(r.totalProjectCost)],
-    ['Apport cible'+(r.apportPctOfPrice!=null ? ' ('+Math.round(r.apportPctOfPrice)+'%)' : ''), pdfEur(r.apportTarget)],
-    ['PTZ', pdfEur(r.ptzAmount)],
-    ['Pr\u00eat principal', pdfEur(r.loanAmount)],
+    ['Frais et co\u00fbt total \u00e0 financer', pdfEur(totalFrais)],
+
+    totalRow('Total financement (apport + PTZ + pr\u00eat)', pdfEur(totalFinancement)),
+    subRow('Apport cible'+(r.apportPctOfPrice!=null ? ' ('+Math.round(r.apportPctOfPrice)+'% du prix apr\u00e8s remise)' : ''), pdfEur(r.apportTarget)),
+    subRow('PTZ', pdfEur(r.ptzAmount)),
+    subRow('Pr\u00eat principal', pdfEur(r.loanAmount)),
+
     ['Dur\u00e9e amortissement', r.loanYears + ' ans'],
     ['Taux nominal', r.loanRate.toFixed(2) + '%'],
     ['Mensualit\u00e9 moyenne (post-livraison'+(ptzUsed?', PTZ actif':'')+')', pdfEur(r.avgMonthlyPostLivraison)],
-    ['Int\u00e9r\u00eats totaux (pr\u00eat'+ptzSuffix+')', pdfEur(r.staged.totalInterest)],
-    ['Assurance totale (pr\u00eat'+ptzSuffix+')', pdfEur(r.totalInsuranceAll)],
-    ['Frais li\u00e9s au cr\u00e9dit', pdfEur(r.totalFeesCredit)],
-    ['= Co\u00fbt total du cr\u00e9dit', pdfEur(r.totalCreditCost)],
+
+    totalRow('Co\u00fbt total du cr\u00e9dit', pdfEur(r.totalCreditCost)),
+    subRow('Int\u00e9r\u00eats totaux (pr\u00eat'+ptzSuffix+')', pdfEur(r.staged.totalInterest)),
+    subRow('Assurance totale (pr\u00eat'+ptzSuffix+')', pdfEur(r.totalInsuranceAll)),
+    subRow('Frais li\u00e9s au cr\u00e9dit', pdfEur(r.totalFeesCredit)),
+    subRow('Frais li\u00e9s \u00e0 l\'acquisition (notaire, agence, mobilier) \u2013 pour info, non inclus ci-dessus', pdfEur(r.totalFeesAcquisition)),
   ];
 }
 function addNegotiationPage(doc, r, y){
@@ -1634,12 +1656,19 @@ function addReportFooter(doc){
   // Stamped on every page, after all content is drawn. Uses doc.internal.pageSize on each existing
   // page (all created as portrait A4 throughout this file) -- this never adds a page or changes
   // orientation, it only writes into the existing bottom margin of each page.
+  //
+  // Vertical offset: many consumer inkjets (several HP DeskJet/OfficeJet models included) have an
+  // asymmetric unprintable margin -- a few mm on top/sides but roughly 11-12mm (~0.46") at the
+  // bottom edge, reserved for the paper-feed/pick mechanism. A PDF viewer renders right up to the
+  // page edge regardless, so this only shows up once actually printed: text placed inside that zone
+  // gets silently clipped on paper even though it looks fine on screen. 15mm clears that with margin
+  // to spare on virtually all consumer printers, without needing "fit to printable area" scaling.
   const pageCount=doc.internal.getNumberOfPages();
   for(let i=1;i<=pageCount;i++){
     doc.setPage(i);
     const pageWidth=doc.internal.pageSize.getWidth();
     const pageHeight=doc.internal.pageSize.getHeight();
-    const footerY=pageHeight-7;
+    const footerY=pageHeight-14.6;
     doc.setFontSize(7); doc.setFont('helvetica','normal'); doc.setTextColor(130);
     doc.text('Simulation indicative, sans valeur contractuelle.', 10, footerY, {align:'left'});
     doc.setTextColor(90);
@@ -1652,13 +1681,15 @@ function exportPDF(){
   if(!lastResults) runSimulation();
   const r=lastResults;
   const { jsPDF } = window.jspdf;
-  const doc=new jsPDF();
+  const doc=new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
   let y=15;
   doc.setFontSize(14); doc.setFont('helvetica','bold');
   doc.text('Simulateur VEFA \u2013 '+(r.projectName||'Projet'), 14, y); y+=8;
   doc.setFontSize(9); doc.setFont('helvetica','normal');
-  doc.text('Commune : '+(r.commune||'-')+(r.adresse?(' \u2013 '+r.adresse):''), 14, y); y+=6;
-  doc.text('G\u00e9n\u00e9r\u00e9 le '+new Date().toLocaleDateString('fr-FR'), 14, y); y+=4;
+  const headerPageWidth=doc.internal.pageSize.getWidth();
+  doc.text('Commune : '+(r.commune||'-')+(r.adresse?(' \u2013 '+r.adresse):''), 14, y, {align:'left'});
+  doc.text('G\u00e9n\u00e9r\u00e9 le '+new Date().toLocaleDateString('fr-FR'), headerPageWidth-14, y, {align:'right'});
+  y+=5;
 
   doc.autoTable({
     startY:y,
