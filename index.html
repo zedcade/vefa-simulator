@@ -62,6 +62,7 @@ body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color
 .status-wrap input[type=date]{cursor:pointer;width:140px;}
 h2{font-size:16px;color:var(--accent);border-bottom:1px solid var(--border);padding-bottom:6px;margin-top:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
 h2[data-tooltip]{cursor:help;}
+h2 .h2-title[data-tooltip]{cursor:help;}
 .h2-toggle{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);font-weight:400;border-bottom:none;padding-bottom:0;white-space:nowrap;cursor:help;}
 .grid{display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:start;}
 /* Direct grid/flex item wrappers need an explicit min-width:0 -- otherwise a nowrap table cell
@@ -92,6 +93,7 @@ h2[data-tooltip]{cursor:help;}
 #prixM2Calc{width:130px;flex:0 0 130px;text-align:right;font-weight:700;}
 #ecartM2{font-weight:700;}
 #prixM2Calc:disabled,#ecartM2:disabled{opacity:1;-webkit-text-fill-color:currentColor;}
+#apport::placeholder{font-style:italic;color:var(--muted);opacity:1;}
 #dateLivraisonEstimee{width:150px;flex:0 0 150px;text-align:left;}
 .field-row input:disabled{opacity:.55;cursor:not-allowed;}
 input[type=number]::-webkit-inner-spin-button,
@@ -323,7 +325,7 @@ table input[type=date],table input[type=number]{width:100%;background:var(--pane
 
   <div class="panel">
     <h2>Financement</h2>
-    <div class="field-row"><label data-tooltip="Objectif d'apport. Le tableau Diff&eacute;r&eacute; suppose que vous levez le compl&eacute;ment n&eacute;cessaire &agrave; chaque &eacute;tape pour que l'apport couvre en priorit&eacute; chaque appel jusqu'&agrave; ce plafond.">Apport cible total (&euro;)</label><input type="number" class="auto" id="apport" value="150000" step="1000" min="0"></div>
+    <div class="field-row"><label data-tooltip="Objectif d'apport. Le tableau Diff&eacute;r&eacute; suppose que vous levez le compl&eacute;ment n&eacute;cessaire &agrave; chaque &eacute;tape pour que l'apport couvre en priorit&eacute; chaque appel jusqu'&agrave; ce plafond.<br><br>Rep&egrave;re courant : l'apport personnel repr&eacute;sente g&eacute;n&eacute;ralement 10 &agrave; 30% du prix d'achat -- de quoi couvrir a minima les frais de notaire, de garantie et de dossier, rarement financ&eacute;s par le pr&ecirc;t. Un apport proche de 30% est souvent recherch&eacute; pour obtenir de meilleures conditions de taux.<br><br>Champ laiss&eacute; vide = apport cible de 0&nbsp;&euro; dans tous les calculs. Le montant gris&eacute; affich&eacute; en italique dans le champ n'est qu'une suggestion (30% du prix apr&egrave;s remise) -- il n'est pas appliqu&eacute; tant que vous ne le saisissez pas vous-m&ecirc;me.">Apport cible total (&euro;)</label><input type="number" class="auto" id="apport" value="150000" step="1000" min="0"></div>
     <div class="section-title">PTZ<span class="tag" id="ptzEligTag" data-tooltip="Renseignez le RFR pour calculer l'&eacute;ligibilit&eacute;.">&hellip;</span><a class="inline-link" href="https://www.anil.org/outils/outils-de-calcul/votre-pret-a-taux-zero/" target="_blank">Simulateur ANIL</a></div>
     <div class="field-row"><label id="rfrLabel" data-tooltip="Le PTZ retient le revenu fiscal de r&eacute;f&eacute;rence de l'ann&eacute;e N-2 par rapport &agrave; la date de la demande de pr&ecirc;t.">RFR N-2 (&euro;)</label><input type="number" class="auto" id="rfr" value="45000" step="100" min="0"></div>
     <div class="field-row"><label><a id="ptzZoneLink" href="https://www.service-public.gouv.fr/simulateur/calcul/zonage-abc" target="_blank" data-tooltip="Ouvre le simulateur officiel service-public.fr pour v&eacute;rifier la zone PTZ (A bis, A, B1, B2, C) de la commune du bien -- non calcul&eacute;e automatiquement ici, le zonage complet portant sur plus de 34 000 communes.">Zone PTZ</a></label>
@@ -404,7 +406,7 @@ table input[type=date],table input[type=number]{width:100%;background:var(--pane
   </div>
 
   <div class="panel">
-    <h2 data-tooltip="R&eacute;servation : le d&eacute;p&ocirc;t de garantie est plafonn&eacute; par la loi (Art. R261-28 CCH) &agrave; 5% si l'acte d&eacute;finitif est sign&eacute; sous 1 an, 2% entre 1 et 2 ans, et 0% au-del&agrave; de 2 ans -- et au-del&agrave; de ce d&eacute;lai, AUCUNE somme, m&ecirc;me forfaitaire, ne peut &ecirc;tre exig&eacute;e ou accept&eacute;e avant la signature de l'acte authentique (Art. L261-15 CCH). D&eacute;calages Fondations/Hors d'eau/Ach&egrave;vement/Livraison : +3/+12/+20/+24 mois par d&eacute;faut depuis le d&eacute;but des travaux.">Calendrier des appels de fonds VEFA <span class="tag">dates et % &eacute;ditables</span></h2>
+    <h2><span class="h2-title" data-tooltip="R&eacute;servation : le d&eacute;p&ocirc;t de garantie est plafonn&eacute; par la loi (Art. R261-28 CCH) &agrave; 5% si l'acte d&eacute;finitif est sign&eacute; sous 1 an, 2% entre 1 et 2 ans, et 0% au-del&agrave; de 2 ans -- et au-del&agrave; de ce d&eacute;lai, AUCUNE somme, m&ecirc;me forfaitaire, ne peut &ecirc;tre exig&eacute;e ou accept&eacute;e avant la signature de l'acte authentique (Art. L261-15 CCH). D&eacute;calages Fondations/Hors d'eau/Ach&egrave;vement/Livraison : +3/+12/+20/+24 mois par d&eacute;faut depuis le d&eacute;but des travaux.">Calendrier des appels de fonds VEFA</span> <span class="tag">dates et % &eacute;ditables</span></h2>
     <div class="note" style="margin-bottom:8px">Pour la R&eacute;servation uniquement, vous pouvez saisir soit le %, soit le montant directement (les deux se recalculent l'un l'autre).</div>
     <div class="scrollbox">
       <table>
@@ -422,8 +424,8 @@ table input[type=date],table input[type=number]{width:100%;background:var(--pane
   </div>
 
   <div class="panel">
-    <h2 data-tooltip="Diff&eacute;r&eacute; : apport (cash organique + vente d'actifs) couvre en priorit&eacute; jusqu'&agrave; &eacute;puisement de l'objectif ; &eacute;pargne restante r&eacute;duit ensuite le pr&ecirc;t directement -- sauf si d&eacute;sactiv&eacute; via le r&eacute;glage ci-contre. Prorata : la banque exige un financement proportionnel identique &agrave; chaque appel.">
-      Simulation d'&eacute;pargne
+    <h2>
+      <span class="h2-title" data-tooltip="Diff&eacute;r&eacute; : apport (cash organique + vente d'actifs) couvre en priorit&eacute; jusqu'&agrave; &eacute;puisement de l'objectif ; &eacute;pargne restante r&eacute;duit ensuite le pr&ecirc;t directement -- sauf si d&eacute;sactiv&eacute; via le r&eacute;glage ci-contre. Prorata : la banque exige un financement proportionnel identique &agrave; chaque appel.">Simulation d'&eacute;pargne</span>
       <span class="h2-toggle" data-tooltip="Si activ&eacute; (par d&eacute;faut) : une fois l'objectif d'apport atteint, toute &eacute;pargne organique restante continue de r&eacute;duire le pr&ecirc;t &agrave; chaque &eacute;tape suivante. Si d&eacute;sactiv&eacute; : l'&eacute;pargne au-del&agrave; de l'objectif s'accumule sans r&eacute;duire le pr&ecirc;t.">
         <label class="switch sm"><input type="checkbox" class="auto" id="useCashBeyondObjectif" checked><span class="slider"></span></label> Utiliser cash au-del&agrave; objectif
       </span>
@@ -1171,6 +1173,12 @@ function runSimulation(){
   else { contactEmailLinkEl.removeAttribute('href'); }
 
   const priceAfterRemise=price*(1-remise/100);
+
+  // Suggestion d'apport cible = 30% du prix après remise (repère courant, cf. tooltip du champ).
+  // Affichée uniquement comme placeholder (grisé/italique) : jamais écrite dans le champ ni utilisée
+  // dans les calculs -- un champ vide vaut toujours 0€ d'apport (cf. val()).
+  const apportSuggested=priceAfterRemise>0 ? Math.round(priceAfterRemise*0.30) : 0;
+  document.getElementById('apport').placeholder = apportSuggested>0 ? eur(apportSuggested) : '';
 
   // Barème officiel PTZ (décret n° 2025-299) : tranche de revenus -> quotité -> montant, différé, durée.
   // Doit s'exécuter AVANT la lecture de ptzAmount/ptzDefer/ptzTotalMonths ci-dessous, afin que les
