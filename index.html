@@ -125,7 +125,13 @@ th,td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:right;}
 th{color:var(--muted);font-weight:600;background:var(--panel2);}
 td:first-child,th:first-child{text-align:left;}
 table input[type=date],table input[type=number]{width:100%;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:4px 6px;border-radius:5px;font-size:12px;text-align:right;}
+table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:4px 6px;border-radius:5px;font-size:12px;text-align:left;}
+.vefa-remove{display:inline-block;font-size:13px;color:var(--muted);cursor:pointer;padding:2px 6px;border-radius:4px;}
+.vefa-remove:hover{color:var(--danger);background:rgba(255,107,107,.12);}
+.vefa-table th.vefa-remove-col,.vefa-table td.vefa-remove-col{text-align:center;white-space:nowrap;width:28px;}
+.vefa-table td:first-child{min-width:190px;} .vefa-table td:nth-child(3){min-width:130px;}
 .scrollbox{max-height:340px;overflow-y:auto;overflow-x:auto;border:1px solid var(--border);border-radius:8px;}
+.vefa-scrollbox{max-height:372px;}
 .scrollbox table thead th{position:sticky;top:0;z-index:5;}
 .no-scroll-table{overflow:visible;max-height:none;border:1px solid var(--border);border-radius:8px;}
 .row-omitted td{text-align:center;color:var(--muted);font-style:italic;font-size:11px;background:var(--panel2);}
@@ -233,7 +239,7 @@ table input[type=date],table input[type=number]{width:100%;background:var(--pane
   table input[type=date],table input[type=number],
   .nego-value-row input,
   .contact-field input { font-size:16px; }
-  #p0amount { font-size:16px !important; }
+  .vefa-amount { font-size:16px !important; }
 }
 </style>
 </head>
@@ -415,21 +421,18 @@ table input[type=date],table input[type=number]{width:100%;background:var(--pane
   </div>
 
   <div class="panel">
-    <h2><span class="h2-title" data-tooltip="R&eacute;servation : le d&eacute;p&ocirc;t de garantie est plafonn&eacute; par la loi (Art. R261-28 CCH) &agrave; 5% si l'acte d&eacute;finitif est sign&eacute; sous 1 an, 2% entre 1 et 2 ans, et 0% au-del&agrave; de 2 ans -- et au-del&agrave; de ce d&eacute;lai, AUCUNE somme, m&ecirc;me forfaitaire, ne peut &ecirc;tre exig&eacute;e ou accept&eacute;e avant la signature de l'acte authentique (Art. L261-15 CCH). D&eacute;calages Fondations/Hors d'eau/Ach&egrave;vement/Livraison : +3/+12/+20/+24 mois par d&eacute;faut depuis le d&eacute;but des travaux.">Calendrier des appels de fonds VEFA</span> <span class="tag">dates et % &eacute;ditables</span></h2>
-    <div class="note" style="margin-bottom:8px">Pour la R&eacute;servation uniquement, vous pouvez saisir soit le %, soit le montant directement (les deux se recalculent l'un l'autre).</div>
-    <div class="scrollbox">
-      <table>
-        <thead><tr><th>Palier</th><th>% cumul&eacute;</th><th>Date estim&eacute;e</th><th>Montant cumul&eacute;</th><th>Appel (montant d&ucirc;)</th></tr></thead>
-        <tbody>
-          <tr><td>0. R&eacute;servation</td><td><input type="number" class="auto" id="p0pct" value="0" step="0.5" min="0" oninput="onP0PctInput()"></td><td><input type="date" class="auto" id="p0date"></td><td id="p0cum"></td><td><input type="number" class="auto" id="p0amount" value="0" step="50" min="0" oninput="onP0AmountInput()" style="width:100%;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:4px 6px;border-radius:5px;font-size:12px;text-align:right;"></td></tr>
-          <tr><td>1. Fondations</td><td><input type="number" class="auto" id="p1pct" value="35" step="1" min="0"></td><td><input type="date" class="auto" id="p1date" oninput="cascadeFromP1()"></td><td id="p1cum"></td><td id="p1call"></td></tr>
-          <tr><td>2. Hors d'eau</td><td><input type="number" class="auto" id="p2pct" value="70" step="1" min="0"></td><td><input type="date" class="auto" id="p2date"></td><td id="p2cum"></td><td id="p2call"></td></tr>
-          <tr><td>3. Ach&egrave;vement</td><td><input type="number" class="auto" id="p3pct" value="95" step="1" min="0"></td><td><input type="date" class="auto" id="p3date"></td><td id="p3cum"></td><td id="p3call"></td></tr>
-          <tr><td>4. Livraison</td><td><input type="number" class="auto" id="p4pct" value="100" step="1" min="0"></td><td><input type="date" class="auto" id="p4date"></td><td id="p4cum"></td><td id="p4call"></td></tr>
-        </tbody>
+    <h2><span class="h2-title" data-tooltip="R&eacute;servation : le d&eacute;p&ocirc;t de garantie est plafonn&eacute; par la loi (Art. R261-28 CCH) &agrave; 5% si l'acte d&eacute;finitif est sign&eacute; sous 1 an, 2% entre 1 et 2 ans, et 0% au-del&agrave; de 2 ans -- et au-del&agrave; de ce d&eacute;lai, AUCUNE somme, m&ecirc;me forfaitaire, ne peut &ecirc;tre exig&eacute;e ou accept&eacute;e avant la signature de l'acte authentique (Art. L261-15 CCH). Les dates des paliers li&eacute;s au chantier (ancr&eacute;s sur le Mois de d&eacute;marrage construction) se d&eacute;calent automatiquement les uns par rapport aux autres lorsque vous modifiez l'une d'entre elles.">Calendrier des appels de fonds VEFA</span> <span class="tag">paliers, dates et % enti&egrave;rement &eacute;ditables</span></h2>
+    <div class="note" style="margin-bottom:8px">Renommez, ajoutez ou supprimez un palier librement pour coller au calendrier de votre programme. Pour le premier palier uniquement, vous pouvez saisir soit le %, soit le montant directement (les deux se recalculent l'un l'autre). Montant et cumul restent vides tant qu'aucun prix d'acquisition n'est renseign&eacute;.</div>
+    <div class="scrollbox vefa-scrollbox">
+      <table class="vefa-table">
+        <thead><tr><th>Palier</th><th>% cumul&eacute;</th><th>Date estim&eacute;e</th><th>Montant cumul&eacute;</th><th>Appel (montant d&ucirc;)</th><th class="vefa-remove-col"></th></tr></thead>
+        <tbody id="vefaStagesBody"></tbody>
       </table>
     </div>
-    <button class="btn btn-secondary" style="margin-top:8px" onclick="resyncPalierDatesFromStart(true)">R&eacute;initialiser aux d&eacute;calages par d&eacute;faut</button>
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+      <button class="btn btn-secondary btn-sm" onclick="addVefaStage()">+ Ajouter un palier</button>
+      <button class="btn btn-secondary btn-sm" onclick="resetVefaStagesToDefault()">R&eacute;initialiser aux valeurs par d&eacute;faut</button>
+    </div>
   </div>
 
   <div class="panel">
@@ -558,7 +561,22 @@ function ptzTranche(zone,persons,revenuRetenu){
   return 4;
 }
 const PTZ_ZONE_LABELS={AbisA:"A bis / A",B1:"B1",B2:"B2",C:"C"};
-const DEFAULT_OFFSETS={p1date:3,p2date:12,p3date:20,p4date:24};
+// Default VEFA fund-call schedule, mirroring a typical appel de fonds table. "pct" is the CUMULATIVE
+// percentage of the price called at that stage (matches the "Cumul %" column of the reference table);
+// per-stage call amounts are derived as the delta vs the previous stage's cumulative amount.
+// anchor:'ref' -> date defaults to the reference "today" date. anchor:'start' -> date defaults to
+// the construction start month + defaultOffset (months). anchor:'custom' -> no auto date (user-added row).
+const DEFAULT_VEFA_STAGES=[
+  {name:'Signature du contrat de r\u00e9servation', pct:1,   anchor:'ref',   defaultOffset:0},
+  {name:'Signature acte authentique',               pct:30,  anchor:'start', defaultOffset:-2},
+  {name:'Ach\u00e8vement des fondations',           pct:35,  anchor:'start', defaultOffset:3},
+  {name:'Dalle du rez-de-chauss\u00e9e',            pct:60,  anchor:'start', defaultOffset:7},
+  {name:"Mise hors d'eau",                          pct:70,  anchor:'start', defaultOffset:11},
+  {name:'Cloisonnement int\u00e9rieur',              pct:90,  anchor:'start', defaultOffset:14},
+  {name:'Ach\u00e8vement',                           pct:95,  anchor:'start', defaultOffset:20},
+  {name:'Solde \u00e0 la livraison du bien',        pct:100, anchor:'start', defaultOffset:21},
+];
+let vefaStages=[];
 const NEGO_RANGES={lancement:[0,2],mi:[2,5],fin:[5,10],invendu:[10,15]};
 const NEGO_LABELS={lancement:'Lancement',mi:'Mi-commercialisation',fin:'Fin de programme',invendu:'Stock invendu'};
 const STATUS_DATE_LABELS={
@@ -616,15 +634,119 @@ function monthsBetween(d1,d2){ return (d2.getFullYear()-d1.getFullYear())*12 + (
 function val(id){ return parseFloat(document.getElementById(id).value)||0; }
 function dateVal(id){ const s=document.getElementById(id).value; return s ? new Date(s+"T00:00:00") : null; }
 
-// ---- Reservation row: bidirectional % <-> montant editing ----
-function onP0PctInput(){ runSimulation(); }
-function onP0AmountInput(){
-  const priceAfterRemise=val('price')*(1-val('remise')/100);
-  if(priceAfterRemise>0){
-    const amt=val('p0amount');
-    document.getElementById('p0pct').value=(amt/priceAfterRemise*100).toFixed(2);
+// ---- Editable VEFA fund-call schedule (add/remove/rename stages, reset to default) ----
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function vefaStagesBodyEl(){ return document.getElementById('vefaStagesBody'); }
+function computeDefaultDateForStage(stage){
+  if(stage.anchor==='start'){
+    const startMonthStr=document.getElementById('startMonth').value;
+    const startDate=startMonthStr ? new Date(startMonthStr+"-01") : new Date();
+    return dateToInputStr(addMonths(startDate, stage.defaultOffset||0));
   }
+  if(stage.anchor==='ref'){
+    const refStr=document.getElementById('refDate').value;
+    return refStr || dateToInputStr(new Date());
+  }
+  return '';
+}
+function buildDefaultVefaStages(){
+  return DEFAULT_VEFA_STAGES.map(s=>({name:s.name, pct:s.pct, anchor:s.anchor, defaultOffset:s.defaultOffset, date:computeDefaultDateForStage(s)}));
+}
+function resetVefaStagesToDefault(){
+  vefaStages=buildDefaultVefaStages();
+  renderVefaTable();
   runSimulation();
+}
+function renderVefaTable(){
+  const body=vefaStagesBodyEl();
+  if(!body) return;
+  body.innerHTML=vefaStages.map((stage,idx)=>{
+    const amountOrCallCell = idx===0
+      ? '<td><input type="number" class="vefa-amount" data-idx="0" data-field="amount" step="50" min="0" value="0"></td>'
+      : '<td class="vefa-call" data-idx="'+idx+'" data-field="call"></td>';
+    return '<tr>'
+      +'<td><input type="text" class="vefa-name" data-idx="'+idx+'" data-field="name" value="'+escapeHtml(stage.name)+'"></td>'
+      +'<td><input type="number" class="vefa-pct" data-idx="'+idx+'" data-field="pct" value="'+stage.pct+'" step="0.5" min="0"></td>'
+      +'<td><input type="date" class="vefa-date" data-idx="'+idx+'" data-field="date" value="'+(stage.date||'')+'"></td>'
+      +'<td class="vefa-cum" data-idx="'+idx+'" data-field="cum"></td>'
+      +amountOrCallCell
+      +'<td class="vefa-remove-col"><span class="vefa-remove" data-idx="'+idx+'" title="Supprimer ce palier">\u2715</span></td>'
+      +'</tr>';
+  }).join('');
+}
+function addVefaStage(){
+  const last=vefaStages[vefaStages.length-1];
+  vefaStages.push({name:'Nouveau palier', pct: last ? last.pct : 100, anchor:'custom', defaultOffset:0, date:''});
+  renderVefaTable();
+  runSimulation();
+}
+function removeVefaStage(idx){
+  if(vefaStages.length<=1) return;
+  vefaStages.splice(idx,1);
+  renderVefaTable();
+  runSimulation();
+}
+function syncVefaDateInputs(){
+  const body=vefaStagesBodyEl(); if(!body) return;
+  vefaStages.forEach((s,idx)=>{
+    const input=body.querySelector('.vefa-date[data-idx="'+idx+'"]');
+    if(input && document.activeElement!==input) input.value=s.date||'';
+  });
+}
+// Editing the date of a construction-linked ("start"-anchored) stage shifts every later
+// construction-linked stage by the same delta, so the whole downstream schedule slides together.
+function cascadeVefaDate(idx){
+  const stage=vefaStages[idx];
+  if(!stage || stage.anchor!=='start' || !stage.date) return;
+  const startMonthStr=document.getElementById('startMonth').value;
+  const startDate=startMonthStr ? new Date(startMonthStr+"-01") : new Date();
+  const defaultDate=addMonths(startDate, stage.defaultOffset||0);
+  const newDate=new Date(stage.date+"T00:00:00");
+  if(isNaN(newDate.getTime())) return;
+  const deltaMonths=monthsBetween(defaultDate,newDate);
+  for(let i=idx+1;i<vefaStages.length;i++){
+    const s=vefaStages[i];
+    if(s.anchor==='start'){ s.date=dateToInputStr(addMonths(addMonths(startDate, s.defaultOffset||0), deltaMonths)); }
+  }
+  syncVefaDateInputs();
+}
+// Called when the construction start month changes: recomputes every "start"-anchored stage's date.
+function resyncVefaStartDates(){
+  const startMonthStr=document.getElementById('startMonth').value;
+  const startDate=startMonthStr ? new Date(startMonthStr+"-01") : new Date();
+  vefaStages.forEach(s=>{ if(s.anchor==='start'){ s.date=dateToInputStr(addMonths(startDate, s.defaultOffset||0)); } });
+  syncVefaDateInputs();
+}
+function initVefaTableEvents(){
+  const body=vefaStagesBodyEl(); if(!body) return;
+  body.addEventListener('input', e=>{
+    const t=e.target; const idxAttr=t.dataset.idx; if(idxAttr===undefined) return;
+    const idx=parseInt(idxAttr,10); const stage=vefaStages[idx]; if(!stage) return;
+    if(t.classList.contains('vefa-name')){
+      stage.name=t.value;
+    } else if(t.classList.contains('vefa-pct')){
+      stage.pct=parseFloat(t.value)||0;
+      runSimulation();
+    } else if(t.classList.contains('vefa-date')){
+      stage.date=t.value;
+      if(stage.anchor==='start') cascadeVefaDate(idx);
+      runSimulation();
+    } else if(t.classList.contains('vefa-amount')){
+      const priceAfterRemise=val('price')*(1-val('remise')/100);
+      const amt=parseFloat(t.value)||0;
+      if(priceAfterRemise>0){
+        stage.pct=(amt/priceAfterRemise*100);
+        const pctInput=body.querySelector('.vefa-pct[data-idx="'+idx+'"]');
+        if(pctInput) pctInput.value=stage.pct.toFixed(2);
+      }
+      runSimulation();
+    }
+  });
+  body.addEventListener('click', e=>{
+    if(e.target.classList.contains('vefa-remove')){
+      removeVefaStage(parseInt(e.target.dataset.idx,10));
+    }
+  });
 }
 
 // ---- Keep popover dropdowns (file lists, contact card, nego-add) fully on-screen ----
@@ -809,6 +931,7 @@ function serializeState(){
   const state={};
   document.querySelectorAll('.auto').forEach(el=>{ if(el.type==='checkbox') state[el.id]=el.checked; else state[el.id]=el.value; });
   PTZ_AUTOCALC_FIELDS.forEach(id=>{ if(document.getElementById(id).dataset.userSet) state[id+'_userSet']=true; });
+  state.vefaStages = vefaStages.map(s=>({name:s.name, pct:s.pct, anchor:s.anchor, defaultOffset:s.defaultOffset, date:s.date||''}));
   return state;
 }
 function applyState(state){
@@ -829,6 +952,12 @@ function applyState(state){
   });
   if(document.getElementById('dateLivraisonEstimee').value) document.getElementById('dateLivraisonEstimee').dataset.userSet='1';
   updateStatusDateLabel();
+  if(state.vefaStages && Array.isArray(state.vefaStages) && state.vefaStages.length){
+    vefaStages = state.vefaStages.map(s=>({name:s.name||'Palier', pct:parseFloat(s.pct)||0, anchor:s.anchor||'custom', defaultOffset:s.defaultOffset||0, date:s.date||''}));
+  } else {
+    vefaStages = buildDefaultVefaStages();
+  }
+  renderVefaTable();
   initNegoData(); renderNegoExtrasGrid(); updateNegoExtrasTotal();
 }
 function setLastActive(name){ localStorage.setItem(STORAGE_LAST_ACTIVE, name); }
@@ -1086,28 +1215,6 @@ function futureValueWithSavings(initial, monthlyContribution, annualRatePct, mon
   for(let m=0;m<months;m++){ balance = balance*(1+monthlyRate) + monthlyContribution; }
   return balance;
 }
-function resyncPalierDatesFromStart(forceReset){
-  const startMonthStr=document.getElementById('startMonth').value;
-  const startDate=startMonthStr ? new Date(startMonthStr+"-01") : new Date();
-  if(forceReset){
-    Object.keys(DEFAULT_OFFSETS).forEach(id=>{ document.getElementById(id).value=dateToInputStr(addMonths(startDate,DEFAULT_OFFSETS[id])); });
-    if(!document.getElementById('p0date').dataset.userSet){ document.getElementById('p0date').value=document.getElementById('refDate').value||dateToInputStr(new Date()); }
-  } else {
-    Object.keys(DEFAULT_OFFSETS).forEach(id=>{ if(!document.getElementById(id).value) document.getElementById(id).value=dateToInputStr(addMonths(startDate,DEFAULT_OFFSETS[id])); });
-  }
-  runSimulation();
-}
-function cascadeFromP1(){
-  const startMonthStr=document.getElementById('startMonth').value;
-  const startDate=startMonthStr ? new Date(startMonthStr+"-01") : new Date();
-  const defaultP1=addMonths(startDate,DEFAULT_OFFSETS.p1date);
-  const newP1=dateVal('p1date'); if(!newP1) return;
-  const deltaMonths=monthsBetween(defaultP1,newP1);
-  document.getElementById('p2date').value=dateToInputStr(addMonths(addMonths(startDate,DEFAULT_OFFSETS.p2date),deltaMonths));
-  document.getElementById('p3date').value=dateToInputStr(addMonths(addMonths(startDate,DEFAULT_OFFSETS.p3date),deltaMonths));
-  document.getElementById('p4date').value=dateToInputStr(addMonths(addMonths(startDate,DEFAULT_OFFSETS.p4date),deltaMonths));
-  runSimulation();
-}
 function getPtzCeiling(zone,persons){ const arr=PTZ_CEILINGS[zone]||PTZ_CEILINGS.AbisA; const idx=Math.min(Math.max(1,persons),8)-1; return arr[idx]; }
 function resetCeilingTo35(skipRun){
   const s1=val('salary1'), s2=val('salary2');
@@ -1314,25 +1421,26 @@ function runSimulation(){
   const totalFeesCredit = fraisGarantie+fraisDossier+fraisCourtage+fraisIRA;
   const totalFeesAcquisition = fraisNotaire+fraisAgence+fraisMobilier;
 
-  const paliers=[
-    {id:'0',name:'R\u00e9servation',pct:val('p0pct'),date:dateVal('p0date')},
-    {id:'1',name:'Fondations',pct:val('p1pct'),date:dateVal('p1date')},
-    {id:'2',name:"Hors d'eau",pct:val('p2pct'),date:dateVal('p2date')},
-    {id:'3',name:'Ach\u00e8vement',pct:val('p3pct'),date:dateVal('p3date')},
-    {id:'4',name:'Livraison',pct:val('p4pct'),date:dateVal('p4date')},
-  ];
+  if(!vefaStages.length) vefaStages=buildDefaultVefaStages();
+  const priceRaw=document.getElementById('price').value;
+  const hasPrice = priceRaw.trim()!=='' && priceAfterRemise>0;
+  const vefaBody=vefaStagesBodyEl();
   let prevCum=0;
-  const vefaRows=paliers.map(p=>{
-    const cumAmount=priceAfterRemise*p.pct/100; const callAmount=cumAmount-prevCum; prevCum=cumAmount;
-    document.getElementById('p'+p.id+'cum').textContent=eur(cumAmount);
-    if(p.id==='0'){
-      if(document.activeElement !== document.getElementById('p0amount')) document.getElementById('p0amount').value=Math.round(callAmount);
+  const vefaRows=vefaStages.map((stage,idx)=>{
+    const cumAmount=priceAfterRemise*stage.pct/100; const callAmount=cumAmount-prevCum; prevCum=cumAmount;
+    const cumCell=vefaBody && vefaBody.querySelector('.vefa-cum[data-idx="'+idx+'"]');
+    if(cumCell) cumCell.textContent = hasPrice ? eur(cumAmount) : '';
+    if(idx===0){
+      const amountInput=vefaBody && vefaBody.querySelector('.vefa-amount[data-idx="0"]');
+      if(amountInput && document.activeElement!==amountInput){ amountInput.value = hasPrice ? Math.round(callAmount) : ''; }
     } else {
-      document.getElementById('p'+p.id+'call').textContent=eur(callAmount);
+      const callCell=vefaBody && vefaBody.querySelector('.vefa-call[data-idx="'+idx+'"]');
+      if(callCell) callCell.textContent = hasPrice ? eur(callAmount) : '';
     }
-    return {name:p.name, date:p.date, pct:p.pct, cumAmount, callAmount};
+    const date = stage.date ? new Date(stage.date+"T00:00:00") : null;
+    return {name:stage.name, date, pct:stage.pct, cumAmount, callAmount};
   });
-  const livraisonDate=paliers[paliers.length-1].date;
+  const livraisonDate=vefaRows.length ? vefaRows[vefaRows.length-1].date : null;
   const dleEl=document.getElementById('dateLivraisonEstimee');
   if(!dleEl.dataset.userSet && livraisonDate){ dleEl.value=dateToInputStr(livraisonDate).slice(0,7); }
 
@@ -1880,8 +1988,7 @@ function bindAutoRecalc(){
     if(e.key==='Escape'){ hideProjectDropdown(); }
   });
   titleEl.addEventListener('blur', ()=>{ commitTitleChange(); setTimeout(hideProjectDropdown, 150); });
-  document.getElementById('p0date').addEventListener('input', ()=>{ document.getElementById('p0date').dataset.userSet='1'; });
-  document.getElementById('startMonth').addEventListener('change', ()=>resyncPalierDatesFromStart(true));
+  document.getElementById('startMonth').addEventListener('change', ()=>{ resyncVefaStartDates(); runSimulation(); });
   ['salary1','salary2'].forEach(id=>document.getElementById(id).addEventListener('input', ()=>resetCeilingTo35()));
   document.getElementById('fraisNotaireFNO').addEventListener('change', updateFraisNotaireFNO);
   document.getElementById('adresseLink').addEventListener('click', e=>{ if(!e.currentTarget.getAttribute('href')) e.preventDefault(); });
@@ -1893,11 +2000,11 @@ function bindAutoRecalc(){
 function initDefaults(){
   const refEl=document.getElementById('refDate');
   if(!refEl.value) refEl.value=dateToInputStr(new Date());
-  document.getElementById('p0date').value=refEl.value;
   document.getElementById('fraisNotaire').disabled=document.getElementById('fraisNotaireFNO').checked;
   updateFraisNotaireLabel();
   updateStatusDateLabel();
-  resyncPalierDatesFromStart(true);
+  vefaStages=buildDefaultVefaStages();
+  renderVefaTable();
   resetCeilingTo35(true);
   defaultStateSnapshot=serializeState();
 }
@@ -1909,6 +2016,7 @@ window.onload=function(){
 
   initDefaults();
   bindAutoRecalc();
+  initVefaTableEvents();
   bindTooltipDelegation();
 
   const list=getProjectList();
