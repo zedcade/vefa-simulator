@@ -346,6 +346,10 @@ table input[type=date],table input[type=number]{width:100%;background:var(--pane
     <div class="field-row"><label data-tooltip="Calcul&eacute; automatiquement selon le bar&egrave;me officiel d&egrave;s que le RFR, la zone, le foyer et le type de logement sont renseign&eacute;s. Modifiable manuellement pour tester une offre bancaire r&eacute;elle.">Montant PTZ (&euro;)</label><input type="number" class="auto" id="ptzAmount" value="50000" step="1000" min="0" oninput="this.dataset.userSet='1'"></div>
     <div class="field-row"><label data-tooltip="Calcul&eacute; automatiquement selon le bar&egrave;me officiel. Modifiable manuellement pour tester une offre bancaire r&eacute;elle.">Diff&eacute;r&eacute; PTZ (mois depuis livraison)</label><input type="number" class="auto" id="ptzDefer" value="0" step="1" min="0" oninput="this.dataset.userSet='1'"></div>
     <div class="field-row"><label data-tooltip="Calcul&eacute; automatiquement selon le bar&egrave;me officiel. Modifiable manuellement pour tester une offre bancaire r&eacute;elle.">Dur&eacute;e totale PTZ (mois)</label><input type="number" class="auto" id="ptzTotalMonths" value="180" step="1" min="0" oninput="this.dataset.userSet='1'"></div>
+    <div class="section-title" data-tooltip="Pr&ecirc;t Accession Action Logement (ex &laquo;&nbsp;1% patronal&nbsp;&raquo; / &laquo;&nbsp;1% Logement&nbsp;&raquo;) : jusqu'&agrave; 30&nbsp;000&euro; &agrave; 1% fixe (hors assurance), plafonn&eacute; &agrave; 40% du co&ucirc;t total de l'op&eacute;ration, sur 25 ans maximum. R&eacute;serv&eacute; aux salari&eacute;s d'entreprises priv&eacute;es non agricoles de 10 salari&eacute;s et plus (50+ en agricole), sous plafond de ressources (RFR N-2), pour l'achat d'une r&eacute;sidence principale neuve ou ancienne -- cumulable avec le PTZ. Demande directement aupr&egrave;s d'Action Logement, s&eacute;par&eacute;ment du dossier bancaire. Dans la simulation, il est mobilis&eacute; juste apr&egrave;s l'apport (et avant le PTZ) &agrave; chaque appel de fonds -- comme le PTZ, il est trait&eacute; comme d&eacute;bloqu&eacute; en une fois et amorti &agrave; taux fixe &agrave; partir de la livraison, sans int&eacute;r&ecirc;ts intercalaires pendant la construction.">Pr&ecirc;t Action Logement</div>
+    <div class="field-row"><label data-tooltip="Pr&ecirc;t Accession Action Logement (ex '1% patronal' / '1% Logement') : jusqu'&agrave; 30&nbsp;000&euro; &agrave; 1% fixe (hors assurance), plafonn&eacute; &agrave; 40% du co&ucirc;t total de l'op&eacute;ration, sur 25 ans maximum. R&eacute;serv&eacute; aux salari&eacute;s d'entreprises priv&eacute;es non agricoles de 10 salari&eacute;s et plus (50+ en agricole), sous plafond de ressources (RFR N-2), pour l'achat d'une r&eacute;sidence principale neuve ou ancienne. Cumulable avec le PTZ. Laissez &agrave; 0&euro; si non applicable.">Pr&ecirc;t Action Logement (1%) -- Montant (&euro;)</label><input type="number" class="auto" id="empLoan1Amount" value="0" step="500" min="0"></div>
+    <div class="field-row"><label>Pr&ecirc;t Action Logement -- Taux annuel (%)</label><input type="number" class="auto" id="empLoan1Rate" value="1" step="0.01" min="0"></div>
+    <div class="field-row"><label>Pr&ecirc;t Action Logement -- Dur&eacute;e totale (mois)</label><input type="number" class="auto" id="empLoan1TotalMonths" value="300" step="1" min="0"></div>
     <div class="section-title">Pr&ecirc;t principal</div>
     <div class="field-row"><label>Dur&eacute;e amortissement post-livraison (ans)</label><input type="number" class="auto" id="loanYears" value="15" step="1" min="0"></div>
     <div class="field-row"><label>Taux nominal du pr&ecirc;t (%)</label><input type="number" class="auto" id="loanRate" value="3.5" step="0.01" min="0"></div>
@@ -438,7 +442,7 @@ table input[type=date],table input[type=number]{width:100%;background:var(--pane
     <div class="tab-panel active" id="tabDiffere">
       <div class="scrollbox">
         <table>
-          <thead><tr><th>Palier</th><th>Date</th><th>Appel</th><th>Pool avant</th><th>Cash apport</th><th>A lever</th><th>Au-del&agrave; objectif</th><th>PTZ</th><th>Pr&ecirc;t</th><th>Pool restant</th><th>Apport requis cum.</th><th>A lever cum.</th></tr></thead>
+          <thead><tr><th>Palier</th><th>Date</th><th>Appel</th><th>Pool avant</th><th>Cash apport</th><th>A lever</th><th>Au-del&agrave; objectif</th><th>Pr&ecirc;t A.L.</th><th>PTZ</th><th>Pr&ecirc;t</th><th>Pool restant</th><th>Apport requis cum.</th><th>A lever cum.</th></tr></thead>
           <tbody id="savingsTableDiffere"></tbody>
         </table>
       </div>
@@ -446,7 +450,7 @@ table input[type=date],table input[type=number]{width:100%;background:var(--pane
     <div class="tab-panel" id="tabProrata">
       <div class="scrollbox">
         <table>
-          <thead><tr><th>Palier</th><th>Date</th><th>Part apport</th><th>Pool avant</th><th>Apport utilis&eacute;</th><th>A lever</th><th>Pr&ecirc;t</th><th>PTZ</th></tr></thead>
+          <thead><tr><th>Palier</th><th>Date</th><th>Part apport</th><th>Pool avant</th><th>Apport utilis&eacute;</th><th>A lever</th><th>Pr&ecirc;t</th><th>Pr&ecirc;t A.L.</th><th>PTZ</th></tr></thead>
           <tbody id="savingsTableProrata"></tbody>
         </table>
       </div>
@@ -466,6 +470,11 @@ table input[type=date],table input[type=number]{width:100%;background:var(--pane
   </div>
 
   <div class="panel">
+    <h2 data-tooltip="Pr&ecirc;t Accession Action Logement (ex &laquo;&nbsp;1% patronal&nbsp;&raquo;) : jusqu'&agrave; 30&nbsp;000&euro; &agrave; 1% fixe, r&eacute;serv&eacute; aux salari&eacute;s d'entreprises priv&eacute;es non agricoles de 10+ salari&eacute;s (50+ en agricole), sous plafond de ressources RFR N-2, cumulable avec le PTZ. Mobilis&eacute; juste apr&egrave;s l'apport dans la simulation d'&eacute;pargne, avant le PTZ et le pr&ecirc;t principal.">Pr&ecirc;t Action Logement</h2>
+    <div class="kpi-grid" id="empLoansKpi"></div>
+  </div>
+
+  <div class="panel">
     <h2>D&eacute;tail de l'assurance emprunteur</h2>
     <div class="kpi-grid" id="insuranceKpi"></div>
     <div class="small-print">Comparer les offres : <a href="https://www.lesfurets.com/assurance-emprunteur" target="_blank">Les Furets - Assurance emprunteur (comparateur not&eacute; parmi les mieux class&eacute;s)</a></div>
@@ -476,7 +485,7 @@ table input[type=date],table input[type=number]{width:100%;background:var(--pane
     <div class="note" style="margin-bottom:8px">Avant livraison : int&eacute;r&ecirc;ts intercalaires. Apr&egrave;s livraison : amortissement classique.</div>
     <div class="scrollbox">
       <table>
-        <thead><tr><th>Date</th><th>Phase</th><th>Pr&ecirc;t</th><th>PTZ</th><th>Assurance</th><th>Total</th></tr></thead>
+        <thead><tr><th>Date</th><th>Phase</th><th>Pr&ecirc;t</th><th>Pr&ecirc;t A.L.</th><th>PTZ</th><th>Assurance</th><th>Total</th></tr></thead>
         <tbody id="scheduleTable"></tbody>
       </table>
     </div>
@@ -1035,6 +1044,16 @@ function ptzSchedule(ptzAmount, deferMonths, totalMonths){
   for(let m=1;m<=totalMonths;m++){ rows.push({month:m,payment: m>deferMonths ? monthlyPayment : 0}); }
   return {rows,monthlyPayment,deferMonths,repayMonths,totalMonths};
 }
+// Pr\u00eat Action Logement (et autre pr\u00eat compl\u00e9mentaire \u00e9ventuel): trait\u00e9 comme le PTZ --
+// d\u00e9bloqu\u00e9s en une fois \u00e0 la livraison plut\u00f4t que tir\u00e9s progressivement pendant le chantier (donc pas
+// d'int\u00e9r\u00eats intercalaires) -- mais avec un vrai taux d'int\u00e9r\u00eat (contrairement au PTZ) et sans assurance
+// emprunteur mod\u00e9lis\u00e9e ici (\u00e0 confirmer au cas par cas selon l'organisme pr\u00eateur). Renvoie un montant nul si
+// le montant ou la dur\u00e9e est nul, pour \u00e9viter une division par z\u00e9ro tant que le champ n'est pas renseign\u00e9.
+function complementaryLoanSchedule(amount, annualRatePct, totalMonths){
+  if(amount<=0 || totalMonths<=0) return {payment:0, totalInterest:0, rows:[]};
+  const sched=amortizationSchedule(amount, annualRatePct, totalMonths/12, ()=>0);
+  return {payment:sched.payment, totalInterest:sched.totalInterest, rows:sched.rows};
+}
 function stagedLoanCost(drawEvents, livraisonDate, annualRatePct, postYears, insMonthlyFn){
   const validDraws=drawEvents.filter(d=>d.date && d.amount>0.5).sort((a,b)=>a.date-b.date);
   const monthlyRate=annualRatePct/100/12; const intercalaryRows=[];
@@ -1092,7 +1111,7 @@ function resetCeilingTo35(skipRun){
 }
 
 function computeScenarioMetrics(apport, years, ctx){
-  const loanAmount=Math.max(0, ctx.totalProjectCost - apport - ctx.ptzAmount);
+  const loanAmount=Math.max(0, ctx.totalProjectCost - apport - ctx.ptzAmount - ctx.empLoansAmount);
   function insMonthlyFn(balance,principal){ const base = ctx.degressive ? balance : principal; return base*ctx.combinedAnnualPctOfCapital/100/12; }
   const sched=amortizationSchedule(loanAmount, ctx.loanRate, years, insMonthlyFn);
   const ptzSched2=ptzSchedule(ctx.ptzAmount, ctx.ptzDefer, ctx.ptzTotalMonths);
@@ -1100,14 +1119,14 @@ function computeScenarioMetrics(apport, years, ctx){
   const ptzInsTotal = ptzInsMonthly*ctx.ptzTotalMonths;
   const loanInsMonthly = sched.rows.length ? sched.rows[0].insurance : 0;
   const totalInsurance = sched.totalInsurance + ptzInsTotal;
-  const totalCost = sched.totalInterest + totalInsurance + ctx.totalFeesCredit;
-  const monthlyDuringDefer = sched.payment + loanInsMonthly;
-  const monthlyPostPTZ = sched.payment + ptzSched2.monthlyPayment + loanInsMonthly + ptzInsMonthly;
+  const totalCost = sched.totalInterest + ctx.empLoansInterest + totalInsurance + ctx.totalFeesCredit;
+  const monthlyDuringDefer = sched.payment + loanInsMonthly + ctx.empLoansMonthly;
+  const monthlyPostPTZ = sched.payment + ptzSched2.monthlyPayment + ctx.empLoansMonthly + loanInsMonthly + ptzInsMonthly;
   return {apport, years, loanAmount, payment:sched.payment, totalInterest:sched.totalInterest, totalInsurance, totalCost, monthlyDuringDefer, monthlyPostPTZ, ptzMonthly:ptzSched2.monthlyPayment};
 }
 function runOptimizer(ctx, apportDispo, monthlySavings, flexFundRate, monthsToLastPalier, ceiling, minYears, maxYears){
   const apportMin=apportDispo;
-  const apportMaxAchievable=Math.min(ctx.totalProjectCost-ctx.ptzAmount, futureValueWithSavings(apportDispo, monthlySavings, flexFundRate, Math.max(0,monthsToLastPalier)));
+  const apportMaxAchievable=Math.min(ctx.totalProjectCost-ctx.ptzAmount-ctx.empLoansAmount, futureValueWithSavings(apportDispo, monthlySavings, flexFundRate, Math.max(0,monthsToLastPalier)));
   const apportMax=Math.max(apportMin, apportMaxAchievable);
   const steps=40; const apportStep=Math.max(500, (apportMax-apportMin)/steps);
   let best=null; const allResults=[];
@@ -1142,6 +1161,7 @@ function runSimulation(){
   const apportTarget=val('apport');
   const rfr=val('rfr'); const ptzZone=document.getElementById('ptzZone').value; const ptzPersonnes=val('ptzPersonnes');
   const loanYears=val('loanYears'), loanRate=val('loanRate');
+  const empLoan1Amount=val('empLoan1Amount'), empLoan1Rate=val('empLoan1Rate'), empLoan1TotalMonths=val('empLoan1TotalMonths');
   const ins1Rate=val('ins1Rate'), ins1Quota=val('ins1Quota'), ins2Rate=val('ins2Rate'), ins2Quota=val('ins2Quota');
   const degressive=document.getElementById('insDegressive').checked;
   const insurePTZChecked=document.getElementById('insurePTZ').checked;
@@ -1237,8 +1257,15 @@ function runSimulation(){
   }
   const ptzAmount=val('ptzAmount'), ptzDefer=val('ptzDefer'), ptzTotalMonths=val('ptzTotalMonths');
 
+  // Prêts complémentaires (Action Logement + autre) -- calculés avant loanAmount car ils réduisent
+  // le montant à financer par le prêt principal, au même titre que l'apport et le PTZ.
+  const empLoan1Sched=complementaryLoanSchedule(empLoan1Amount, empLoan1Rate, empLoan1TotalMonths);
+  const empLoansAmount=empLoan1Amount;
+  const empLoansInterest=empLoan1Sched.totalInterest;
+  const empLoansMonthly=empLoan1Sched.payment;
+
   const totalProjectCost=priceAfterRemise+fraisNotaire+fraisAgence+fraisMobilier+fraisGarantie+fraisDossier+fraisCourtage+fraisIRA;
-  let loanAmount=totalProjectCost-apportTarget-ptzAmount;
+  let loanAmount=totalProjectCost-apportTarget-ptzAmount-empLoansAmount;
   const overFunded=loanAmount<0;
   if(loanAmount<0) loanAmount=0;
 
@@ -1306,7 +1333,7 @@ function runSimulation(){
 
   const monthlySavings=(salary1+salary2)*savingsRate/100;
   const monthlyFlexRate=Math.pow(1+flexFundRate/100,1/12)-1;
-  let poolD=apportDispo, curD=refDate, apportBudgetUsed=0, ptzBudgetUsed=0, aLeverCumule=0;
+  let poolD=apportDispo, curD=refDate, apportBudgetUsed=0, empLoansBudgetUsed=0, ptzBudgetUsed=0, aLeverCumule=0;
   const savingsRowsDiffere = vefaRows.map(r=>{
     const months = r.date ? Math.max(0, monthsBetween(curD, r.date)) : 0;
     for(let i=0;i<months;i++){ poolD = poolD*(1+monthlyFlexRate) + monthlySavings; }
@@ -1320,16 +1347,20 @@ function runSimulation(){
     const cashBeyondObjectif = useCashBeyond ? Math.min(poolD, afterApportCall) : 0;
     poolD -= cashBeyondObjectif;
     const afterExtraCash = afterApportCall - cashBeyondObjectif;
+    const remainingEmpLoansBudget = Math.max(0, empLoansAmount - empLoansBudgetUsed);
+    const empLoansEtape = Math.min(afterExtraCash, remainingEmpLoansBudget);
+    const afterEmpLoans = afterExtraCash - empLoansEtape;
     const remainingPtzBudget = Math.max(0, ptzAmount - ptzBudgetUsed);
-    const ptzEtape = Math.min(afterExtraCash, remainingPtzBudget);
-    const financeParPret = afterExtraCash - ptzEtape;
-    apportBudgetUsed += apportNecessaire; ptzBudgetUsed += ptzEtape; aLeverCumule += aLeverEtape;
-    return {name:r.name, date:r.date, callAmount:r.callAmount, poolAvant, cashApport, aLeverEtape, cashBeyondObjectif, ptzEtape, financeParPret, poolRestant:poolD, apportRequisCumule:apportBudgetUsed, aLeverCumule};
+    const ptzEtape = Math.min(afterEmpLoans, remainingPtzBudget);
+    const financeParPret = afterEmpLoans - ptzEtape;
+    apportBudgetUsed += apportNecessaire; empLoansBudgetUsed += empLoansEtape; ptzBudgetUsed += ptzEtape; aLeverCumule += aLeverEtape;
+    return {name:r.name, date:r.date, callAmount:r.callAmount, poolAvant, cashApport, aLeverEtape, cashBeyondObjectif, empLoansEtape, ptzEtape, financeParPret, poolRestant:poolD, apportRequisCumule:apportBudgetUsed, aLeverCumule};
   });
   const apportShortfallVsCible = savingsRowsDiffere.length ? savingsRowsDiffere[savingsRowsDiffere.length-1].aLeverCumule : 0;
   const apportUtiliseCumule = apportBudgetUsed;
 
   const apportPct = totalProjectCost>0 ? apportTarget/totalProjectCost : 0;
+  const empLoansPct = totalProjectCost>0 ? empLoansAmount/totalProjectCost : 0;
   const ptzPct = totalProjectCost>0 ? ptzAmount/totalProjectCost : 0;
   const pretPct = totalProjectCost>0 ? loanAmount/totalProjectCost : 0;
   let poolP=apportDispo, curP=refDate; let apportShareSum=0, apportOrganicSum=0, aLeverProrataSum=0;
@@ -1343,7 +1374,7 @@ function runSimulation(){
     poolP -= usedFromPool;
     const aLever = apportShare - usedFromPool;
     apportShareSum+=apportShare; apportOrganicSum+=usedFromPool; aLeverProrataSum+=aLever;
-    return {name:r.name, date:r.date, apportShare, poolAvant, usedFromPool, aLever, pretEtape:r.callAmount*pretPct, ptzEtape:r.callAmount*ptzPct};
+    return {name:r.name, date:r.date, apportShare, poolAvant, usedFromPool, aLever, pretEtape:r.callAmount*pretPct, empLoansEtape:r.callAmount*empLoansPct, ptzEtape:r.callAmount*ptzPct};
   });
   const feesShareOfApport = Math.max(0, apportTarget - apportShareSum);
 
@@ -1356,11 +1387,11 @@ function runSimulation(){
   const ptzInsuranceMonthly = insurePTZChecked ? ptzAmount*combinedAnnualPctOfCapital/100/12 : 0;
   const ptzInsuranceTotal = ptzInsuranceMonthly*ptzTotalMonths;
   const totalInsuranceAll = staged.totalInsurance + ptzInsuranceTotal;
-  const avgMonthlyPostLivraison = staged.postSched.payment + ptzSched.monthlyPayment + (staged.postSched.rows.length ? staged.postSched.rows[0].insurance : 0) + ptzInsuranceMonthly;
+  const avgMonthlyPostLivraison = staged.postSched.payment + ptzSched.monthlyPayment + empLoansMonthly + (staged.postSched.rows.length ? staged.postSched.rows[0].insurance : 0) + ptzInsuranceMonthly;
 
   const lastPalierDate=livraisonDate;
   const monthsToLastPalier = lastPalierDate ? Math.max(0, monthsBetween(refDate,lastPalierDate)) : 0;
-  const ctx={totalProjectCost, ptzAmount, ptzDefer, ptzTotalMonths, loanRate, degressive, insurePTZChecked, combinedAnnualPctOfCapital, totalFeesCredit};
+  const ctx={totalProjectCost, ptzAmount, ptzDefer, ptzTotalMonths, loanRate, degressive, insurePTZChecked, combinedAnnualPctOfCapital, totalFeesCredit, empLoansAmount, empLoansInterest, empLoansMonthly};
   const optResult=runOptimizer(ctx, apportDispo, monthlySavings, flexFundRate, monthsToLastPalier, mensualiteCeiling, optMinYears, optMaxYears);
   lastReco=optResult;
 
@@ -1386,26 +1417,33 @@ function runSimulation(){
 
   document.getElementById('kpiGrid').innerHTML=''
     +'<div class="kpi"><div class="label">Prix apr\u00e8s remise</div><div class="value">'+eur(priceAfterRemise)+'</div></div>'
-    +'<div class="kpi" data-tooltip="= prix apr\u00e8s remise + frais li\u00e9s \u00e0 l acquisition + frais li\u00e9s au cr\u00e9dit. C est le montant r\u00e9el que apport + PTZ + pr\u00eat doivent couvrir ensemble."><div class="label">Co\u00fbt total \u00e0 financer</div><div class="value">'+eur(totalProjectCost)+'</div></div>'
+    +'<div class="kpi" data-tooltip="= prix apr\u00e8s remise + frais li\u00e9s \u00e0 l acquisition + frais li\u00e9s au cr\u00e9dit. C est le montant r\u00e9el que apport + Pr\u00eat Action Logement + PTZ + pr\u00eat doivent couvrir ensemble."><div class="label">Co\u00fbt total \u00e0 financer</div><div class="value">'+eur(totalProjectCost)+'</div></div>'
     +'<div class="kpi"><div class="label">Apport cible</div><div class="value accent">'+eur(apportTarget)+'</div></div>'
+    +(empLoansAmount>0.5 ? '<div class="kpi" data-tooltip="Pr\u00eat Accession Action Logement (ex &laquo;&nbsp;1% patronal&nbsp;&raquo;) : jusqu\'\u00e0 30\u00a0000\u20ac \u00e0 1% fixe, r\u00e9serv\u00e9 aux salari\u00e9s d\'entreprises priv\u00e9es de 10+ salari\u00e9s, sous plafond de ressources RFR N-2. Demand\u00e9 directement aupr\u00e8s d\'Action Logement, en plus du PTZ et du pr\u00eat bancaire."><div class="label">Pr\u00eat Action Logement</div><div class="value accent">'+eur(empLoansAmount)+'</div></div>' : '')
     +'<div class="kpi"><div class="label">PTZ'+(!eligible && rfr>0 && priceAfterRemise>0 ? ' <span style="color:var(--danger)">\u2717 Non \u00e9ligible</span>' : '')+'</div><div class="value accent">'+eur(ptzAmount)+'</div></div>'
     +'<div class="kpi"><div class="label">Pr\u00eat principal</div><div class="value '+(overFunded?'danger':'')+'">'+eur(loanAmount)+'</div></div>'
-    +'<div class="kpi" data-tooltip="Mensualit\u00e9 repr\u00e9sentative une fois la livraison effectu\u00e9e'+(eligible?' et le diff\u00e9r\u00e9 PTZ termin\u00e9 : pr\u00eat principal + PTZ + assurance emprunteur.':' : pr\u00eat principal + assurance emprunteur.')+'"><div class="label">Mensualit\u00e9 moyenne (post-livraison'+(eligible?', PTZ actif':'')+')</div><div class="value">'+eur2(avgMonthlyPostLivraison)+'</div></div>'
+    +'<div class="kpi" data-tooltip="Mensualit\u00e9 repr\u00e9sentative une fois la livraison effectu\u00e9e'+(eligible?' et le diff\u00e9r\u00e9 PTZ termin\u00e9 : pr\u00eat principal + PTZ'+(empLoansAmount>0.5?' + Pr\u00eat Action Logement':'')+' + assurance emprunteur.':' : pr\u00eat principal'+(empLoansAmount>0.5?' + Pr\u00eat Action Logement':'')+' + assurance emprunteur.')+'"><div class="label">Mensualit\u00e9 moyenne (post-livraison'+(eligible?', PTZ actif':'')+')</div><div class="value">'+eur2(avgMonthlyPostLivraison)+'</div></div>'
     +'<div class="kpi"><div class="label">Dur\u00e9e amortissement</div><div class="value">'+loanYears+' ans</div></div>'
     +'<div class="kpi"><div class="label">Taux nominal</div><div class="value">'+loanRate.toFixed(2)+'%</div></div>';
   document.getElementById('consistencyNote').innerHTML = overFunded
-    ? 'Apport + PTZ d\u00e9passent le co\u00fbt total \u00e0 financer de '+eur(Math.abs(totalProjectCost-apportTarget-ptzAmount))+'.'
-    : 'Coh\u00e9rent : Apport ('+eur(apportTarget)+') + PTZ ('+eur(ptzAmount)+') + Pr\u00eat ('+eur(loanAmount)+') = '+eur(apportTarget+ptzAmount+loanAmount)+' ~= Co\u00fbt total \u00e0 financer ('+eur(totalProjectCost)+')';
+    ? 'Apport'+(empLoansAmount>0.5?' + Pr\u00eat Action Logement':'')+' + PTZ d\u00e9passent le co\u00fbt total \u00e0 financer de '+eur(Math.abs(totalProjectCost-apportTarget-ptzAmount-empLoansAmount))+'.'
+    : 'Coh\u00e9rent : Apport ('+eur(apportTarget)+')'+(empLoansAmount>0.5?' + Pr\u00eat Action Logement ('+eur(empLoansAmount)+')':'')+' + PTZ ('+eur(ptzAmount)+') + Pr\u00eat ('+eur(loanAmount)+') = '+eur(apportTarget+empLoansAmount+ptzAmount+loanAmount)+' ~= Co\u00fbt total \u00e0 financer ('+eur(totalProjectCost)+')';
 
-  const totalCreditCost=staged.totalInterest+totalInsuranceAll+totalFeesCredit;
+  const totalCreditCost=staged.totalInterest+empLoansInterest+totalInsuranceAll+totalFeesCredit;
+  // Displayed total is the sum of the already-rounded line items below, not a separate rounding of
+  // the precise total -- otherwise two independently-rounded numbers (e.g. 4403+64894=69297) can land
+  // 1€ away from a total rounded straight from the unrounded sum (e.g. 142504 instead of 142505),
+  // which reads as a math error even though both numbers are individually correct.
+  const displayedCreditCost = Math.round(staged.totalIntercalaryInterest) + Math.round(staged.postSched.totalInterest) + Math.round(empLoansInterest) + Math.round(totalInsuranceAll) + Math.round(totalFeesCredit);
   document.getElementById('totalCostKpi').innerHTML=''
     +'<div class="kpi"><div class="label">Int\u00e9r\u00eats intercalaires</div><div class="value warn">'+eur(staged.totalIntercalaryInterest)+'</div></div>'
     +'<div class="kpi"><div class="label">Int\u00e9r\u00eats post-livraison</div><div class="value warn">'+eur(staged.postSched.totalInterest)+'</div></div>'
+    +(empLoansInterest>0.5 ? '<div class="kpi"><div class="label">Int\u00e9r\u00eats Pr\u00eat Action Logement</div><div class="value warn">'+eur(empLoansInterest)+'</div></div>' : '')
     +'<div class="kpi"><div class="label">Assurance totale pr\u00eat + PTZ</div><div class="value warn">'+eur(totalInsuranceAll)+'</div></div>'
     +'<div class="kpi"><div class="label">Frais li\u00e9s au cr\u00e9dit</div><div class="value">'+eur(totalFeesCredit)+'</div></div>'
     +'<div class="kpi"><div class="label">Frais li\u00e9s \u00e0 l acquisition</div><div class="value">'+eur(totalFeesAcquisition)+'</div></div>'
-    +'<div class="kpi" data-tooltip="= int\u00e9r\u00eats intercalaires + int\u00e9r\u00eats post-livraison + assurance + frais li\u00e9s au cr\u00e9dit. Change selon le sc\u00e9nario Diff\u00e9r\u00e9/Prorata et selon le r\u00e9glage Utiliser cash au-del\u00e0 objectif. Les frais li\u00e9s \u00e0 l acquisition notaire, agence, mobilier ne sont volontairement pas inclus ici -- voir Co\u00fbt total \u00e0 financer -- mais leur financement via le pr\u00eat augmente d\u00e9j\u00e0 les int\u00e9r\u00eats ci-dessus au prorata du montant emprunt\u00e9."><div class="label">Co\u00fbt total du cr\u00e9dit</div><div class="value danger">'+eur(totalCreditCost)+'</div></div>'
-    +'<div class="kpi" data-tooltip="= pr\u00eat + int\u00e9r\u00eats + assurance + PTZ. Exclut volontairement les frais (total '+eur(totalFeesCredit+totalFeesAcquisition)+'), pay\u00e9s une fois, jamais rembours\u00e9s via mensualit\u00e9s -- contrairement au capital, aux int\u00e9r\u00eats et \u00e0 l assurance qui s \u00e9talent sur toute la dur\u00e9e."><div class="label">Montant total rembours\u00e9</div><div class="value">'+eur(staged.totalDrawn+staged.totalInterest+totalInsuranceAll+ptzAmount)+'</div></div>';
+    +'<div class="kpi" data-tooltip="= int\u00e9r\u00eats intercalaires + int\u00e9r\u00eats post-livraison + int\u00e9r\u00eats Pr\u00eat Action Logement + assurance + frais li\u00e9s au cr\u00e9dit (chaque montant arrondi \u00e0 l euro avant addition, d o\u00f9 un &eacute;cart possible de 1&euro; avec la somme des valeurs non arrondies). Change selon le sc\u00e9nario Diff\u00e9r\u00e9/Prorata et selon le r\u00e9glage Utiliser cash au-del\u00e0 objectif. Les frais li\u00e9s \u00e0 l acquisition notaire, agence, mobilier ne sont volontairement pas inclus ici -- voir Co\u00fbt total \u00e0 financer -- mais leur financement via le pr\u00eat augmente d\u00e9j\u00e0 les int\u00e9r\u00eats ci-dessus au prorata du montant emprunt\u00e9."><div class="label">Co\u00fbt total du cr\u00e9dit</div><div class="value danger">'+eur(displayedCreditCost)+'</div></div>'
+    +'<div class="kpi" data-tooltip="= pr\u00eat + int\u00e9r\u00eats + assurance + PTZ + Pr\u00eat Action Logement. Exclut volontairement les frais (total '+eur(totalFeesCredit+totalFeesAcquisition)+'), pay\u00e9s une fois, jamais rembours\u00e9s via mensualit\u00e9s -- contrairement au capital, aux int\u00e9r\u00eats et \u00e0 l assurance qui s \u00e9talent sur toute la dur\u00e9e."><div class="label">Montant total rembours\u00e9</div><div class="value">'+eur(staged.totalDrawn+staged.totalInterest+empLoansAmount+empLoansInterest+totalInsuranceAll+ptzAmount)+'</div></div>';
 
   document.getElementById('savingsKpi').innerHTML=''
     +'<div class="kpi"><div class="label">\u00c9pargne mensuelle</div><div class="value accent">'+eur2(monthlySavings)+'</div></div>'
@@ -1425,10 +1463,10 @@ function runSimulation(){
       ? 'OK'
       : (dejaLeve ? eur(r.aLeverCumule)+' <span class="deja-levee">d\u00e9j\u00e0 lev\u00e9</span>' : eur(r.aLeverCumule));
     prevApportRequisCumule=r.apportRequisCumule; prevALeverCumule=r.aLeverCumule;
-    return '<tr><td>'+r.name+objectifTag+'</td><td>'+fmtDate(r.date)+'</td><td>'+eur(r.callAmount)+'</td><td>'+eur(r.poolAvant)+'</td><td>'+eur(r.cashApport)+'</td><td>'+(r.aLeverEtape>0.5?'<span class="row-short">'+eur(r.aLeverEtape)+'</span>':'<span class="row-ok">-</span>')+'</td><td>'+(r.cashBeyondObjectif>0.5?eur(r.cashBeyondObjectif):'-')+'</td><td>'+eur(r.ptzEtape)+'</td><td>'+(r.financeParPret>0.5?'<span class="row-short">'+eur(r.financeParPret)+'</span>':'<span class="row-ok">-</span>')+'</td><td>'+eur(r.poolRestant)+'</td><td>'+apportCumCell+'</td><td>'+aLeverCumCell+'</td></tr>';
+    return '<tr><td>'+r.name+objectifTag+'</td><td>'+fmtDate(r.date)+'</td><td>'+eur(r.callAmount)+'</td><td>'+eur(r.poolAvant)+'</td><td>'+eur(r.cashApport)+'</td><td>'+(r.aLeverEtape>0.5?'<span class="row-short">'+eur(r.aLeverEtape)+'</span>':'<span class="row-ok">-</span>')+'</td><td>'+(r.cashBeyondObjectif>0.5?eur(r.cashBeyondObjectif):'-')+'</td><td>'+(r.empLoansEtape>0.5?eur(r.empLoansEtape):'-')+'</td><td>'+eur(r.ptzEtape)+'</td><td>'+(r.financeParPret>0.5?'<span class="row-short">'+eur(r.financeParPret)+'</span>':'<span class="row-ok">-</span>')+'</td><td>'+eur(r.poolRestant)+'</td><td>'+apportCumCell+'</td><td>'+aLeverCumCell+'</td></tr>';
   }).join('');
   document.getElementById('savingsTableProrata').innerHTML=savingsRowsProrata.map(r=>{
-    return '<tr><td>'+r.name+'</td><td>'+fmtDate(r.date)+'</td><td>'+eur(r.apportShare)+'</td><td>'+eur(r.poolAvant)+'</td><td>'+eur(r.usedFromPool)+'</td><td>'+(r.aLever>0.5?'<span class="row-short">'+eur(r.aLever)+'</span>':'<span class="row-ok">-</span>')+'</td><td>'+eur(r.pretEtape)+'</td><td>'+eur(r.ptzEtape)+'</td></tr>';
+    return '<tr><td>'+r.name+'</td><td>'+fmtDate(r.date)+'</td><td>'+eur(r.apportShare)+'</td><td>'+eur(r.poolAvant)+'</td><td>'+eur(r.usedFromPool)+'</td><td>'+(r.aLever>0.5?'<span class="row-short">'+eur(r.aLever)+'</span>':'<span class="row-ok">-</span>')+'</td><td>'+eur(r.pretEtape)+'</td><td>'+eur(r.empLoansEtape)+'</td><td>'+eur(r.ptzEtape)+'</td></tr>';
   }).join('');
   document.getElementById('aLeverSummary').innerHTML = activeScenario==='differe'
     ? 'Lecture (Diff\u00e9r\u00e9) : l\'apport couvre en priorit\u00e9 jusqu\'\u00e0 \u00e9puisement de l\'objectif de '+eur(apportTarget)+'. Une fois atteint, les colonnes cumul\u00e9es restent affich\u00e9es en gris (d\u00e9j\u00e0 r\u00e8gl\u00e9, pas une nouvelle demande).'
@@ -1447,6 +1485,12 @@ function runSimulation(){
     +'<div class="kpi"><div class="label">Diff\u00e9r\u00e9 depuis livraison</div><div class="value">'+ptzDefer+' mois</div></div>'
     +'<div class="kpi"><div class="label">Dur\u00e9e remboursement</div><div class="value">'+ptzSched.repayMonths+' mois</div></div>'
     +'<div class="kpi"><div class="label">Mensualit\u00e9 apr\u00e8s diff\u00e9r\u00e9</div><div class="value accent">'+eur2(ptzSched.monthlyPayment)+'</div></div>';
+  document.getElementById('empLoansKpi').innerHTML=''
+    +'<div class="kpi"><div class="label">Montant</div><div class="value">'+eur(empLoan1Amount)+'</div></div>'
+    +'<div class="kpi"><div class="label">Taux fixe</div><div class="value">'+empLoan1Rate.toFixed(2)+'%</div></div>'
+    +'<div class="kpi"><div class="label">Dur\u00e9e</div><div class="value">'+(empLoan1TotalMonths/12).toFixed(0)+' ans</div></div>'
+    +'<div class="kpi"><div class="label">Mensualit\u00e9 hors assurance</div><div class="value accent">'+eur2(empLoan1Sched.payment)+'</div></div>'
+    +'<div class="kpi"><div class="label">Int\u00e9r\u00eats totaux</div><div class="value warn">'+eur(empLoansInterest)+'</div></div>';
   document.getElementById('insuranceKpi').innerHTML=''
     +'<div class="kpi"><div class="label">Taux combin\u00e9 annuel</div><div class="value">'+combinedAnnualPctOfCapital.toFixed(3)+'%</div></div>'
     +'<div class="kpi"><div class="label">Assurance pr\u00eat</div><div class="value warn">'+eur(staged.totalInsurance)+'</div></div>'
@@ -1455,10 +1499,12 @@ function runSimulation(){
 
   const ptzRowsAnchored = ptzSched.rows.map(r=>({date: livraisonDate ? addMonths(livraisonDate, r.month-1) : null, payment:r.payment}));
   const postRowsAnchored = staged.postSched.rows.map(r=>({date: livraisonDate ? addMonths(livraisonDate, r.month-1) : null, payment:r.payment, insurance:r.insurance}));
+  const empLoan1RowsAnchored = empLoan1Sched.rows.map(r=>({date: livraisonDate ? addMonths(livraisonDate, r.month-1) : null, payment:r.payment}));
   const setDates=new Set();
   staged.intercalaryRows.forEach(r=>setDates.add(r.date.getTime()));
   postRowsAnchored.forEach(r=>{ if(r.date) setDates.add(r.date.getTime()); });
   ptzRowsAnchored.forEach(r=>{ if(r.date) setDates.add(r.date.getTime()); });
+  empLoan1RowsAnchored.forEach(r=>{ if(r.date) setDates.add(r.date.getTime()); });
   const uniqueSorted=Array.from(setDates).sort((a,b)=>a-b).map(t=>new Date(t));
   const maxDisplay=60;
   let displayDates;
@@ -1471,22 +1517,24 @@ function runSimulation(){
   }
   let rowsHtml='';
   displayDates.forEach(item=>{
-    if(item.omitMarker){ rowsHtml+='<tr class="row-omitted"><td colspan="6">('+item.count+' lignes omises, valeurs inchang\u00e9es)</td></tr>'; return; }
+    if(item.omitMarker){ rowsHtml+='<tr class="row-omitted"><td colspan="7">('+item.count+' lignes omises, valeurs inchang\u00e9es)</td></tr>'; return; }
     const d=item.date;
     const inter=staged.intercalaryRows.find(r=>r.date.getTime()===d.getTime());
     const post=postRowsAnchored.find(r=>r.date && r.date.getTime()===d.getTime());
     const ptzR=ptzRowsAnchored.find(r=>r.date && r.date.getTime()===d.getTime());
+    const emp1R=empLoan1RowsAnchored.find(r=>r.date && r.date.getTime()===d.getTime());
     const loanPay = inter ? inter.payment : (post ? post.payment : 0);
     const loanIns = inter ? inter.insurance : (post ? post.insurance : 0);
     const ptzPay = ptzR ? ptzR.payment : 0;
     const ptzIns = (insurePTZChecked && ptzR) ? ptzInsuranceMonthly : 0;
+    const empLoansPay = emp1R ? emp1R.payment : 0;
     const phase = inter ? '<span class="row-intercalary">Intercalaire</span>' : (livraisonDate && d>=livraisonDate ? '<span class="row-ok">Amortissement</span>' : '-');
-    const total=loanPay+ptzPay+loanIns+ptzIns;
-    rowsHtml+='<tr><td>'+fmtDate(d)+'</td><td>'+phase+'</td><td>'+eur2(loanPay)+'</td><td>'+eur2(ptzPay)+'</td><td>'+eur2(loanIns+ptzIns)+'</td><td><strong>'+eur2(total)+'</strong></td></tr>';
+    const total=loanPay+ptzPay+empLoansPay+loanIns+ptzIns;
+    rowsHtml+='<tr><td>'+fmtDate(d)+'</td><td>'+phase+'</td><td>'+eur2(loanPay)+'</td><td>'+eur2(empLoansPay)+'</td><td>'+eur2(ptzPay)+'</td><td>'+eur2(loanIns+ptzIns)+'</td><td><strong>'+eur2(total)+'</strong></td></tr>';
   });
   document.getElementById('scheduleTable').innerHTML=rowsHtml;
 
-  lastResults={projectName:currentProjectName, commune, adresse, price, surface, prixM2Calc, prixM2Moyen, ecartEur, ecartPct, stade, remise, priceAfterRemise, totalProjectCost, apportTarget, apportPctOfPrice, ptzAmount, loanAmount, overFunded, loanYears, loanRate, ptzDefer, ptzRepayMonths:ptzSched.repayMonths, ptzMonthlyPayment:ptzSched.monthlyPayment, avgMonthlyPostLivraison, rfr, ptzZone, ptzPersonnes, ptzCeiling:ceilingPtz, ptzEligible:eligible, combinedAnnualPctOfCapital, totalInsuranceAll, totalFeesCredit, totalFeesAcquisition, totalCreditCost, vefaRows, savingsRowsDiffere, savingsRowsProrata, monthlySavings, apportDispo, flexFundRate, salary1, salary2, savingsRate, reco:optResult.best, mensualiteCeiling, apportMaxAchievable:optResult.apportMax, staged, activeScenario, apportUtiliseCumule, apportShortfallVsCible, negoExtrasTotal:updateNegoExtrasTotal()};
+  lastResults={projectName:currentProjectName, commune, adresse, price, surface, prixM2Calc, prixM2Moyen, ecartEur, ecartPct, stade, remise, priceAfterRemise, totalProjectCost, apportTarget, apportPctOfPrice, ptzAmount, empLoan1Amount, empLoan1Rate, empLoansAmount, empLoansInterest, empLoansMonthly, loanAmount, overFunded, loanYears, loanRate, ptzDefer, ptzRepayMonths:ptzSched.repayMonths, ptzMonthlyPayment:ptzSched.monthlyPayment, avgMonthlyPostLivraison, rfr, ptzZone, ptzPersonnes, ptzCeiling:ceilingPtz, ptzEligible:eligible, combinedAnnualPctOfCapital, totalInsuranceAll, totalFeesCredit, totalFeesAcquisition, totalCreditCost, vefaRows, savingsRowsDiffere, savingsRowsProrata, monthlySavings, apportDispo, flexFundRate, salary1, salary2, savingsRate, reco:optResult.best, mensualiteCeiling, apportMaxAchievable:optResult.apportMax, staged, activeScenario, apportUtiliseCumule, apportShortfallVsCible, negoExtrasTotal:updateNegoExtrasTotal()};
 
   if(currentProjectName) saveProject(currentProjectName, serializeState());
 }
@@ -1501,7 +1549,7 @@ function buildDiffereTableForPDF(r){
   const needsFullDetail = r.apportTarget > r.apportDispo;
 
   if(needsFullDetail){
-    const head = [['Palier','Date','Appel','Pool avant','Cash apport','A lever','Au-del\u00e0 objectif','PTZ','Pr\u00eat','Pool restant','Apport requis cum.','A lever cum.']];
+    const head = [['Palier','Date','Appel','Pool avant','Cash apport','A lever','Au-del\u00e0 objectif','Pr\u00eat A.L.','PTZ','Pr\u00eat','Pool restant','Apport requis cum.','A lever cum.']];
     let prevApportCum = -1, prevALeverCum = -1;
     const body = r.savingsRowsDiffere.map(row=>{
       const apportCumUnchanged = Math.abs(row.apportRequisCumule - prevApportCum) < 0.5;
@@ -1528,6 +1576,7 @@ function buildDiffereTableForPDF(r){
         pdfEur(row.cashApport),
         row.aLeverEtape > 0.5 ? pdfEur(row.aLeverEtape) : '-',
         row.cashBeyondObjectif > 0.5 ? pdfEur(row.cashBeyondObjectif) : '-',
+        row.empLoansEtape > 0.5 ? pdfEur(row.empLoansEtape) : '-',
         pdfEur(row.ptzEtape),
         row.financeParPret > 0.5 ? pdfEur(row.financeParPret) : '-',
         pdfEur(row.poolRestant),
@@ -1540,7 +1589,7 @@ function buildDiffereTableForPDF(r){
 
   // Simplified set: apport dispo already covers the target, so cash-apport/aLever-etape/apport-requis-cum
   // columns are always trivial -- show pool/au-dela/a-lever-cumule instead, which stay informative.
-  const head = [['Palier','Date','Appel','Pool avant','Au-del\u00e0 obj.','PTZ','Pr\u00eat','A lever cum.']];
+  const head = [['Palier','Date','Appel','Pool avant','Au-del\u00e0 obj.','Pr\u00eat A.L.','PTZ','Pr\u00eat','A lever cum.']];
   let prevALeverCumSimple = -1;
   const body = r.savingsRowsDiffere.map(row=>{
     const aLeverCumUnchanged = Math.abs(row.aLeverCumule - prevALeverCumSimple) < 0.5;
@@ -1555,6 +1604,7 @@ function buildDiffereTableForPDF(r){
       pdfEur(row.callAmount),
       pdfEur(row.poolAvant),
       row.cashBeyondObjectif > 0.5 ? pdfEur(row.cashBeyondObjectif) : '-',
+      row.empLoansEtape > 0.5 ? pdfEur(row.empLoansEtape) : '-',
       pdfEur(row.ptzEtape),
       row.financeParPret > 0.5 ? pdfEur(row.financeParPret) : '-',
       aLeverCumCell
@@ -1565,8 +1615,9 @@ function buildDiffereTableForPDF(r){
 function buildSummaryTableBody(r){
   const remiseEur = r.price - r.priceAfterRemise;
   const ptzUsed = r.ptzAmount > 0.5;
+  const empLoansUsed = r.empLoansAmount > 0.5;
   const ptzSuffix = ptzUsed ? '+PTZ' : '';
-  const totalFinancement = r.apportTarget + r.ptzAmount + r.loanAmount;
+  const totalFinancement = r.apportTarget + r.ptzAmount + r.empLoansAmount + r.loanAmount;
   const totalFrais = r.totalFeesAcquisition + r.totalFeesCredit;
   const INDENT = '\u00A0\u00A0\u00A0\u00A0'; // 4 non-breaking spaces -- visually nests a line under the bold total above it
 
@@ -1582,28 +1633,43 @@ function buildSummaryTableBody(r){
       {content: value, styles:{textColor:120, fontSize:7.5}}
     ];
   }
+  // "Total emprunté" line: every genuine debt component (PTZ, complementary loans, main loan) named
+  // and summed inline, so the reader sees what makes up the borrowed total without extra rows --
+  // zero-amount components are simply left out rather than shown as "+ 0 €".
+  function debtBreakdownLabel(){
+    const terms=[];
+    if(ptzUsed) terms.push('PTZ '+pdfEur(r.ptzAmount));
+    if(r.empLoan1Amount>0.5) terms.push('Action Logement '+pdfEur(r.empLoan1Amount));
+    terms.push('Pr\u00eat principal '+pdfEur(r.loanAmount));
+    return terms.length>1 ? ('Total emprunt\u00e9 : '+terms.join(' + ')) : terms[0];
+  }
 
-  return [
+  const body = [
     ['Prix initial', pdfEur(r.price)],
     ['Remise', pdfEur(remiseEur) + ' (' + r.remise.toFixed(2) + '%)'],
     ['Prix apr\u00e8s remise', pdfEur(r.priceAfterRemise)],
     ['Frais total', pdfEur(totalFrais)],
 
-    totalRow('Total financement (apport + PTZ + pr\u00eat)', pdfEur(totalFinancement)),
+    totalRow('Total financement (apport + PTZ + Pr\u00eat A.L. + pr\u00eat)', pdfEur(totalFinancement)),
     subRow('Apport cible'+(r.apportPctOfPrice!=null ? ' ('+Math.round(r.apportPctOfPrice)+'% du prix apr\u00e8s remise)' : ''), pdfEur(r.apportTarget)),
-    subRow(ptzUsed ? ('Total emprunt\u00e9 : PTZ '+pdfEur(r.ptzAmount)+' + Pr\u00eat principal '+pdfEur(r.loanAmount)) : 'Pr\u00eat principal', pdfEur(r.ptzAmount + r.loanAmount)),
+    subRow(debtBreakdownLabel(), pdfEur(r.ptzAmount + r.empLoansAmount + r.loanAmount)),
 
     ['Dur\u00e9e amortissement', r.loanYears + ' ans'],
     ['Taux nominal', r.loanRate.toFixed(2) + '%'],
     ['Mensualit\u00e9 moyenne (post-livraison'+(ptzUsed?', PTZ actif':'')+')', pdfEur(r.avgMonthlyPostLivraison)],
-
-    totalRow('Co\u00fbt total du cr\u00e9dit', pdfEur(r.totalCreditCost)),
-    subRow('Int\u00e9r\u00eats totaux (pr\u00eat)', pdfEur(r.staged.totalInterest)),
-    subRow('Assurance totale (pr\u00eat'+ptzSuffix+')', pdfEur(r.totalInsuranceAll)),
-    subRow('Frais li\u00e9s au cr\u00e9dit', pdfEur(r.totalFeesCredit)),
-
-    ['Frais li\u00e9s \u00e0 l\'acquisition (notaire, agence, mobilier)', pdfEur(r.totalFeesAcquisition)],
   ];
+  // Displayed total is the sum of the already-rounded line items below, not a separate rounding of
+  // the precise total -- otherwise two independently-rounded numbers can land 1€ away from a total
+  // rounded straight from the unrounded sum, which reads as a math error even when both are correct.
+  let displayedCreditCost = Math.round(r.staged.totalInterest) + Math.round(r.totalInsuranceAll) + Math.round(r.totalFeesCredit);
+  if(empLoansUsed) displayedCreditCost += Math.round(r.empLoansInterest);
+  body.push(totalRow('Co\u00fbt total du cr\u00e9dit', pdfEur(displayedCreditCost)));
+  body.push(subRow('Int\u00e9r\u00eats totaux (pr\u00eat)', pdfEur(r.staged.totalInterest)));
+  if(empLoansUsed) body.push(subRow('Int\u00e9r\u00eats Pr\u00eat Action Logement', pdfEur(r.empLoansInterest)));
+  body.push(subRow('Assurance totale (pr\u00eat'+ptzSuffix+')', pdfEur(r.totalInsuranceAll)));
+  body.push(subRow('Frais li\u00e9s au cr\u00e9dit', pdfEur(r.totalFeesCredit)));
+  body.push(['Frais li\u00e9s \u00e0 l\'acquisition (notaire, agence, mobilier)', pdfEur(r.totalFeesAcquisition)]);
+  return body;
 }
 function addNegotiationPage(doc, r, y){
   doc.addPage('a4','portrait'); y = 15;
