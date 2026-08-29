@@ -37,17 +37,25 @@ body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color
 .save-indicator{font-size:10.5px;color:var(--accent2);opacity:0;transition:opacity .3s;white-space:nowrap;}
 .save-indicator.show{opacity:1;}
 .file-btn-wrap{position:relative;display:inline-flex;align-items:center;gap:2px;}
-.file-dropdown{position:absolute;top:calc(100% + 4px);left:0;background:var(--panel2);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,.5);max-height:220px;overflow-y:auto;z-index:55;display:none;min-width:220px;}
-.file-btn-wrap:hover .file-dropdown,.file-btn-wrap:hover .contact-dropdown{display:block;}
+/* Outer hit-zone: flush against the button (top:100%, no dead pixel) and transparent/unclipped.
+   The visual gap lives in padding-top -- a real part of this box's own geometry, so hovering it
+   is hovering this element (a descendant of the button's wrap), never "empty space". The previous
+   attempt put an invisible bridge *inside* the scrollable panel below, but that panel has
+   overflow-y:auto, which forces the other axis to auto-clip too -- anything positioned outside its
+   own box (like a bridge sitting above it) was silently clipped away and never actually hoverable.
+   Keeping the padding on this outer, unclipped element avoids that trap entirely. */
+.file-dropdown{position:absolute;top:100%;left:0;padding-top:6px;z-index:55;display:none;min-width:220px;}
 .file-dropdown.show{display:block;}
+.file-dropdown-panel{background:var(--panel2);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,.5);max-height:min(360px,70vh);overflow-y:auto;}
 .file-dropdown-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;font-size:12px;color:var(--text);border-bottom:1px solid var(--border);cursor:pointer;white-space:nowrap;}
 .file-dropdown-item:last-child{border-bottom:none;}
 .file-dropdown-item:hover{background:var(--accent);color:#fff;}
 .file-dropdown-item .file-remove{color:var(--danger);font-size:12px;cursor:pointer;padding:2px 4px;flex:0 0 auto;}
 .file-dropdown-add{color:var(--accent2);font-weight:600;}
 .file-dropdown-empty{padding:8px 10px;font-size:11.5px;color:var(--muted);}
-.contact-dropdown{display:none;padding:12px;width:230px;position:absolute;top:calc(100% + 4px);left:0;background:var(--panel2);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,.5);z-index:56;}
+.contact-dropdown{position:absolute;top:100%;left:0;padding-top:6px;z-index:56;display:none;}
 .contact-dropdown.show{display:block;}
+.contact-dropdown-panel{padding:12px;width:230px;background:var(--panel2);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,.5);}
 .contact-field{margin-bottom:8px;}
 .contact-field:last-child{margin-bottom:0;}
 .contact-field label{display:block;font-size:10.5px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;}
@@ -225,9 +233,10 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
   .topbar-right-left{gap:8px;}
   table{font-size:11.5px;}
   th,td{padding:5px 6px;}
-  .file-dropdown{min-width:0;width:min(240px,85vw);}
+  .file-dropdown{min-width:0;}
+  .file-dropdown-panel{width:min(240px,85vw);}
   #negoAddDropdown{min-width:0;width:min(280px,85vw);}
-  .contact-dropdown{width:min(230px,85vw);}
+  .contact-dropdown-panel{width:min(230px,85vw);}
 }
 /* iOS Safari (and iOS Chrome, same engine) auto-zooms the whole page in whenever a focused form
    field has font-size below 16px. Every field on this page is under that threshold, so on a phone
@@ -246,8 +255,7 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
 <body>
 
 <div id="globalTooltip"></div>
-<input type="file" id="planFileInput" accept="application/pdf,image/*" style="display:none">
-<input type="file" id="brochureFileInput" accept="application/pdf,image/*" style="display:none">
+<input type="file" id="documentsFileInput" accept="application/pdf,image/*" style="display:none">
 
 <div class="topbar">
   <div class="title-wrap">
@@ -258,21 +266,19 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
   <div class="topbar-right">
     <div class="topbar-right-left">
       <button class="btn btn-secondary" onclick="newProject()">+ Nouveau projet</button>
-      <div class="file-btn-wrap" id="planBtnWrap">
-        <button class="btn btn-secondary" type="button" onclick="toggleFileDropdown('plan')">Plan</button>
-        <div class="file-dropdown" id="planDropdown"></div>
-      </div>
-      <div class="file-btn-wrap" id="brochureBtnWrap">
-        <button class="btn btn-secondary" type="button" onclick="toggleFileDropdown('brochure')">Brochure</button>
-        <div class="file-dropdown" id="brochureDropdown"></div>
+      <div class="file-btn-wrap" id="documentsBtnWrap">
+        <button class="btn btn-secondary" type="button" onclick="toggleFileDropdown('documents')">Documents</button>
+        <div class="file-dropdown" id="documentsDropdown"><div class="file-dropdown-panel"></div></div>
       </div>
       <div class="file-btn-wrap" id="contactBtnWrap">
         <button class="btn btn-secondary" type="button" onclick="toggleContactDropdown()">Contact</button>
         <div class="contact-dropdown" id="contactDropdown">
+          <div class="contact-dropdown-panel">
           <div class="contact-field"><label for="contactPromoteur">Promoteur</label><input type="text" class="auto" id="contactPromoteur" placeholder="ex: Prim'Arte"></div>
           <div class="contact-field"><label for="contactNom">Nom</label><input type="text" class="auto" id="contactNom" placeholder="Nom du contact"></div>
           <div class="contact-field"><label><a id="contactTelLink" href="#" data-tooltip="Appeler ce num&eacute;ro">T&eacute;l&eacute;phone</a></label><input type="tel" class="auto" id="contactTel" placeholder="06 12 34 56 78"></div>
           <div class="contact-field"><label><a id="contactEmailLink" href="#" data-tooltip="Envoyer un email">Email</a></label><input type="email" class="auto" id="contactEmail" placeholder="contact@promoteur.fr"></div>
+          </div>
         </div>
       </div>
       <span class="save-indicator" id="saveIndicator">enregistr&eacute;</span>
@@ -421,7 +427,7 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
   </div>
 
   <div class="panel">
-    <h2><span class="h2-title" data-tooltip="R&eacute;servation : le d&eacute;p&ocirc;t de garantie est plafonn&eacute; par la loi (Art. R261-28 CCH) &agrave; 5% si l'acte d&eacute;finitif est sign&eacute; sous 1 an, 2% entre 1 et 2 ans, et 0% au-del&agrave; de 2 ans -- et au-del&agrave; de ce d&eacute;lai, AUCUNE somme, m&ecirc;me forfaitaire, ne peut &ecirc;tre exig&eacute;e ou accept&eacute;e avant la signature de l'acte authentique (Art. L261-15 CCH). Les dates des paliers li&eacute;s au chantier (ancr&eacute;s sur le Mois de d&eacute;marrage construction) se d&eacute;calent automatiquement les uns par rapport aux autres lorsque vous modifiez l'une d'entre elles.">Calendrier des appels de fonds VEFA</span> <span class="tag">paliers, dates et % enti&egrave;rement &eacute;ditables</span></h2>
+    <h2><span class="h2-title" data-tooltip="R&eacute;servation : le d&eacute;p&ocirc;t de garantie est plafonn&eacute; par la loi (Art. R261-28 CCH) &agrave; 5% si l'acte d&eacute;finitif est sign&eacute; sous 1 an, 2% entre 1 et 2 ans, et 0% au-del&agrave; de 2 ans -- et au-del&agrave; de ce d&eacute;lai, AUCUNE somme, m&ecirc;me forfaitaire, ne peut &ecirc;tre exig&eacute;e ou accept&eacute;e avant la signature de l'acte authentique (Art. L261-15 CCH). Les dates des paliers li&eacute;s au chantier (ancr&eacute;s sur le Mois de d&eacute;marrage construction) se d&eacute;calent automatiquement les uns par rapport aux autres lorsque vous modifiez l'une d'entre elles.">Calendrier des appels de fonds VEFA</span> <span class="tag" data-tooltip="R&eacute;servation : le d&eacute;p&ocirc;t de garantie est plafonn&eacute; par la loi (Art. R261-28 CCH) &agrave; 5% si l'acte d&eacute;finitif est sign&eacute; sous 1 an, 2% entre 1 et 2 ans, et 0% au-del&agrave; de 2 ans -- et au-del&agrave; de ce d&eacute;lai, AUCUNE somme, m&ecirc;me forfaitaire, ne peut &ecirc;tre exig&eacute;e ou accept&eacute;e avant la signature de l'acte authentique (Art. L261-15 CCH). Les dates des paliers li&eacute;s au chantier (ancr&eacute;s sur le Mois de d&eacute;marrage construction) se d&eacute;calent automatiquement les uns par rapport aux autres lorsque vous modifiez l'une d'entre elles.">paliers, dates et % enti&egrave;rement &eacute;ditables</span></h2>
     <div class="note" style="margin-bottom:8px">Renommez, ajoutez ou supprimez un palier librement pour coller au calendrier de votre programme. Pour le premier palier uniquement, vous pouvez saisir soit le %, soit le montant directement (les deux se recalculent l'un l'autre). Montant et cumul restent vides tant qu'aucun prix d'acquisition n'est renseign&eacute;.</div>
     <div class="scrollbox vefa-scrollbox">
       <table class="vefa-table">
@@ -628,7 +634,7 @@ function pdfInt(x){ if(isNaN(x)) return '-'; const rounded=Math.round(x); const 
 function pdfEur(x){ if(isNaN(x)) return '-'; return pdfInt(x)+'\u00A0\u20ac'; }
 const PDF_DEJA_LEVE_SUFFIX = ' d\u00e9j\u00e0 lev\u00e9'; // marker (no parens) recognised by exportPDF's custom cell renderer
 function addMonths(dateObj,months){ const d=new Date(dateObj); d.setMonth(d.getMonth()+months); return d; }
-function fmtDate(d){ if(!d||isNaN(d.getTime())) return '-'; return d.toLocaleDateString('fr-FR',{month:'short',year:'numeric'}); }
+function fmtDate(d){ if(!d||isNaN(d.getTime())) return '-'; return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'}); }
 function dateToInputStr(d){ const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0'); return y+'-'+m+'-'+day; }
 function monthsBetween(d1,d2){ return (d2.getFullYear()-d1.getFullYear())*12 + (d2.getMonth()-d1.getMonth()); }
 function val(id){ return parseFloat(document.getElementById(id).value)||0; }
@@ -769,9 +775,45 @@ function clampOpenDropdowns(){
   document.querySelectorAll('.file-dropdown.show,.contact-dropdown.show,#negoAddDropdown.show').forEach(clampDropdownToViewport);
 }
 window.addEventListener('resize', clampOpenDropdowns);
-document.querySelectorAll('.file-btn-wrap').forEach(wrap=>{
-  wrap.addEventListener('mouseenter', ()=>{ clampDropdownToViewport(wrap.querySelector('.file-dropdown, .contact-dropdown')); });
-});
+// Documents/Contact dropdowns: the outer .file-dropdown/.contact-dropdown element sits flush
+// against the button (top:100%, no dead pixel) and carries the visual gap as padding-top -- a real
+// part of its own box, so hovering that gap is hovering this element (a descendant of the button's
+// wrap), never "empty space" outside any element. The actual background/border/shadow/scrolling
+// live on a nested .file-dropdown-panel / .contact-dropdown-panel, so the outer shell itself is
+// never clipped by overflow rules. That keeps the cursor's hit-tested element always the button or
+// a descendant of the dropdown while moving between them, so the wrapper never sees a spurious
+// mouseleave mid-transition -- letting us close immediately on mouseleave with no artificial delay.
+function initHoverIntentDropdowns(){
+  document.querySelectorAll('.file-btn-wrap').forEach(wrap=>{
+    const dd=wrap.querySelector('.file-dropdown, .contact-dropdown');
+    if(!dd) return;
+    wrap.addEventListener('mouseenter', ()=>{ dd.classList.add('show'); clampDropdownToViewport(dd); });
+    wrap.addEventListener('mouseleave', ()=>{ dd.classList.remove('show'); });
+  });
+}
+
+// ---- Lock the page's own scrollbar while the Documents dropdown is open AND actually scrolling
+// (i.e. it has more entries than fit in its max-height). Without this, scrolling inside the
+// dropdown list with a wheel/trackpad can "bleed through" once the list hits its own scroll limit,
+// scrolling the page underneath instead. Driven by a MutationObserver on both the 'show' class
+// (open/close, whether triggered by hover or click) and the panel's content (files added/removed
+// while already open), so it stays correct no matter which code path changed things -- no need to
+// call it manually from every place that can open/close/refresh the dropdown.
+function initDocumentsScrollLock(){
+  const dd=document.getElementById('documentsDropdown');
+  if(!dd) return;
+  const panel=dd.querySelector('.file-dropdown-panel');
+  if(!panel) return;
+  function sync(){
+    const isOpen=dd.classList.contains('show');
+    const isScrollable=panel.scrollHeight>panel.clientHeight+1;
+    document.body.style.overflow=(isOpen && isScrollable) ? 'hidden' : '';
+  }
+  new MutationObserver(sync).observe(dd, {attributes:true, attributeFilter:['class']});
+  new MutationObserver(sync).observe(panel, {childList:true, subtree:true});
+  window.addEventListener('resize', sync);
+  sync();
+}
 
 // ---- Contact promoteur dropdown ----
 function toggleContactDropdown(){
@@ -784,19 +826,17 @@ document.addEventListener('click', e=>{
   if(wrap && !wrap.contains(e.target)) document.getElementById('contactDropdown').classList.remove('show');
 });
 
-// ---- Plan/Brochure file dropdown (tap-to-toggle, for touch devices which have no :hover state) ----
+// ---- Documents file dropdown (tap-to-toggle, for touch devices which have no :hover state) ----
 function toggleFileDropdown(category){
   const dd=document.getElementById(category+'Dropdown');
   if(!dd) return;
   const wasShown=dd.classList.contains('show');
-  document.getElementById('planDropdown').classList.remove('show');
-  document.getElementById('brochureDropdown').classList.remove('show');
+  dd.classList.remove('show');
   if(!wasShown){ dd.classList.add('show'); clampDropdownToViewport(dd); }
 }
 document.addEventListener('click', e=>{
   if(!e.target.closest('.file-btn-wrap')){
-    document.getElementById('planDropdown').classList.remove('show');
-    document.getElementById('brochureDropdown').classList.remove('show');
+    document.getElementById('documentsDropdown').classList.remove('show');
   }
 });
 
@@ -978,8 +1018,8 @@ function deleteProjectStorage(name){ localStorage.removeItem(STORAGE_PREFIX+name
 let saveFlashTimeout=null;
 function flashSaveIndicator(){ const el=document.getElementById('saveIndicator'); el.classList.add('show'); clearTimeout(saveFlashTimeout); saveFlashTimeout=setTimeout(()=>el.classList.remove('show'),1200); }
 
-// ---- Multi-file storage (Plan + Brochure), per project, with hover dropdown ----
-const FILES_DB_NAME='vefaSimFilesDB', FILES_DB_VERSION=2, FILES_STORE='files', LEGACY_PLAN_STORE='plans';
+// ---- Multi-file storage (Documents), per project, with hover dropdown ----
+const FILES_DB_NAME='vefaSimFilesDB', FILES_DB_VERSION=2, FILES_STORE='files';
 function openFilesDB(){
   return new Promise((resolve,reject)=>{
     const req=indexedDB.open(FILES_DB_NAME, FILES_DB_VERSION);
@@ -988,31 +1028,13 @@ function openFilesDB(){
   });
 }
 function fileKey(category, projectName){ return category+'::'+projectName; }
-async function getLegacyPlanEntry(projectName){
-  const db=await openFilesDB();
-  if(!db.objectStoreNames.contains(LEGACY_PLAN_STORE)) return null;
-  return new Promise((resolve,reject)=>{
-    const tx=db.transaction(LEGACY_PLAN_STORE,'readonly');
-    const req=tx.objectStore(LEGACY_PLAN_STORE).get(projectName);
-    req.onsuccess=()=>resolve(req.result||null); req.onerror=e=>reject(e);
-  });
-}
 async function getFileEntries(category, projectName){
   const db=await openFilesDB();
-  const entries=await new Promise((resolve,reject)=>{
+  return new Promise((resolve,reject)=>{
     const tx=db.transaction(FILES_STORE,'readonly');
     const req=tx.objectStore(FILES_STORE).get(fileKey(category,projectName));
     req.onsuccess=()=>resolve(req.result||[]); req.onerror=e=>reject(e);
   });
-  if(entries.length===0 && category==='plan'){
-    const legacy=await getLegacyPlanEntry(projectName);
-    if(legacy && legacy.blob){
-      const migrated=[{id:'legacy_'+Date.now(), name:legacy.name, type:legacy.type, blob:legacy.blob, uploadedAt:legacy.uploadedAt||Date.now()}];
-      await setFileEntries('plan', projectName, migrated);
-      return migrated;
-    }
-  }
-  return entries;
 }
 async function setFileEntries(category, projectName, entries){
   const db=await openFilesDB();
@@ -1032,7 +1054,7 @@ async function renameFileCategoryProject(category, oldName, newName){
   if(entries.length){ await setFileEntries(category, newName, entries); await setFileEntries(category, oldName, []); }
 }
 async function deleteFileCategoryProject(category, projectName){ await setFileEntries(category, projectName, []); }
-const FILE_CATEGORY_LABELS={plan:'Ajouter un plan',brochure:'Ajouter une brochure'};
+const FILE_CATEGORY_LABELS={documents:'Ajouter document'};
 function fileDropdownAddItemHtml(category){
   return '<div class="file-dropdown-item file-dropdown-add" data-cat="'+category+'"><span>+ '+(FILE_CATEGORY_LABELS[category]||'Ajouter une fiche')+'</span></div>';
 }
@@ -1046,10 +1068,11 @@ function bindFileDropdownAddHandler(dd, category){
 async function refreshFileDropdown(category){
   const dd=document.getElementById(category+'Dropdown');
   if(!dd) return;
-  if(!currentProjectName){ dd.innerHTML=fileDropdownAddItemHtml(category)+'<div class="file-dropdown-empty">Aucun fichier</div>'; bindFileDropdownAddHandler(dd, category); return; }
+  const panel=dd.querySelector('.file-dropdown-panel');
+  if(!currentProjectName){ panel.innerHTML=fileDropdownAddItemHtml(category)+'<div class="file-dropdown-empty">Aucun fichier</div>'; bindFileDropdownAddHandler(dd, category); return; }
   const entries=await getFileEntries(category, currentProjectName);
-  if(!entries.length){ dd.innerHTML=fileDropdownAddItemHtml(category)+'<div class="file-dropdown-empty">Aucun fichier</div>'; bindFileDropdownAddHandler(dd, category); return; }
-  dd.innerHTML=fileDropdownAddItemHtml(category)+entries.map(e=>'<div class="file-dropdown-item" data-id="'+e.id+'"><span class="file-open" data-id="'+e.id+'">'+e.name+'</span><span class="file-remove" data-id="'+e.id+'" title="Supprimer">x</span></div>').join('');
+  if(!entries.length){ panel.innerHTML=fileDropdownAddItemHtml(category)+'<div class="file-dropdown-empty">Aucun fichier</div>'; bindFileDropdownAddHandler(dd, category); return; }
+  panel.innerHTML=fileDropdownAddItemHtml(category)+entries.map(e=>'<div class="file-dropdown-item" data-id="'+e.id+'"><span class="file-open" data-id="'+e.id+'">'+e.name+'</span><span class="file-remove" data-id="'+e.id+'" title="Supprimer">x</span></div>').join('');
   bindFileDropdownAddHandler(dd, category);
   dd.querySelectorAll('.file-open').forEach(el=>el.addEventListener('click', async ()=>{
     const entries2=await getFileEntries(category, currentProjectName);
@@ -1063,16 +1086,11 @@ async function refreshFileDropdown(category){
     refreshFileDropdown(category);
   }));
 }
-function refreshAllFileDropdowns(){ refreshFileDropdown('plan'); refreshFileDropdown('brochure'); }
-document.getElementById('planFileInput').addEventListener('change', async e=>{
+function refreshAllFileDropdowns(){ refreshFileDropdown('documents'); }
+document.getElementById('documentsFileInput').addEventListener('change', async e=>{
   const file=e.target.files[0]; if(!file || !currentProjectName) return;
-  await addFileEntry('plan', currentProjectName, file);
-  refreshFileDropdown('plan'); e.target.value='';
-});
-document.getElementById('brochureFileInput').addEventListener('change', async e=>{
-  const file=e.target.files[0]; if(!file || !currentProjectName) return;
-  await addFileEntry('brochure', currentProjectName, file);
-  refreshFileDropdown('brochure'); e.target.value='';
+  await addFileEntry('documents', currentProjectName, file);
+  refreshFileDropdown('documents'); e.target.value='';
 });
 
 // ---- Frais de notaire offerts (FNO) toggle ----
@@ -1117,7 +1135,7 @@ function commitTitleChange(){
   if(currentProjectName) deleteProjectStorage(currentProjectName);
   currentProjectName=newName;
   saveProject(currentProjectName, serializeState());
-  Promise.all([renameFileCategoryProject('plan', oldName, newName), renameFileCategoryProject('brochure', oldName, newName)]).then(refreshAllFileDropdowns);
+  renameFileCategoryProject('documents', oldName, newName).then(refreshAllFileDropdowns);
 }
 function nextAvailableName(base){
   const m=base.match(/^(.*?)(\d+)$/); let root=m?m[1]:base; let n=m?parseInt(m[2])+1:2;
@@ -1137,7 +1155,7 @@ function deleteCurrentProject(){
   if(!currentProjectName){ return; }
   if(!confirm('Cette action est irr\u00e9versible. Supprimer d\u00e9finitivement le projet "'+currentProjectName+'" et toutes ses donn\u00e9es ?')) return;
   const nameToDelete=currentProjectName;
-  deleteProjectStorage(nameToDelete); deleteFileCategoryProject('plan', nameToDelete); deleteFileCategoryProject('brochure', nameToDelete);
+  deleteProjectStorage(nameToDelete); deleteFileCategoryProject('documents', nameToDelete);
   const remaining=getProjectList();
   if(remaining.length>0){
     currentProjectName=remaining[0]; applyState(loadProjectState(remaining[0]));
@@ -2018,6 +2036,8 @@ window.onload=function(){
   bindAutoRecalc();
   initVefaTableEvents();
   bindTooltipDelegation();
+  initHoverIntentDropdowns();
+  initDocumentsScrollLock();
 
   const list=getProjectList();
   const lastActive=localStorage.getItem(STORAGE_LAST_ACTIVE);
