@@ -27,10 +27,6 @@ body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color
 .title-wrap .chevron{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:10px;pointer-events:none;}
 #projectDropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--panel2);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,.5);max-height:220px;overflow-y:auto;z-index:50;display:none;}
 #projectDropdown.show{display:block;}
-.dropdown-item{padding:8px 12px;font-size:13px;cursor:pointer;color:var(--text);border-bottom:1px solid var(--border);}
-.dropdown-item:hover{background:var(--accent);color:#fff;}
-.dropdown-item.current{color:var(--accent2);font-weight:600;}
-.dropdown-empty{padding:10px 12px;font-size:12px;color:var(--muted);}
 .topbar-right{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;}
 .topbar-right-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-self:start;}
 .topbar-right-right{justify-self:end;}
@@ -176,7 +172,6 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
 .link-line{font-size:12px;margin-top:8px;} .link-line a{color:var(--accent);}
 .small-print{font-size:10.5px;color:var(--muted);margin-top:10px;} .small-print a{color:var(--muted);text-decoration:underline;}
 .eligible-yes{color:var(--accent2);font-weight:700;} .eligible-no{color:var(--danger);font-weight:700;}
-.bottom-section{display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:start;}
 .tabs{display:flex;gap:2px;}
 .tab-btn{background:var(--bg);border:1px solid var(--border);border-bottom:none;color:var(--muted);padding:8px 14px;border-radius:6px 6px 0 0;font-size:12.5px;cursor:pointer;font-weight:600;position:relative;top:1px;}
 .tab-btn.active{background:var(--panel2);color:var(--text);}
@@ -210,7 +205,7 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
 .switch.sm{width:30px;height:18px;flex:0 0 30px;}
 .switch.sm .slider:before{height:12px;width:12px;left:2px;bottom:2px;}
 .switch.sm input:checked + .slider:before{transform:translateX(12px);}
-@media (max-width:900px){.grid,.topbar,.bottom-section{grid-template-columns:1fr;}.topbar-right{grid-template-columns:1fr;}.status-wrap{justify-self:start;}.topbar-right-right{justify-self:start;}}
+@media (max-width:900px){.grid,.topbar{grid-template-columns:1fr;}.topbar-right{grid-template-columns:1fr;}.status-wrap{justify-self:start;}.topbar-right-right{justify-self:start;}}
 @media (max-width:700px){.two-col{grid-template-columns:1fr;}}
 @media (max-width:480px){
   body{padding:12px;}
@@ -265,7 +260,6 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
   </div>
   <div class="topbar-right">
     <div class="topbar-right-left">
-      <button class="btn btn-secondary" onclick="newProject()">+ Nouveau projet</button>
       <div class="file-btn-wrap" id="documentsBtnWrap">
         <button class="btn btn-secondary" type="button" onclick="toggleFileDropdown('documents')">Documents</button>
         <div class="file-dropdown" id="documentsDropdown"><div class="file-dropdown-panel"></div></div>
@@ -363,6 +357,10 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
     <div class="field-row"><label data-tooltip="Calcul&eacute; automatiquement selon le bar&egrave;me officiel d&egrave;s que le RFR, la zone, le foyer et le type de logement sont renseign&eacute;s. Modifiable manuellement pour tester une offre bancaire r&eacute;elle.">Montant PTZ (&euro;)</label><input type="number" class="auto" id="ptzAmount" value="50000" step="1000" min="0" oninput="this.dataset.userSet='1'"></div>
     <div class="field-row"><label data-tooltip="Calcul&eacute; automatiquement selon le bar&egrave;me officiel. Modifiable manuellement pour tester une offre bancaire r&eacute;elle.">Diff&eacute;r&eacute; PTZ (mois depuis livraison)</label><input type="number" class="auto" id="ptzDefer" value="0" step="1" min="0" oninput="this.dataset.userSet='1'"></div>
     <div class="field-row"><label data-tooltip="Calcul&eacute; automatiquement selon le bar&egrave;me officiel. Modifiable manuellement pour tester une offre bancaire r&eacute;elle.">Dur&eacute;e totale PTZ (mois)</label><input type="number" class="auto" id="ptzTotalMonths" value="180" step="1" min="0" oninput="this.dataset.userSet='1'"></div>
+    <div class="checkbox-row">
+      <label class="switch"><input type="checkbox" class="auto" id="lissePTZ"><span class="slider"></span></label>
+      <label for="lissePTZ" data-tooltip="Certaines banques proposent un pr&ecirc;t principal &laquo;&nbsp;liss&eacute; sur le PTZ&nbsp;&raquo; : au lieu d'un pr&ecirc;t principal amorti normalement (mensualit&eacute; fixe du d&eacute;but &agrave; la fin), sa mensualit&eacute; est calcul&eacute;e pour &ecirc;tre PLUS &eacute;lev&eacute;e pendant le diff&eacute;r&eacute; du PTZ (o&ugrave; le PTZ ne paie rien), puis baisse d&egrave;s que le PTZ d&eacute;marre -- de sorte que la mensualit&eacute; TOTALE (pr&ecirc;t principal + PTZ) reste constante sur toute la dur&eacute;e. Sans ce r&eacute;glage (par d&eacute;faut), le pr&ecirc;t principal est amorti normalement, ind&eacute;pendamment du PTZ, ce qui donne une mensualit&eacute; totale plus basse pendant le diff&eacute;r&eacute; puis plus &eacute;lev&eacute;e une fois le PTZ activ&eacute;. Activez ce r&eacute;glage pour reproduire un devis de courtier/banque qui applique ce lissage.">Lisser le pr&ecirc;t principal sur le diff&eacute;r&eacute; du PTZ</label>
+    </div>
     <div class="section-title"><span data-tooltip="Pr&ecirc;t Accession Action Logement (ex &laquo;&nbsp;1% patronal&nbsp;&raquo; / &laquo;&nbsp;1% Logement&nbsp;&raquo;) : jusqu'&agrave; 30&nbsp;000&euro; &agrave; 1% fixe (hors assurance), plafonn&eacute; &agrave; 40% du co&ucirc;t total de l'op&eacute;ration, sur 25 ans maximum. R&eacute;serv&eacute; aux salari&eacute;s d'entreprises priv&eacute;es non agricoles de 10 salari&eacute;s et plus (50+ en agricole), sous plafond de ressources (RFR N-2), pour l'achat d'une r&eacute;sidence principale neuve ou ancienne -- cumulable avec le PTZ. Demande directement aupr&egrave;s d'Action Logement, s&eacute;par&eacute;ment du dossier bancaire. Dans la simulation, il est mobilis&eacute; juste apr&egrave;s l'apport (et avant le PTZ) &agrave; chaque appel de fonds -- comme le PTZ, il est trait&eacute; comme d&eacute;bloqu&eacute; en une fois et amorti &agrave; taux fixe &agrave; partir de la livraison, sans int&eacute;r&ecirc;ts intercalaires pendant la construction.">Pr&ecirc;t Action Logement</span><a class="inline-link" href="https://www.service-public.gouv.fr/particuliers/vosdroits/F37842" target="_blank">Info Vos Droits</a></div>
     <div class="field-row"><label data-tooltip="Pr&ecirc;t Accession Action Logement (ex '1% patronal' / '1% Logement') : jusqu'&agrave; 30&nbsp;000&euro; &agrave; 1% fixe (hors assurance), plafonn&eacute; &agrave; 40% du co&ucirc;t total de l'op&eacute;ration, sur 25 ans maximum. R&eacute;serv&eacute; aux salari&eacute;s d'entreprises priv&eacute;es non agricoles de 10 salari&eacute;s et plus (50+ en agricole), sous plafond de ressources (RFR N-2), pour l'achat d'une r&eacute;sidence principale neuve ou ancienne. Cumulable avec le PTZ. Laissez &agrave; 0&euro; si non applicable.">Pr&ecirc;t AL (1%) Montant (&euro;)</label><input type="number" class="auto" id="empLoan1Amount" value="0" step="500" min="0"></div>
     <div class="field-row"><label>Pr&ecirc;t AL Taux annuel (%)</label><input type="number" class="auto" id="empLoan1Rate" value="1" step="0.01" min="0"></div>
@@ -389,13 +387,12 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
     <h2>Emprunteurs et &eacute;pargne</h2>
     <div class="field-row"><label>Salaire net emprunteur 1 (&euro;/mois)</label><input type="number" class="auto" id="salary1" value="3000" step="10" min="0"></div>
     <div class="field-row"><label>Salaire net emprunteur 2 (&euro;/mois)</label><input type="number" class="auto" id="salary2" value="2000" step="10" min="0"></div>
+    <div class="field-row"><label data-tooltip="Utilis&eacute; par la Comparaison des dur&eacute;es de pr&ecirc;t pour juger si une mensualit&eacute; est finan&ccedil;able. La norme HCSF officielle (contraignante depuis 2022) est 35% des revenus nets, ASSURANCE COMPRISE. Certains courtiers communiquent encore un plafond &agrave; 33% appliqu&eacute; HORS ASSURANCE (convention plus ancienne mais toujours tr&egrave;s r&eacute;pandue en pratique, ex: certains devis de courtiers). Ce champ reste appliqu&eacute; au montant hors assurance -- ajustez le pourcentage selon la convention de votre banque/courtier plut&ocirc;t que de vous fier &agrave; une valeur fig&eacute;e.">Plafond d'endettement (%) hors assurance</label><input type="number" class="auto" id="debtRatioPct" value="35" step="0.5" min="0"></div>
     <div class="field-row"><label>% du salaire mis de c&ocirc;t&eacute; /mois</label><input type="number" class="auto" id="savingsRate" value="30" step="1" min="0"></div>
     <div class="field-row"><label>Rendement Flex Fund (% APY)</label><input type="number" class="auto" id="flexFundRate" value="2" step="0.01" min="0"></div>
     <div class="field-row"><label>Apport disponible aujourd'hui (&euro;)</label><input type="number" class="auto" id="apportDispo" value="50000" step="1000" min="0"></div>
     <div class="field-row"><label>Date de r&eacute;f&eacute;rence "aujourd'hui"</label><input type="date" class="auto" id="refDate"></div>
   </div>
-
-  <button class="btn btn-danger" style="width:100%" onclick="deleteCurrentProject()">Effacer ce projet</button>
 </div>
 
 <div>
@@ -496,7 +493,7 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
 
   <div class="panel">
     <h2>&Eacute;ch&eacute;ancier mensuel combin&eacute;</h2>
-    <div class="note" style="margin-bottom:8px">Avant livraison : int&eacute;r&ecirc;ts intercalaires. Apr&egrave;s livraison : amortissement classique.</div>
+    <div class="note" id="scheduleTableNote" style="margin-bottom:8px">Avant livraison : int&eacute;r&ecirc;ts intercalaires. Apr&egrave;s livraison : amortissement classique.</div>
     <div class="scrollbox">
       <table>
         <thead><tr><th>Date</th><th>Phase</th><th>Pr&ecirc;t</th><th>Pr&ecirc;t A.L.</th><th>PTZ</th><th>Assurance</th><th>Total</th></tr></thead>
@@ -504,32 +501,18 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
       </table>
     </div>
   </div>
-</div>
-</div>
-
-<div class="bottom-section">
-  <div class="panel highlight">
-    <h2>Param&egrave;tres de la recommandation</h2>
-    <div class="field-row"><label>Plafond mensualit&eacute; totale (&euro;/mois)</label><input type="number" class="auto" id="mensualiteCeiling" value="0" step="10" min="0"></div>
-    <div class="note" style="margin-bottom:8px"><span data-tooltip="Recalcul&eacute; automatiquement si vous changez les salaires. Modifiable manuellement pour tester un plafond plus prudent.">Auto = 35% des salaires nets</span></div>
-    <button class="btn btn-secondary" style="width:100%;margin-bottom:8px" onclick="resetCeilingTo35()">Recalculer 35%</button>
-    <div class="field-row"><label>Dur&eacute;e min. test&eacute;e (ann&eacute;es)</label><input type="number" class="auto" id="optMinYears" value="5" step="1" min="0"></div>
-    <div class="field-row"><label>Dur&eacute;e max. test&eacute;e (ann&eacute;es)</label><input type="number" class="auto" id="optMaxYears" value="25" step="1" min="0"></div>
-  </div>
 
   <div class="panel highlight">
-    <h2>Recommandation optimale</h2>
-    <div class="kpi-grid" id="recoKpi" style="margin-bottom:10px"></div>
-    <div class="note" id="recoNote" style="margin-bottom:10px"></div>
-    <button class="btn btn-gold" onclick="applyRecommendation()">Appliquer aux champs</button>
-    <hr style="border:none;border-top:1px solid var(--border);margin:14px 0">
+    <h2>Comparaison des dur&eacute;es de pr&ecirc;t <span class="tag" id="durationCompareScenarioTag" data-tooltip="Le montant tir&eacute; (staged.totalDrawn), les int&eacute;r&ecirc;ts intercalaires, le PTZ et le Pr&ecirc;t Action Logement restent ceux du sc&eacute;nario actif (Diff&eacute;r&eacute;/Prorata) et de l'apport actuellement renseign&eacute; ci-dessus -- seule la dur&eacute;e d'amortissement du pr&ecirc;t principal varie d'une ligne &agrave; l'autre.">scenario Diff&eacute;r&eacute;</span></h2>
+    <div class="note" id="durationCompareNote" style="margin-bottom:10px"></div>
     <div class="no-scroll-table">
       <table>
-        <thead><tr><th>Apport</th><th>Dur&eacute;e</th><th>Pr&ecirc;t</th><th>Mensualit&eacute;</th><th>Co&ucirc;t total</th></tr></thead>
-        <tbody id="recoTable"></tbody>
+        <thead><tr><th>Dur&eacute;e</th><th>Mensualit&eacute; post-livraison</th><th>Int&eacute;r&ecirc;ts totaux</th><th>Co&ucirc;t total du cr&eacute;dit</th><th>&Eacute;cart vs actuelle</th><th></th></tr></thead>
+        <tbody id="durationCompareTable"></tbody>
       </table>
     </div>
   </div>
+</div>
 </div>
 
 <div class="app-footer">
@@ -539,7 +522,7 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
 </div>
 
 <script>
-let lastResults=null, lastReco=null, lastPtzBareme=null, currentProjectName=null, defaultStateSnapshot=null, activeScenario='differe';
+let lastResults=null, lastPtzBareme=null, currentProjectName=null, defaultStateSnapshot=null, activeScenario='differe';
 const STORAGE_PREFIX='vefaSim_project_';
 const STORAGE_LIST_KEY='vefaSim_projectList';
 const STORAGE_LAST_ACTIVE='vefaSim_lastActive';
@@ -950,7 +933,7 @@ function bindTooltipDelegation(){
   document.body.addEventListener('touchstart', e=>{
     const el=e.target.closest('[data-tooltip]');
     if(!el){ if(touchTooltipTarget){ hideTooltip(); touchTooltipTarget=null; } return; }
-    if(e.target.closest('input, select, textarea, a, button, .nego-card, .file-dropdown-item, .dropdown-item, .nego-add-item')){
+    if(e.target.closest('input, select, textarea, a, button, .nego-card, .file-dropdown-item, .nego-add-item')){
       if(touchTooltipTarget){ hideTooltip(); touchTooltipTarget=null; }
       return;
     }
@@ -1113,9 +1096,22 @@ function updateFraisNotaireFNO(){
 
 function renderProjectDropdown(){
   const dd=document.getElementById('projectDropdown'); const list=getProjectList();
-  if(list.length===0){ dd.innerHTML='<div class="dropdown-empty">Aucun autre projet enregistr\u00e9</div>'; return; }
-  dd.innerHTML=list.map(n=>'<div class="dropdown-item '+(n===currentProjectName?'current':'')+'" data-name="'+n.replace(/"/g,'&quot;')+'">'+n+(n===currentProjectName?' (actuel)':'')+'</div>').join('');
-  dd.querySelectorAll('.dropdown-item').forEach(item=>item.addEventListener('mousedown', e=>{ e.preventDefault(); loadProjectByName(item.getAttribute('data-name')); hideProjectDropdown(); }));
+  let html='<div class="file-dropdown-item file-dropdown-add" id="projectAddNew"><span>+ Nouveau projet</span></div>';
+  html += list.length
+    ? list.map(n=>'<div class="file-dropdown-item" data-name="'+n.replace(/"/g,'&quot;')+'"><span'+(n===currentProjectName?' style="color:var(--accent2);font-weight:600"':'')+'>'+n+(n===currentProjectName?' (actuel)':'')+'</span><span class="file-remove" data-name="'+n.replace(/"/g,'&quot;')+'" title="Supprimer">x</span></div>').join('')
+    : '<div class="file-dropdown-empty">Aucun projet enregistr\u00e9</div>';
+  dd.innerHTML=html;
+  document.getElementById('projectAddNew').addEventListener('mousedown', e=>{ e.preventDefault(); hideProjectDropdown(); newProject(); });
+  dd.querySelectorAll('.file-dropdown-item:not(.file-dropdown-add)').forEach(item=>{
+    item.addEventListener('mousedown', e=>{
+      if(e.target.classList.contains('file-remove')) return;
+      e.preventDefault(); loadProjectByName(item.getAttribute('data-name')); hideProjectDropdown();
+    });
+  });
+  dd.querySelectorAll('.file-remove').forEach(el=>{
+    el.addEventListener('mousedown', e=>{ e.preventDefault(); e.stopPropagation(); });
+    el.addEventListener('click', e=>{ e.stopPropagation(); removeProjectFromDropdown(el.getAttribute('data-name')); });
+  });
 }
 function showProjectDropdown(){ renderProjectDropdown(); document.getElementById('projectDropdown').classList.add('show'); }
 function hideProjectDropdown(){ document.getElementById('projectDropdown').classList.remove('show'); }
@@ -1151,22 +1147,40 @@ function newProject(){
   currentProjectName=newName; document.getElementById('pageTitle').value=newName;
   switchTab('differe', true); runSimulation(); saveProject(currentProjectName, serializeState()); refreshAllFileDropdowns();
 }
-function deleteCurrentProject(){
-  if(!currentProjectName){ return; }
-  if(!confirm('Cette action est irr\u00e9versible. Supprimer d\u00e9finitivement le projet "'+currentProjectName+'" et toutes ses donn\u00e9es ?')) return;
-  const nameToDelete=currentProjectName;
-  deleteProjectStorage(nameToDelete); deleteFileCategoryProject('documents', nameToDelete);
-  const remaining=getProjectList();
-  if(remaining.length>0){
-    currentProjectName=remaining[0]; applyState(loadProjectState(remaining[0]));
-    document.getElementById('pageTitle').value=currentProjectName; setLastActive(currentProjectName);
-    switchTab('differe', true); runSimulation();
-  } else {
-    if(defaultStateSnapshot) applyState(defaultStateSnapshot);
-    currentProjectName='Mon projet VEFA'; document.getElementById('pageTitle').value=currentProjectName;
-    switchTab('differe', true); runSimulation(); saveProject(currentProjectName, serializeState());
-  }
+// Always keep at least one project around: deleting the LAST remaining one resets it in place to
+// the default template (and default name) instead of leaving no project at all.
+function resetProjectToDefault(name){
+  deleteFileCategoryProject('documents', name);
+  deleteProjectStorage(name);
+  currentProjectName='Mon projet VEFA';
+  if(defaultStateSnapshot) applyState(defaultStateSnapshot);
+  document.getElementById('pageTitle').value=currentProjectName;
+  switchTab('differe', true); runSimulation(); saveProject(currentProjectName, serializeState());
   refreshAllFileDropdowns();
+}
+function removeProjectFromDropdown(name){
+  const list=getProjectList();
+  const isLast = list.length<=1;
+  const warning = isLast
+    ? 'Cette action est irr\u00e9versible. "'+name+'" est le seul projet restant : ses donn\u00e9es seront r\u00e9initialis\u00e9es (un projet reste toujours disponible). Continuer ?'
+    : 'Cette action est irr\u00e9versible. Supprimer d\u00e9finitivement le projet "'+name+'" et toutes ses donn\u00e9es ?';
+  if(!confirm(warning)) return;
+  if(isLast){
+    resetProjectToDefault(name);
+  } else {
+    deleteProjectStorage(name);
+    deleteFileCategoryProject('documents', name);
+    if(name===currentProjectName){
+      const remaining=getProjectList();
+      currentProjectName=remaining[0];
+      applyState(loadProjectState(remaining[0]));
+      document.getElementById('pageTitle').value=currentProjectName;
+      setLastActive(currentProjectName);
+      switchTab('differe', true); runSimulation();
+      refreshAllFileDropdowns();
+    }
+  }
+  renderProjectDropdown();
 }
 function switchTab(name, skipRun){
   activeScenario=name;
@@ -1190,6 +1204,39 @@ function amortizationSchedule(principal, annualRatePct, years, insMonthlyFn){
     rows.push({month:m,payment,interest,capital,balance,insurance});
   }
   return {rows,payment,n,totalInterest,totalInsurance};
+}
+// "Pr\u00eat lisse sur le PTZ": some banks size the main loan's own payment to be HIGHER while the
+// PTZ pays nothing (its deferral) and LOWER once the PTZ activates, so the COMBINED total (main
+// loan + PTZ) stays flat for the whole term -- rather than the main loan amortizing independently
+// at a single constant payment throughout (which is what amortizationSchedule() above assumes).
+// Standard annuity math: PV of a d-month annuity at C, plus a (n-d)-month annuity at (C-ptzMonthly)
+// discounted back d months, must equal the principal -- solved directly for C below.
+function annuityFactor(r, n){
+  if(n<=0) return 0;
+  return r>0 ? (1-Math.pow(1+r,-n))/r : n;
+}
+function computeSmoothedMainLoanPayments(principal, annualRatePct, totalMonths, deferMonths, ptzMonthly){
+  const r=annualRatePct/100/12;
+  const d=Math.max(0, Math.min(deferMonths, totalMonths));
+  const a1=annuityFactor(r, d);
+  const a2=annuityFactor(r, totalMonths-d);
+  const discD=Math.pow(1+r, -d);
+  const denom=a1 + a2*discD;
+  const duringDefer = denom>0 ? (principal + ptzMonthly*a2*discD)/denom : 0;
+  return {duringDefer, postDefer:duringDefer-ptzMonthly, deferMonths:d};
+}
+function amortizationScheduleVariablePayment(principal, annualRatePct, totalMonths, paymentForMonthFn, insMonthlyFn){
+  const r=annualRatePct/100/12;
+  let balance=principal; const rows=[]; let totalInterest=0, totalInsurance=0;
+  for(let m=1;m<=totalMonths;m++){
+    const interest=balance*r; let payment=paymentForMonthFn(m); let capital=payment-interest;
+    if(capital>balance){ capital=balance; payment=capital+interest; }
+    balance=Math.max(0,balance-capital);
+    const insurance=insMonthlyFn(balance,principal);
+    totalInterest+=interest; totalInsurance+=insurance;
+    rows.push({month:m,payment,interest,capital,balance,insurance});
+  }
+  return {rows,n:totalMonths,totalInterest,totalInsurance};
 }
 function ptzSchedule(ptzAmount, deferMonths, totalMonths){
   const repayMonths= totalMonths>0 ? Math.max(1,totalMonths-deferMonths) : 0; const monthlyPayment= repayMonths>0 ? ptzAmount/repayMonths : 0; const rows=[];
@@ -1228,48 +1275,7 @@ function stagedLoanCost(drawEvents, livraisonDate, annualRatePct, postYears, ins
            totalInterest: totalIntercalaryInterest+postSched.totalInterest,
            totalInsurance: totalIntercalaryInsurance+postSched.totalInsurance};
 }
-function futureValueWithSavings(initial, monthlyContribution, annualRatePct, months){
-  let balance=initial; const monthlyRate=Math.pow(1+annualRatePct/100,1/12)-1;
-  for(let m=0;m<months;m++){ balance = balance*(1+monthlyRate) + monthlyContribution; }
-  return balance;
-}
 function getPtzCeiling(zone,persons){ const arr=PTZ_CEILINGS[zone]||PTZ_CEILINGS.AbisA; const idx=Math.min(Math.max(1,persons),8)-1; return arr[idx]; }
-function resetCeilingTo35(skipRun){
-  const s1=val('salary1'), s2=val('salary2');
-  document.getElementById('mensualiteCeiling').value=Math.round((s1+s2)*0.35);
-  if(!skipRun) runSimulation();
-}
-
-function computeScenarioMetrics(apport, years, ctx){
-  const loanAmount=Math.max(0, ctx.totalProjectCost - apport - ctx.ptzAmount - ctx.empLoansAmount);
-  function insMonthlyFn(balance,principal){ const base = ctx.degressive ? balance : principal; return base*ctx.combinedAnnualPctOfCapital/100/12; }
-  const sched=amortizationSchedule(loanAmount, ctx.loanRate, years, insMonthlyFn);
-  const ptzSched2=ptzSchedule(ctx.ptzAmount, ctx.ptzDefer, ctx.ptzTotalMonths);
-  const ptzInsMonthly = ctx.insurePTZChecked ? ctx.ptzAmount*ctx.combinedAnnualPctOfCapital/100/12 : 0;
-  const ptzInsTotal = ptzInsMonthly*ctx.ptzTotalMonths;
-  const loanInsMonthly = sched.rows.length ? sched.rows[0].insurance : 0;
-  const totalInsurance = sched.totalInsurance + ptzInsTotal;
-  const totalCost = sched.totalInterest + ctx.empLoansInterest + totalInsurance + ctx.totalFeesCredit;
-  const monthlyDuringDefer = sched.payment + loanInsMonthly + ctx.empLoansMonthly;
-  const monthlyPostPTZ = sched.payment + ptzSched2.monthlyPayment + ctx.empLoansMonthly + loanInsMonthly + ptzInsMonthly;
-  return {apport, years, loanAmount, payment:sched.payment, totalInterest:sched.totalInterest, totalInsurance, totalCost, monthlyDuringDefer, monthlyPostPTZ, ptzMonthly:ptzSched2.monthlyPayment};
-}
-function runOptimizer(ctx, apportDispo, monthlySavings, flexFundRate, monthsToLastPalier, ceiling, minYears, maxYears){
-  const apportMin=apportDispo;
-  const apportMaxAchievable=Math.min(ctx.totalProjectCost-ctx.ptzAmount-ctx.empLoansAmount, futureValueWithSavings(apportDispo, monthlySavings, flexFundRate, Math.max(0,monthsToLastPalier)));
-  const apportMax=Math.max(apportMin, apportMaxAchievable);
-  const steps=40; const apportStep=Math.max(500, (apportMax-apportMin)/steps);
-  let best=null; const allResults=[];
-  for(let apport=apportMin; apport<=apportMax+0.01; apport+=apportStep){
-    for(let years=minYears; years<=maxYears; years++){
-      const m=computeScenarioMetrics(apport, years, ctx);
-      const feasible = m.monthlyPostPTZ<=ceiling && m.monthlyDuringDefer<=ceiling;
-      allResults.push({...m, feasible});
-      if(feasible && (!best || m.totalCost<best.totalCost)) best=m;
-    }
-  }
-  return {best, apportMin, apportMax, allResults};
-}
 function priceGradientColor(pct){
   if(isNaN(pct)) return '';
   if(pct<=-15) return '#2ecc71';
@@ -1299,8 +1305,6 @@ function runSimulation(){
   const salary1=val('salary1'), salary2=val('salary2'), savingsRate=val('savingsRate');
   const flexFundRate=val('flexFundRate'), apportDispo=val('apportDispo');
   const refDate=dateVal('refDate')||new Date();
-  const mensualiteCeiling=val('mensualiteCeiling');
-  const optMinYears=val('optMinYears')||5, optMaxYears=val('optMaxYears')||25;
 
   const gmapsParts=[adresse, commune, 'France'].filter(x=>x && x.trim());
   const adresseLinkEl=document.getElementById('adresseLink');
@@ -1512,40 +1516,141 @@ function runSimulation(){
   const activeDrawEvents = activeScenario==='differe'
     ? savingsRowsDiffere.map(r=>({date:r.date, amount:r.financeParPret}))
     : savingsRowsProrata.map(r=>({date:r.date, amount:r.pretEtape}));
+  // Both frais li\u00e9s au cr\u00e9dit (garantie/dossier/courtage/IRA) AND frais li\u00e9s \u00e0 l'acquisition
+  // (notaire/agence/mobilier) are financed by the loan when applicable (they're part of loanAmount
+  // via totalProjectCost) but never appear in the VEFA appel-de-fonds percentages -- those only cover
+  // the PRICE. Without this, staged.totalDrawn (and therefore intercalary interest + the
+  // post-livraison amortized amount) would silently fall short of loanAmount by exactly this fee
+  // total. Real bank practice is to deduct these fees at the loan's actual first drawdown.
+  const feesFinancedByLoan = totalFeesCredit + totalFeesAcquisition;
+  if(feesFinancedByLoan>0.5){
+    let feeDrawIdx = activeDrawEvents.findIndex(e=>e.date && e.amount>0.5);
+    if(feeDrawIdx<0) feeDrawIdx = activeDrawEvents.findIndex(e=>e.date);
+    if(feeDrawIdx>=0) activeDrawEvents[feeDrawIdx] = {...activeDrawEvents[feeDrawIdx], amount:(activeDrawEvents[feeDrawIdx].amount||0)+feesFinancedByLoan};
+  }
   const staged = stagedLoanCost(activeDrawEvents, livraisonDate, loanRate, loanYears, insMonthlyFn);
 
   const ptzSched=ptzSchedule(ptzAmount, ptzDefer, ptzTotalMonths);
+  const lissePTZChecked = document.getElementById('lissePTZ').checked;
+  let mainLoanDuringDeferPayment = null; // only set when smoothing is active (see below)
+  let mainLoanInsuranceRepresentativeRow = null; // row to read insurance from -- matches where "payment" comes from
+  if(lissePTZChecked && ptzAmount>0.5 && staged.totalDrawn>0.5){
+    const totalMonthsMain = Math.round(loanYears*12);
+    const smoothed = computeSmoothedMainLoanPayments(staged.totalDrawn, loanRate, totalMonthsMain, ptzDefer, ptzSched.monthlyPayment);
+    const newPostSched = amortizationScheduleVariablePayment(staged.totalDrawn, loanRate, totalMonthsMain, m => m<=smoothed.deferMonths ? smoothed.duringDefer : smoothed.postDefer, insMonthlyFn);
+    newPostSched.payment = smoothed.postDefer; // "steady" figure used as the headline post-PTZ payment
+    mainLoanDuringDeferPayment = smoothed.duringDefer;
+    staged.postSched = newPostSched;
+    staged.totalInterest = staged.totalIntercalaryInterest + newPostSched.totalInterest;
+    staged.totalInsurance = staged.totalIntercalaryInsurance + newPostSched.totalInsurance;
+    // Insurance on the loan is flat (non-degressive) or declines with balance (degressive). Either
+    // way, pick the row from right AFTER PTZ activation -- the same point "payment" (postDefer) comes
+    // from -- rather than row[0] (still mid-deferral): with non-degressive insurance both give the
+    // identical value anyway (fixed on original principal), but with degressive insurance row[0]'s
+    // balance is still near the full principal and would overstate insurance for this "steady" figure.
+    const postDeferRowIdx = Math.min(smoothed.deferMonths, newPostSched.rows.length-1);
+    mainLoanInsuranceRepresentativeRow = newPostSched.rows[postDeferRowIdx] || null;
+  }
   const ptzInsuranceMonthly = insurePTZChecked ? ptzAmount*combinedAnnualPctOfCapital/100/12 : 0;
   const ptzInsuranceTotal = ptzInsuranceMonthly*ptzTotalMonths;
   const totalInsuranceAll = staged.totalInsurance + ptzInsuranceTotal;
-  const avgMonthlyPostLivraison = staged.postSched.payment + ptzSched.monthlyPayment + empLoansMonthly + (staged.postSched.rows.length ? staged.postSched.rows[0].insurance : 0) + ptzInsuranceMonthly;
+  const avgMonthlyPostLivraisonHorsAssurance = staged.postSched.payment + ptzSched.monthlyPayment + empLoansMonthly;
+  const avgMonthlyPostLivraisonAssurance = (mainLoanInsuranceRepresentativeRow ? mainLoanInsuranceRepresentativeRow.insurance : (staged.postSched.rows.length ? staged.postSched.rows[0].insurance : 0)) + ptzInsuranceMonthly;
+  const avgMonthlyPostLivraison = avgMonthlyPostLivraisonHorsAssurance + avgMonthlyPostLivraisonAssurance;
 
-  const lastPalierDate=livraisonDate;
-  const monthsToLastPalier = lastPalierDate ? Math.max(0, monthsBetween(refDate,lastPalierDate)) : 0;
-  const ctx={totalProjectCost, ptzAmount, ptzDefer, ptzTotalMonths, loanRate, degressive, insurePTZChecked, combinedAnnualPctOfCapital, totalFeesCredit, empLoansAmount, empLoansInterest, empLoansMonthly};
-  const optResult=runOptimizer(ctx, apportDispo, monthlySavings, flexFundRate, monthsToLastPalier, mensualiteCeiling, optMinYears, optMaxYears);
-  lastReco=optResult;
+  // ---- Comparaison de dur\u00e9es standard (10/15/20/25 ans, + la dur\u00e9e actuellement renseign\u00e9e si
+  // diff\u00e9rente) -- \u00e0 apport, PTZ et Pr\u00eat Action Logement identiques (ceux d\u00e9j\u00e0 renseign\u00e9s
+  // ci-dessus) et sur le m\u00eame calendrier de tirage (staged.totalDrawn, sc\u00e9nario actif). Seule la
+  // dur\u00e9e d'amortissement du pr\u00eat principal varie -- ce n'est plus une recherche d'apport optimal.
+  // Chaque dur\u00e9e est aussi \u00e9valu\u00e9e contre un plafond d'endettement. Deux conventions coexistent en
+  // pratique et NE SE MELANGENT PAS (mixer les deux fausserait le r\u00e9sultat) : la norme HCSF officielle
+  // (35% des revenus nets, ASSURANCE COMPRISE, contraignante depuis 2022) et la convention encore tr\u00e8s
+  // r\u00e9pandue chez les courtiers -- 33% des revenus nets, HORS ASSURANCE (c'est par ex. exactement ce que
+  // fait In&Fi Cr\u00e9dits : 10 878\u20ac x 33% = 3 589\u20ac dans un devis r\u00e9el). On retient ici la convention
+  // courtier (33% hors assurance) car c'est la r\u00e9f\u00e9rence la plus directement comparable \u00e0 un devis
+  // bancaire/courtier r\u00e9el -- appliqu\u00e9e au montant hors assurance de chaque dur\u00e9e, jamais au total TTC.
+  const debtRatioPct=val('debtRatioPct')||35; // editable -- conventions vary (35% HCSF assurance comprise vs 33% hors assurance chez certains courtiers); this app applies it to the hors-assurance figure
+  const debtRatioCeiling=(salary1+salary2)*debtRatioPct/100;
+  const CLOSE_TO_CEILING_RATIO=0.9; // within 10% below the ceiling is flagged orange, not just green
+  const STANDARD_LOAN_DURATIONS=[10,15,20,25];
+  const durationYearsSet=Array.from(new Set([...STANDARD_LOAN_DURATIONS, loanYears])).sort((a,b)=>a-b);
+  const durationComparisons=durationYearsSet.map(y=>{
+    const totalMonthsY = Math.round(y*12);
+    let postSchedY;
+    if(lissePTZChecked && ptzAmount>0.5 && staged.totalDrawn>0.5){
+      const smoothedY = computeSmoothedMainLoanPayments(staged.totalDrawn, loanRate, totalMonthsY, ptzDefer, ptzSched.monthlyPayment);
+      postSchedY = amortizationScheduleVariablePayment(staged.totalDrawn, loanRate, totalMonthsY, m=> m<=smoothedY.deferMonths?smoothedY.duringDefer:smoothedY.postDefer, insMonthlyFn);
+      postSchedY.payment = smoothedY.postDefer;
+    } else {
+      postSchedY = amortizationSchedule(staged.totalDrawn, loanRate, y, insMonthlyFn);
+    }
+    const totalInterestY=staged.totalIntercalaryInterest+postSchedY.totalInterest;
+    const totalInsuranceY=staged.totalIntercalaryInsurance+postSchedY.totalInsurance+ptzInsuranceTotal;
+    const totalCostY=totalInterestY+empLoansInterest+totalInsuranceY+totalFeesCredit;
+    const monthlyHorsAssuranceY=postSchedY.payment+ptzSched.monthlyPayment+empLoansMonthly;
+    const monthlyAssuranceY=(postSchedY.rows.length?postSchedY.rows[0].insurance:0)+ptzInsuranceMonthly;
+    const monthlyPostLivraisonY=monthlyHorsAssuranceY+monthlyAssuranceY;
+    // Compared hors-assurance vs hors-assurance -- never the assurance-comprise total against this
+    // ceiling, since that would mix two incompatible bases and misjudge feasibility.
+    const ceilingDiff = debtRatioCeiling>0 ? monthlyHorsAssuranceY-debtRatioCeiling : null;
+    const ceilingDiffPct = (debtRatioCeiling>0) ? ceilingDiff/debtRatioCeiling*100 : null;
+    const feasible = debtRatioCeiling<=0 || monthlyHorsAssuranceY<=debtRatioCeiling;
+    return {years:y, isCurrent:y===loanYears, totalInterestY, totalCostY, monthlyPostLivraisonY, monthlyHorsAssuranceY, monthlyAssuranceY, ceilingDiff, ceilingDiffPct, feasible};
+  });
+  const currentDurationRow=durationComparisons.find(r=>r.isCurrent);
+  // "Moins cher" only among durations that actually respect the debt-ratio ceiling -- a cheaper
+  // duration whose mensualit\u00e9 the buyer can't legally/practically borrow at isn't a real option.
+  const feasibleRows=durationComparisons.filter(r=>r.feasible);
+  const cheapestFeasibleRow = feasibleRows.length
+    ? feasibleRows.reduce((min,r)=> r.totalCostY<min.totalCostY ? r : min, feasibleRows[0])
+    : null;
+  document.getElementById('durationCompareScenarioTag').textContent = activeScenario==='differe' ? 'scenario Diff\u00e9r\u00e9' : 'scenario Prorata';
+  document.getElementById('durationCompareNote').innerHTML = debtRatioCeiling>0
+    ? 'Comparaison &agrave; apport, PTZ et Pr&ecirc;t Action Logement identiques (ceux renseign&eacute;s ci-dessus) : seule la dur&eacute;e d\'amortissement change. Plafond d\'endettement utilis&eacute; : '+debtRatioPct+'% des salaires nets <i>hors assurance</i> (modifiable ci-contre) = <b>'+eur2(debtRatioCeiling)+'/mois</b>.'
+    : 'Comparaison &agrave; apport, PTZ et Pr&ecirc;t Action Logement identiques (ceux renseign&eacute;s ci-dessus) : seule la dur&eacute;e d\'amortissement change. Renseignez les salaires pour &eacute;valuer chaque dur&eacute;e face au plafond d\'endettement ('+debtRatioPct+'% des revenus nets hors assurance, modifiable ci-contre).';
+  document.getElementById('durationCompareTable').innerHTML=durationComparisons.map(r=>{
+    const isCheapest = cheapestFeasibleRow && r===cheapestFeasibleRow;
+    const rowStyle = isCheapest ? 'color:var(--gold);font-weight:700' : '';
+    const currentBadge = r.isCurrent ? ' <span class="tag" style="border-color:var(--accent);color:var(--accent)">actuelle</span>' : '';
+    const cheapestBadge = isCheapest ? ' <span class="tag" style="border-color:var(--gold);color:var(--gold)">moins cher</span>' : '';
+    const infeasibleBadge = (!r.feasible) ? ' <span class="tag" style="border-color:var(--danger);color:var(--danger)">au-dessus du plafond</span>' : '';
+    let monthlyCell = eur2(r.monthlyPostLivraisonY);
+    if(r.ceilingDiff!=null){
+      const sign = r.ceilingDiff>=0 ? '+' : '';
+      let color, label;
+      if(r.ceilingDiff>0){ color='var(--danger)'; label='au-dessus du plafond (hors assurance)'; }
+      else if(r.monthlyHorsAssuranceY>=debtRatioCeiling*CLOSE_TO_CEILING_RATIO){ color='var(--warn)'; label='proche du plafond (hors assurance)'; }
+      else { color='var(--accent2)'; label='sous le plafond (hors assurance)'; }
+      monthlyCell += '<br><span style="font-size:10.5px;font-weight:400;color:'+color+'">('+sign+eur(r.ceilingDiff)+' / '+sign+r.ceilingDiffPct.toFixed(0)+'%) '+label+'</span>';
+    }
+    const deltaVsCurrent = r.totalCostY - currentDurationRow.totalCostY;
+    const deltaCell = r.isCurrent
+      ? '<span class="note">actuelle</span>'
+      : '<span class="'+(deltaVsCurrent<0?'row-ok':'row-short')+'">'+(deltaVsCurrent>=0?'+':'')+eur(deltaVsCurrent)+'</span>';
+    const applyBtn = r.isCurrent ? '' : '<button class="btn btn-secondary btn-sm" onclick="applyDurationYears('+r.years+')">Appliquer</button>';
+    return '<tr style="'+rowStyle+'"><td>'+r.years+' ans'+currentBadge+cheapestBadge+infeasibleBadge+'</td><td>'+monthlyCell+'</td><td>'+eur(r.totalInterestY)+'</td><td>'+eur(r.totalCostY)+'</td><td>'+deltaCell+'</td><td>'+applyBtn+'</td></tr>';
+  }).join('');
 
-  if(optResult.best){
-    const b=optResult.best;
-    document.getElementById('recoKpi').innerHTML=''
-      +'<div class="kpi gold"><div class="label">Apport recommand\u00e9</div><div class="value gold">'+eur(b.apport)+'</div></div>'
-      +'<div class="kpi gold"><div class="label">Dur\u00e9e recommand\u00e9e</div><div class="value gold">'+b.years+' ans</div></div>'
-      +'<div class="kpi"><div class="label">Pr\u00eat r\u00e9sultant</div><div class="value">'+eur(b.loanAmount)+'</div></div>'
-      +'<div class="kpi"><div class="label">Mensualit\u00e9 apr\u00e8s diff\u00e9r\u00e9 PTZ</div><div class="value">'+eur2(b.monthlyPostPTZ)+'</div></div>'
-      +'<div class="kpi"><div class="label">Co\u00fbt total</div><div class="value warn">'+eur(b.totalCost)+'</div></div>';
-    document.getElementById('recoNote').innerHTML='Apport max. envisageable d\'ici Livraison ('+fmtDate(lastPalierDate)+') : '+eur(optResult.apportMax)+'. Plafond mensualit\u00e9 utilis\u00e9 : '+eur(mensualiteCeiling)+'/mois.';
-    const top=optResult.allResults.filter(r=>r.feasible).sort((a,b2)=>a.totalCost-b2.totalCost).slice(0,8);
-    document.getElementById('recoTable').innerHTML=top.map(r=>{
-      const isBest = r===b;
-      return '<tr style="'+(isBest?'color:var(--gold);font-weight:700':'')+'"><td>'+eur(r.apport)+'</td><td>'+r.years+' ans</td><td>'+eur(r.loanAmount)+'</td><td>'+eur2(r.monthlyPostPTZ)+'</td><td>'+eur(r.totalCost)+'</td></tr>';
-    }).join('');
-  } else {
-    document.getElementById('recoKpi').innerHTML='<div class="kpi"><div class="label">R\u00e9sultat</div><div class="value danger">Aucune combinaison faisable</div></div>';
-    document.getElementById('recoNote').innerHTML='Aucune combinaison ne respecte le plafond de mensualit\u00e9 ('+eur(mensualiteCeiling)+'/mois).';
-    document.getElementById('recoTable').innerHTML='';
-  }
-
+  const totalCreditPrincipal = ptzAmount + empLoansAmount + loanAmount;
+  // Simple capital-weighted average (weighted by each credit's INITIAL amount, PTZ counted at 0%).
+  // This is the standard, easily-reproduced convention -- a lender's own "taux moyen" may instead
+  // weight by average outstanding balance over time, which tends to run slightly lower since a 0%
+  // PTZ sitting at full balance for its deferral period drags a time-weighted average down more.
+  // Treat this figure as a close approximation, not a guaranteed match to a specific bank's method.
+  const weightedAvgCreditRate = totalCreditPrincipal>0 ? (ptzAmount*0 + empLoansAmount*empLoan1Rate + loanAmount*loanRate)/totalCreditPrincipal : 0;
+  const debtRatioActualPct = (salary1+salary2)>0 ? avgMonthlyPostLivraisonHorsAssurance/(salary1+salary2)*100 : 0;
+  const ptzActive = ptzAmount>0.5;
+  const isFullyConstantAllMonths = mainLoanDuringDeferPayment!=null && !degressive;
+  const mensualiteMoyenneLabelParts = [];
+  if(mainLoanDuringDeferPayment!=null) mensualiteMoyenneLabelParts.push('liss\u00e9');
+  if(ptzActive) mensualiteMoyenneLabelParts.push('+PTZ');
+  mensualiteMoyenneLabelParts.push('+assurance');
+  const mensualiteMoyenneLabel = (isFullyConstantAllMonths?'Mensualit\u00e9':'Mensualit\u00e9 moyenne') + ' (' + mensualiteMoyenneLabelParts.join(', ') + ')';
+  const mensualiteMoyenneTooltip = 'Mensualit\u00e9 repr\u00e9sentative une fois la livraison effectu\u00e9e'+(ptzActive && mainLoanDuringDeferPayment==null?' et le diff\u00e9r\u00e9 PTZ termin\u00e9':'')+', d\u00e9compos\u00e9e en deux parties : '+eur2(avgMonthlyPostLivraisonHorsAssurance)+' hors assurance (pr\u00eat principal'+(ptzActive?' + PTZ':'')+(empLoansAmount>0.5?' + Pr\u00eat Action Logement':'')+', capital uniquement) + '+eur2(avgMonthlyPostLivraisonAssurance)+' d\'assurance emprunteur'+(ptzActive?(insurePTZChecked?' (pr\u00eat + PTZ)':' (pr\u00eat seul, PTZ non assur\u00e9 ici)'):' (pr\u00eat seul)')+'.'+(mainLoanDuringDeferPayment!=null
+    ? (isFullyConstantAllMonths
+        ? ' Pr\u00eat liss\u00e9 sur le PTZ, assurance NON d\u00e9gressive : ce montant est EXACTEMENT IDENTIQUE sur les 180 mois (pas seulement une moyenne) -- l\'assurance \u00e9tant calcul\u00e9e sur le capital initial (constant) et le prêt+PTZ combin\u00e9 restant constant gr\u00e2ce au lissage.'
+        : ' Pr\u00eat liss\u00e9 sur le PTZ : le prêt+PTZ combin\u00e9 (hors assurance) reste constant sur toute la dur\u00e9e. L\'assurance, elle, est D\u00c9GRESSIVE ici (calcul\u00e9e sur le capital restant d\u00fb) et diminue donc progressivement avec l\'amortissement -- ce total n\'est donc qu\'une valeur repr\u00e9sentative (prise juste apr\u00e8s activation du PTZ), pas une moyenne stricte sur 180 mois.')
+    : (ptzActive?' Un devis de courtier communique souvent le montant hors assurance seul -- v\u00e9rifiez lequel des deux vous comparez.':''));
   document.getElementById('kpiGrid').innerHTML=''
     +'<div class="kpi"><div class="label">Prix apr\u00e8s remise</div><div class="value">'+eur(priceAfterRemise)+'</div></div>'
     +'<div class="kpi" data-tooltip="= prix apr\u00e8s remise + frais li\u00e9s \u00e0 l acquisition + frais li\u00e9s au cr\u00e9dit. C est le montant r\u00e9el que apport + Pr\u00eat Action Logement + PTZ + pr\u00eat doivent couvrir ensemble."><div class="label">Co\u00fbt total \u00e0 financer</div><div class="value">'+eur(totalProjectCost)+'</div></div>'
@@ -1553,9 +1658,11 @@ function runSimulation(){
     +(empLoansAmount>0.5 ? '<div class="kpi" data-tooltip="Pr\u00eat Accession Action Logement (ex &laquo;&nbsp;1% patronal&nbsp;&raquo;) : jusqu\'\u00e0 30\u00a0000\u20ac \u00e0 1% fixe, r\u00e9serv\u00e9 aux salari\u00e9s d\'entreprises priv\u00e9es de 10+ salari\u00e9s, sous plafond de ressources RFR N-2. Demand\u00e9 directement aupr\u00e8s d\'Action Logement, en plus du PTZ et du pr\u00eat bancaire."><div class="label">Pr\u00eat Action Logement</div><div class="value accent">'+eur(empLoansAmount)+'</div></div>' : '')
     +'<div class="kpi"><div class="label">PTZ'+(!eligible && rfr>0 && priceAfterRemise>0 ? ' <span style="color:var(--danger)">\u2717 Non \u00e9ligible</span>' : '')+'</div><div class="value accent">'+eur(ptzAmount)+'</div></div>'
     +'<div class="kpi"><div class="label">Pr\u00eat principal</div><div class="value '+(overFunded?'danger':'')+'">'+eur(loanAmount)+'</div></div>'
-    +'<div class="kpi" data-tooltip="Mensualit\u00e9 repr\u00e9sentative une fois la livraison effectu\u00e9e'+(eligible?' et le diff\u00e9r\u00e9 PTZ termin\u00e9 : pr\u00eat principal + PTZ'+(empLoansAmount>0.5?' + Pr\u00eat Action Logement':'')+' + assurance emprunteur.':' : pr\u00eat principal'+(empLoansAmount>0.5?' + Pr\u00eat Action Logement':'')+' + assurance emprunteur.')+'"><div class="label">Mensualit\u00e9 moyenne (post-livraison'+(eligible?', PTZ actif':'')+')</div><div class="value">'+eur2(avgMonthlyPostLivraison)+'</div></div>'
+    +'<div class="kpi" data-tooltip="'+mensualiteMoyenneTooltip+'"><div class="label">'+mensualiteMoyenneLabel+'</div><div class="value">'+eur2(avgMonthlyPostLivraison)+'</div></div>'
     +'<div class="kpi"><div class="label">Dur\u00e9e amortissement</div><div class="value">'+loanYears+' ans</div></div>'
-    +'<div class="kpi"><div class="label">Taux nominal</div><div class="value">'+loanRate.toFixed(2)+'%</div></div>';
+    +'<div class="kpi"><div class="label">Taux nominal</div><div class="value">'+loanRate.toFixed(2)+'%</div></div>'
+    +'<div class="kpi" data-tooltip="Moyenne des taux des '+(empLoansAmount>0.5?'3':'2')+' cr\u00e9dits (PTZ \u00e0 0%'+(empLoansAmount>0.5?', Pr\u00eat Action Logement \u00e0 '+empLoan1Rate.toFixed(2)+'%':'')+', pr\u00eat principal \u00e0 '+loanRate.toFixed(2)+'%), pond\u00e9r\u00e9e par le montant INITIAL de chaque cr\u00e9dit. Convention simple et reproductible -- le calcul exact d\'un courtier/banque peut l\u00e9g\u00e8rement diff\u00e9rer s\'il pond\u00e8re plut\u00f4t par capital restant d\u00fb moyen dans le temps (g\u00e9n\u00e9ralement un peu plus bas, le PTZ \u00e0 0% pesant plus longtemps \u00e0 taux plein pendant son diff\u00e9r\u00e9)."><div class="label">Taux moyen pond\u00e9r\u00e9 des cr\u00e9dits</div><div class="value">'+weightedAvgCreditRate.toFixed(2)+'%</div></div>'
+    +'<div class="kpi" data-tooltip="Mensualit\u00e9 moyenne hors assurance ('+eur2(avgMonthlyPostLivraisonHorsAssurance)+') rapport\u00e9e aux salaires nets ('+eur2(salary1+salary2)+'/mois). \u00c0 comparer au plafond d\'endettement ci-contre ('+debtRatioPct+'%, modifiable dans le panneau Emprunteurs et \u00e9pargne)."><div class="label">Taux d\'endettement (hors assurance)</div><div class="value '+(debtRatioActualPct>debtRatioPct?'danger':(debtRatioActualPct>=debtRatioPct*0.9?'warn':'accent'))+'">'+debtRatioActualPct.toFixed(2)+'%</div></div>';
   document.getElementById('consistencyNote').innerHTML = overFunded
     ? 'Apport'+(empLoansAmount>0.5?' + Pr\u00eat Action Logement':'')+' + PTZ d\u00e9passent le co\u00fbt total \u00e0 financer de '+eur(Math.abs(totalProjectCost-apportTarget-ptzAmount-empLoansAmount))+'.'
     : 'Coh\u00e9rent : Apport ('+eur(apportTarget)+')'+(empLoansAmount>0.5?' + Pr\u00eat Action Logement ('+eur(empLoansAmount)+')':'')+' + PTZ ('+eur(ptzAmount)+') + Pr\u00eat ('+eur(loanAmount)+') = '+eur(apportTarget+empLoansAmount+ptzAmount+loanAmount)+' ~= Co\u00fbt total \u00e0 financer ('+eur(totalProjectCost)+')';
@@ -1605,7 +1712,9 @@ function runSimulation(){
 
   document.getElementById('loanKpi').innerHTML=''
     +'<div class="kpi"><div class="label">Montant total tir\u00e9</div><div class="value">'+eur(staged.totalDrawn)+'</div></div>'
-    +'<div class="kpi"><div class="label">Mensualit\u00e9 post-livraison</div><div class="value">'+eur2(staged.postSched.payment)+'</div></div>'
+    +(mainLoanDuringDeferPayment!=null
+      ? '<div class="kpi" data-tooltip="Pr\u00eat liss\u00e9 sur le PTZ : la mensualit\u00e9 COMBIN\u00e9E (pr\u00eat principal + PTZ) reste constante sur toute la dur\u00e9e -- c\'est le chiffre affich\u00e9. En d\u00e9tail : le pr\u00eat principal SEUL vaut '+eur2(mainLoanDuringDeferPayment)+' pendant le diff\u00e9r\u00e9 PTZ (le PTZ payant 0\u20ac \u00e0 ce stade) puis baisse \u00e0 '+eur2(staged.postSched.payment)+' une fois le PTZ activ\u00e9 (qui paie alors '+eur2(ptzSched.monthlyPayment)+') -- les deux phases totalisent le m\u00eame montant combin\u00e9."><div class="label">Mensualit\u00e9 post-livraison (liss\u00e9, avec PTZ)</div><div class="value">'+eur2(mainLoanDuringDeferPayment)+'</div></div>'
+      : '<div class="kpi"><div class="label">Mensualit\u00e9 post-livraison</div><div class="value">'+eur2(staged.postSched.payment)+'</div></div>')
     +'<div class="kpi"><div class="label">Dur\u00e9e amortissement</div><div class="value">'+loanYears+' ans</div></div>'
     +'<div class="kpi"><div class="label">Total int\u00e9r\u00eats</div><div class="value warn">'+eur(staged.totalInterest)+'</div></div>';
   document.getElementById('ptzPanelEligTag').innerHTML = (!eligible && rfr>0 && priceAfterRemise>0)
@@ -1622,10 +1731,12 @@ function runSimulation(){
     +'<div class="kpi"><div class="label">Dur\u00e9e</div><div class="value">'+(empLoan1TotalMonths/12).toFixed(0)+' ans</div></div>'
     +'<div class="kpi"><div class="label">Mensualit\u00e9 hors assurance</div><div class="value accent">'+eur2(empLoan1Sched.payment)+'</div></div>'
     +'<div class="kpi"><div class="label">Int\u00e9r\u00eats totaux</div><div class="value warn">'+eur(empLoansInterest)+'</div></div>';
+  const loanInsuranceMonthly = mainLoanInsuranceRepresentativeRow ? mainLoanInsuranceRepresentativeRow.insurance : (staged.postSched.rows.length ? staged.postSched.rows[0].insurance : 0);
   document.getElementById('insuranceKpi').innerHTML=''
     +'<div class="kpi"><div class="label">Taux combin\u00e9 annuel</div><div class="value">'+combinedAnnualPctOfCapital.toFixed(3)+'%</div></div>'
     +'<div class="kpi"><div class="label">Assurance pr\u00eat</div><div class="value warn">'+eur(staged.totalInsurance)+'</div></div>'
     +'<div class="kpi"><div class="label">Assurance PTZ</div><div class="value warn">'+eur(ptzInsuranceTotal)+'</div></div>'
+    +'<div class="kpi" data-tooltip="Mensualit\u00e9 d\'assurance post-livraison, d\u00e9compos\u00e9e : '+eur2(loanInsuranceMonthly)+' sur le pr\u00eat principal'+(insurePTZChecked&&ptzAmount>0.5?' + '+eur2(ptzInsuranceMonthly)+' sur le PTZ':(ptzAmount>0.5?' (PTZ non assur\u00e9 ici)':''))+'."><div class="label">Mensualit\u00e9 assurance (post-livraison)</div><div class="value warn">'+eur2(avgMonthlyPostLivraisonAssurance)+'</div></div>'
     +'<div class="kpi"><div class="label">Assurance totale</div><div class="value danger">'+eur(totalInsuranceAll)+'</div></div>';
 
   const ptzRowsAnchored = ptzSched.rows.map(r=>({date: livraisonDate ? addMonths(livraisonDate, r.month-1) : null, payment:r.payment}));
@@ -1659,21 +1770,22 @@ function runSimulation(){
     const ptzPay = ptzR ? ptzR.payment : 0;
     const ptzIns = (insurePTZChecked && ptzR) ? ptzInsuranceMonthly : 0;
     const empLoansPay = emp1R ? emp1R.payment : 0;
-    const phase = inter ? '<span class="row-intercalary">Intercalaire</span>' : (livraisonDate && d>=livraisonDate ? '<span class="row-ok">Amortissement</span>' : '-');
+    const inPtzDeferSubPhase = mainLoanDuringDeferPayment!=null && livraisonDate && d>=livraisonDate && ptzR && ptzR.payment<0.5;
+    const phase = inter ? '<span class="row-intercalary">Intercalaire</span>' : (livraisonDate && d>=livraisonDate ? (inPtzDeferSubPhase ? '<span class="row-intercalary">Amortissement (diff. PTZ, liss\u00e9)</span>' : '<span class="row-ok">Amortissement</span>') : '-');
     const total=loanPay+ptzPay+empLoansPay+loanIns+ptzIns;
     rowsHtml+='<tr><td>'+fmtDate(d)+'</td><td>'+phase+'</td><td>'+eur2(loanPay)+'</td><td>'+eur2(empLoansPay)+'</td><td>'+eur2(ptzPay)+'</td><td>'+eur2(loanIns+ptzIns)+'</td><td><strong>'+eur2(total)+'</strong></td></tr>';
   });
   document.getElementById('scheduleTable').innerHTML=rowsHtml;
+  document.getElementById('scheduleTableNote').innerHTML = 'Avant livraison : int\u00e9r\u00eats intercalaires. Apr\u00e8s livraison : amortissement classique.'
+    + (mainLoanDuringDeferPayment!=null ? ' Pr\u00eat liss\u00e9 sur le PTZ actif : la colonne Pr\u00eat est plus \u00e9lev\u00e9e tant que la colonne PTZ affiche 0\u20ac (diff\u00e9r\u00e9 PTZ), puis les deux s\'\u00e9quilibrent -- le Total reste constant sur toute la p\u00e9riode d\'amortissement.' : '');
 
-  lastResults={projectName:currentProjectName, commune, adresse, price, surface, prixM2Calc, prixM2Moyen, ecartEur, ecartPct, stade, remise, priceAfterRemise, totalProjectCost, apportTarget, apportPctOfPrice, ptzAmount, empLoan1Amount, empLoan1Rate, empLoansAmount, empLoansInterest, empLoansMonthly, loanAmount, overFunded, loanYears, loanRate, ptzDefer, ptzRepayMonths:ptzSched.repayMonths, ptzMonthlyPayment:ptzSched.monthlyPayment, avgMonthlyPostLivraison, rfr, ptzZone, ptzPersonnes, ptzCeiling:ceilingPtz, ptzEligible:eligible, combinedAnnualPctOfCapital, totalInsuranceAll, totalFeesCredit, totalFeesAcquisition, totalCreditCost, vefaRows, savingsRowsDiffere, savingsRowsProrata, monthlySavings, apportDispo, flexFundRate, salary1, salary2, savingsRate, reco:optResult.best, mensualiteCeiling, apportMaxAchievable:optResult.apportMax, staged, activeScenario, apportUtiliseCumule, apportShortfallVsCible, negoExtrasTotal:updateNegoExtrasTotal()};
+  lastResults={projectName:currentProjectName, commune, adresse, price, surface, prixM2Calc, prixM2Moyen, ecartEur, ecartPct, stade, remise, priceAfterRemise, totalProjectCost, apportTarget, apportPctOfPrice, ptzAmount, empLoan1Amount, empLoan1Rate, empLoansAmount, empLoansInterest, empLoansMonthly, loanAmount, overFunded, loanYears, loanRate, ptzDefer, ptzRepayMonths:ptzSched.repayMonths, ptzMonthlyPayment:ptzSched.monthlyPayment, avgMonthlyPostLivraison, avgMonthlyPostLivraisonHorsAssurance, avgMonthlyPostLivraisonAssurance, rfr, ptzZone, ptzPersonnes, ptzCeiling:ceilingPtz, ptzEligible:eligible, combinedAnnualPctOfCapital, totalInsuranceAll, totalFeesCredit, totalFeesAcquisition, totalCreditCost, vefaRows, savingsRowsDiffere, savingsRowsProrata, monthlySavings, apportDispo, flexFundRate, salary1, salary2, savingsRate, durationComparisons, staged, activeScenario, apportUtiliseCumule, apportShortfallVsCible, negoExtrasTotal:updateNegoExtrasTotal()};
 
   if(currentProjectName) saveProject(currentProjectName, serializeState());
 }
 
-function applyRecommendation(){
-  if(!lastReco || !lastReco.best) return;
-  document.getElementById('apport').value=Math.round(lastReco.best.apport);
-  document.getElementById('loanYears').value=lastReco.best.years;
+function applyDurationYears(years){
+  document.getElementById('loanYears').value=years;
   runSimulation();
 }
 function buildDiffereTableForPDF(r){
@@ -1787,7 +1899,9 @@ function buildSummaryTableBody(r){
 
     ['Dur\u00e9e amortissement', r.loanYears + ' ans'],
     ['Taux nominal', r.loanRate.toFixed(2) + '%'],
-    ['Mensualit\u00e9 moyenne (post-livraison'+(ptzUsed?', PTZ actif':'')+')', pdfEur(r.avgMonthlyPostLivraison)],
+    totalRow('Mensualit\u00e9 moyenne (post-livraison'+(ptzUsed?', PTZ actif':'')+')', pdfEur(r.avgMonthlyPostLivraison)),
+    subRow('Hors assurance (pr\u00eat principal + PTZ'+(empLoansUsed?' + Pr\u00eat Action Logement':'')+')', pdfEur(r.avgMonthlyPostLivraisonHorsAssurance)),
+    subRow('Assurance emprunteur', pdfEur(r.avgMonthlyPostLivraisonAssurance)),
   ];
   // Displayed total is the sum of the already-rounded line items below, not a separate rounding of
   // the precise total -- otherwise two independently-rounded numbers can land 1€ away from a total
@@ -2007,7 +2121,6 @@ function bindAutoRecalc(){
   });
   titleEl.addEventListener('blur', ()=>{ commitTitleChange(); setTimeout(hideProjectDropdown, 150); });
   document.getElementById('startMonth').addEventListener('change', ()=>{ resyncVefaStartDates(); runSimulation(); });
-  ['salary1','salary2'].forEach(id=>document.getElementById(id).addEventListener('input', ()=>resetCeilingTo35()));
   document.getElementById('fraisNotaireFNO').addEventListener('change', updateFraisNotaireFNO);
   document.getElementById('adresseLink').addEventListener('click', e=>{ if(!e.currentTarget.getAttribute('href')) e.preventDefault(); });
   document.getElementById('prixM2MoyenLink').addEventListener('click', e=>{ if(!e.currentTarget.getAttribute('href')) e.preventDefault(); });
@@ -2023,7 +2136,6 @@ function initDefaults(){
   updateStatusDateLabel();
   vefaStages=buildDefaultVefaStages();
   renderVefaTable();
-  resetCeilingTo35(true);
   defaultStateSnapshot=serializeState();
 }
 
