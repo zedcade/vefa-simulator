@@ -137,7 +137,7 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
 .scrollbox{max-height:340px;overflow-y:auto;overflow-x:auto;border:1px solid var(--border);border-radius:8px;}
 .vefa-scrollbox{max-height:372px;}
 .scrollbox table thead th{position:sticky;top:0;z-index:5;}
-.no-scroll-table{overflow:visible;max-height:none;border:1px solid var(--border);border-radius:8px;}
+.no-scroll-table{overflow-x:auto;overflow-y:visible;max-height:none;border:1px solid var(--border);border-radius:8px;}
 .row-omitted td{text-align:center;color:var(--muted);font-style:italic;font-size:11px;background:var(--panel2);}
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;margin-bottom:6px;}
 .kpi{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:10px;min-height:82px;display:flex;flex-direction:column;justify-content:space-between;}
@@ -503,11 +503,11 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
   </div>
 
   <div class="panel highlight">
-    <h2>Comparaison des dur&eacute;es de pr&ecirc;t <span class="tag" id="durationCompareScenarioTag" data-tooltip="Le montant tir&eacute; (staged.totalDrawn), les int&eacute;r&ecirc;ts intercalaires, le PTZ et le Pr&ecirc;t Action Logement restent ceux du sc&eacute;nario actif (Diff&eacute;r&eacute;/Prorata) et de l'apport actuellement renseign&eacute; ci-dessus -- seule la dur&eacute;e d'amortissement du pr&ecirc;t principal varie d'une ligne &agrave; l'autre.">scenario Diff&eacute;r&eacute;</span></h2>
+    <h2>Comparaison des dur&eacute;es de pr&ecirc;t <span class="tag" id="durationCompareScenarioTag" data-tooltip="Le montant tir&eacute;, les int&eacute;r&ecirc;ts intercalaires, le PTZ et le Pr&ecirc;t Action Logement restent ceux du sc&eacute;nario actif (Diff&eacute;r&eacute;/Prorata) et de l'apport actuellement renseign&eacute; ci-dessus -- seule la dur&eacute;e d'amortissement du pr&ecirc;t principal varie d'une ligne &agrave; l'autre.">scenario Diff&eacute;r&eacute;</span></h2>
     <div class="note" id="durationCompareNote" style="margin-bottom:10px"></div>
     <div class="no-scroll-table">
       <table>
-        <thead><tr><th>Dur&eacute;e</th><th>Mensualit&eacute; post-livraison</th><th>Int&eacute;r&ecirc;ts totaux</th><th>Co&ucirc;t total du cr&eacute;dit</th><th>&Eacute;cart vs actuelle</th><th></th></tr></thead>
+        <thead><tr><th>Dur&eacute;e</th><th>Mensualit&eacute; post-livraison</th><th id="intTotalTh">Int&eacute;r&ecirc;ts totaux</th><th>Assurance totale</th><th id="coutTotalTh">Co&ucirc;t total du cr&eacute;dit</th><th>&Eacute;cart vs actuelle</th><th></th></tr></thead>
         <tbody id="durationCompareTable"></tbody>
       </table>
     </div>
@@ -1584,9 +1584,15 @@ function runSimulation(){
     } else {
       postSchedY = amortizationSchedule(staged.totalDrawn, loanRate, y, insMonthlyFn);
     }
-    const totalInterestY=staged.totalIntercalaryInterest+postSchedY.totalInterest;
+    // "Interest, all interest-bearing credits" -- must include Pr\u00eat Action Logement interest here,
+    // not just fold it silently into totalCostY below. Otherwise the "Int\u00e9r\u00eats totaux" column
+    // understates reality (PTZ excluded on purpose: it's 0% by definition, so it contributes no interest).
+    const totalInterestY=staged.totalIntercalaryInterest+postSchedY.totalInterest+empLoansInterest;
     const totalInsuranceY=staged.totalIntercalaryInsurance+postSchedY.totalInsurance+ptzInsuranceTotal;
-    const totalCostY=totalInterestY+empLoansInterest+totalInsuranceY+totalFeesCredit;
+    // Same "sum of already-rounded line items" convention as the top Co\u00fbt total du cr\u00e9dit KPI
+    // (see displayedCreditCost above) -- otherwise this column and the top figure can land 1\u20ac apart
+    // for the exact same duration even though both are individually correct.
+    const totalCostY = Math.round(staged.totalIntercalaryInterest) + Math.round(postSchedY.totalInterest) + Math.round(empLoansInterest) + Math.round(totalInsuranceY) + Math.round(totalFeesCredit);
     const monthlyHorsAssuranceY=postSchedY.payment+ptzSched.monthlyPayment+empLoansMonthly;
     const monthlyAssuranceY=(postSchedY.rows.length?postSchedY.rows[0].insurance:0)+ptzInsuranceMonthly;
     const monthlyPostLivraisonY=monthlyHorsAssuranceY+monthlyAssuranceY;
@@ -1595,7 +1601,7 @@ function runSimulation(){
     const ceilingDiff = debtRatioCeiling>0 ? monthlyHorsAssuranceY-debtRatioCeiling : null;
     const ceilingDiffPct = (debtRatioCeiling>0) ? ceilingDiff/debtRatioCeiling*100 : null;
     const feasible = debtRatioCeiling<=0 || monthlyHorsAssuranceY<=debtRatioCeiling;
-    return {years:y, isCurrent:y===loanYears, totalInterestY, totalCostY, monthlyPostLivraisonY, monthlyHorsAssuranceY, monthlyAssuranceY, ceilingDiff, ceilingDiffPct, feasible};
+    return {years:y, isCurrent:y===loanYears, totalInterestY, totalInsuranceY, totalCostY, monthlyPostLivraisonY, monthlyHorsAssuranceY, monthlyAssuranceY, ceilingDiff, ceilingDiffPct, feasible};
   });
   const currentDurationRow=durationComparisons.find(r=>r.isCurrent);
   // "Moins cher" only among durations that actually respect the debt-ratio ceiling -- a cheaper
@@ -1605,9 +1611,17 @@ function runSimulation(){
     ? feasibleRows.reduce((min,r)=> r.totalCostY<min.totalCostY ? r : min, feasibleRows[0])
     : null;
   document.getElementById('durationCompareScenarioTag').textContent = activeScenario==='differe' ? 'scenario Diff\u00e9r\u00e9' : 'scenario Prorata';
-  document.getElementById('durationCompareNote').innerHTML = debtRatioCeiling>0
+  const intTotalTooltip = 'Somme des int\u00e9r\u00eats du pr\u00eat principal (intercalaires + post-livraison)'
+    + (empLoansInterest>0.5 ? ' et du Pr\u00eat Action Logement (<b>'+eur(empLoansInterest)+'</b>, identiques quelle que soit la dur\u00e9e compar\u00e9e ici puisque seule la dur\u00e9e du pr\u00eat principal varie)' : '')
+    + '. Le PTZ n\'y contribue pas, \u00e9tant \u00e0 0%.';
+  document.getElementById('intTotalTh').setAttribute('data-tooltip', intTotalTooltip);
+  const coutTotalTooltip = 'Int\u00e9r\u00eats totaux + Assurance totale'
+    + (totalFeesCredit>0.5 ? ' + frais li\u00e9s au cr\u00e9dit (<b>'+eur(totalFeesCredit)+'</b>, identiques quelle que soit la dur\u00e9e, non repris dans une colonne d\u00e9di\u00e9e)' : '')
+    + '.';
+  document.getElementById('coutTotalTh').setAttribute('data-tooltip', coutTotalTooltip);
+  document.getElementById('durationCompareNote').innerHTML = (debtRatioCeiling>0
     ? 'Comparaison &agrave; apport, PTZ et Pr&ecirc;t Action Logement identiques (ceux renseign&eacute;s ci-dessus) : seule la dur&eacute;e d\'amortissement change. Plafond d\'endettement utilis&eacute; : '+debtRatioPct+'% des salaires nets <i>hors assurance</i> (modifiable ci-contre) = <b>'+eur2(debtRatioCeiling)+'/mois</b>.'
-    : 'Comparaison &agrave; apport, PTZ et Pr&ecirc;t Action Logement identiques (ceux renseign&eacute;s ci-dessus) : seule la dur&eacute;e d\'amortissement change. Renseignez les salaires pour &eacute;valuer chaque dur&eacute;e face au plafond d\'endettement ('+debtRatioPct+'% des revenus nets hors assurance, modifiable ci-contre).';
+    : 'Comparaison &agrave; apport, PTZ et Pr&ecirc;t Action Logement identiques (ceux renseign&eacute;s ci-dessus) : seule la dur&eacute;e d\'amortissement change. Renseignez les salaires pour &eacute;valuer chaque dur&eacute;e face au plafond d\'endettement ('+debtRatioPct+'% des revenus nets hors assurance, modifiable ci-contre).');
   document.getElementById('durationCompareTable').innerHTML=durationComparisons.map(r=>{
     const isCheapest = cheapestFeasibleRow && r===cheapestFeasibleRow;
     const rowStyle = isCheapest ? 'color:var(--gold);font-weight:700' : '';
@@ -1628,7 +1642,7 @@ function runSimulation(){
       ? '<span class="note">actuelle</span>'
       : '<span class="'+(deltaVsCurrent<0?'row-ok':'row-short')+'">'+(deltaVsCurrent>=0?'+':'')+eur(deltaVsCurrent)+'</span>';
     const applyBtn = r.isCurrent ? '' : '<button class="btn btn-secondary btn-sm" onclick="applyDurationYears('+r.years+')">Appliquer</button>';
-    return '<tr style="'+rowStyle+'"><td>'+r.years+' ans'+currentBadge+cheapestBadge+infeasibleBadge+'</td><td>'+monthlyCell+'</td><td>'+eur(r.totalInterestY)+'</td><td>'+eur(r.totalCostY)+'</td><td>'+deltaCell+'</td><td>'+applyBtn+'</td></tr>';
+    return '<tr style="'+rowStyle+'"><td>'+r.years+' ans'+currentBadge+cheapestBadge+infeasibleBadge+'</td><td>'+monthlyCell+'</td><td>'+eur(r.totalInterestY)+'</td><td>'+eur(r.totalInsuranceY)+'</td><td>'+eur(r.totalCostY)+'</td><td>'+deltaCell+'</td><td>'+applyBtn+'</td></tr>';
   }).join('');
 
   const totalCreditPrincipal = ptzAmount + empLoansAmount + loanAmount;
@@ -1757,7 +1771,7 @@ function runSimulation(){
     const omittedCount=uniqueSorted.length-60;
     displayDates=head.concat([{omitMarker:true, count:omittedCount}], tail);
   }
-  let rowsHtml='';
+  let rowsHtml='', hasTailPhase=false;
   displayDates.forEach(item=>{
     if(item.omitMarker){ rowsHtml+='<tr class="row-omitted"><td colspan="7">('+item.count+' lignes omises, valeurs inchang\u00e9es)</td></tr>'; return; }
     const d=item.date;
@@ -1771,13 +1785,31 @@ function runSimulation(){
     const ptzIns = (insurePTZChecked && ptzR) ? ptzInsuranceMonthly : 0;
     const empLoansPay = emp1R ? emp1R.payment : 0;
     const inPtzDeferSubPhase = mainLoanDuringDeferPayment!=null && livraisonDate && d>=livraisonDate && ptzR && ptzR.payment<0.5;
-    const phase = inter ? '<span class="row-intercalary">Intercalaire</span>' : (livraisonDate && d>=livraisonDate ? (inPtzDeferSubPhase ? '<span class="row-intercalary">Amortissement (diff. PTZ, liss\u00e9)</span>' : '<span class="row-ok">Amortissement</span>') : '-');
+    // Once the main loan's own amortization is fully repaid (no `post` row left) but the PTZ and/or
+    // Pr\u00eat Action Logement still run beyond it (they can have a longer term), keep the phase label
+    // honest instead of leaving it as a generic "Amortissement" while the Pr\u00eat column silently reads
+    // 0,00\u20ac -- that reads like a data error rather than the expected tail of a longer secondary loan.
+    const mainLoanFinished = !inter && livraisonDate && d>=livraisonDate && !post;
+    const tailCredits=[];
+    if(mainLoanFinished && ptzR) tailCredits.push('PTZ');
+    if(mainLoanFinished && emp1R) tailCredits.push('Pr\u00eat A.L.');
+    const phase = inter
+      ? '<span class="row-intercalary">Intercalaire</span>'
+      : (livraisonDate && d>=livraisonDate
+          ? (inPtzDeferSubPhase
+              ? '<span class="row-intercalary">Amortissement (diff. PTZ, liss\u00e9)</span>'
+              : (tailCredits.length>0
+                  ? '<span class="row-intercalary">Pr\u00eat principal sold\u00e9 &ndash; '+tailCredits.join(' + ')+' encore en cours</span>'
+                  : '<span class="row-ok">Amortissement</span>'))
+          : '-');
+    if(tailCredits.length>0) hasTailPhase=true;
     const total=loanPay+ptzPay+empLoansPay+loanIns+ptzIns;
     rowsHtml+='<tr><td>'+fmtDate(d)+'</td><td>'+phase+'</td><td>'+eur2(loanPay)+'</td><td>'+eur2(empLoansPay)+'</td><td>'+eur2(ptzPay)+'</td><td>'+eur2(loanIns+ptzIns)+'</td><td><strong>'+eur2(total)+'</strong></td></tr>';
   });
   document.getElementById('scheduleTable').innerHTML=rowsHtml;
   document.getElementById('scheduleTableNote').innerHTML = 'Avant livraison : int\u00e9r\u00eats intercalaires. Apr\u00e8s livraison : amortissement classique.'
-    + (mainLoanDuringDeferPayment!=null ? ' Pr\u00eat liss\u00e9 sur le PTZ actif : la colonne Pr\u00eat est plus \u00e9lev\u00e9e tant que la colonne PTZ affiche 0\u20ac (diff\u00e9r\u00e9 PTZ), puis les deux s\'\u00e9quilibrent -- le Total reste constant sur toute la p\u00e9riode d\'amortissement.' : '');
+    + (mainLoanDuringDeferPayment!=null ? ' Pr\u00eat liss\u00e9 sur le PTZ actif : la colonne Pr\u00eat est plus \u00e9lev\u00e9e tant que la colonne PTZ affiche 0\u20ac (diff\u00e9r\u00e9 PTZ), puis les deux s\'\u00e9quilibrent -- le Total reste constant sur toute la p\u00e9riode d\'amortissement.' : '')
+    + (hasTailPhase ? ' Une fois le pr\u00eat principal totalement rembours\u00e9, seuls le PTZ et/ou le Pr\u00eat Action Logement peuvent continuer si leur dur\u00e9e est plus longue -- la colonne Phase l\'indique alors explicitement plut\u00f4t que d\'afficher un simple \u00ab\u00a0Amortissement\u00a0\u00bb qui laisserait croire \u00e0 une erreur pendant que la colonne Pr\u00eat affiche 0\u20ac.' : '');
 
   lastResults={projectName:currentProjectName, commune, adresse, price, surface, prixM2Calc, prixM2Moyen, ecartEur, ecartPct, stade, remise, priceAfterRemise, totalProjectCost, apportTarget, apportPctOfPrice, ptzAmount, empLoan1Amount, empLoan1Rate, empLoansAmount, empLoansInterest, empLoansMonthly, loanAmount, overFunded, loanYears, loanRate, ptzDefer, ptzRepayMonths:ptzSched.repayMonths, ptzMonthlyPayment:ptzSched.monthlyPayment, avgMonthlyPostLivraison, avgMonthlyPostLivraisonHorsAssurance, avgMonthlyPostLivraisonAssurance, rfr, ptzZone, ptzPersonnes, ptzCeiling:ceilingPtz, ptzEligible:eligible, combinedAnnualPctOfCapital, totalInsuranceAll, totalFeesCredit, totalFeesAcquisition, totalCreditCost, vefaRows, savingsRowsDiffere, savingsRowsProrata, monthlySavings, apportDispo, flexFundRate, salary1, salary2, savingsRate, durationComparisons, staged, activeScenario, apportUtiliseCumule, apportShortfallVsCible, negoExtrasTotal:updateNegoExtrasTotal()};
 
