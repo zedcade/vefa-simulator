@@ -6,8 +6,9 @@
 <title>Simulateur VEFA</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js"></script>
 <style>
-:root{--bg:#0f1420;--panel:#161d2e;--panel2:#1c2438;--border:#2a3452;--text:#e8ecf5;--muted:#9aa6c0;--accent:#4f8cff;--accent2:#3ddc97;--warn:#ffb454;--danger:#ff6b6b;--gold:#ffd166;color-scheme:dark;}
+:root{--bg:#0f1420;--panel:#161d2e;--panel2:#1c2438;--border:#2a3452;--text:#e8ecf5;--muted:#9aa6c0;--accent:#4f8cff;--accent2:#3ddc97;--warn:#ffb454;--danger:#ff6b6b;--gold:#ffd166;--cat-main:#4f8cff;--cat-al:#c084fc;--cat-ptz:#22d3ee;--cat-ins:#3ddc97;--cat-fees:#fb923c;color-scheme:dark;}
 *{box-sizing:border-box;}
 /* Generic fallback: any element carrying data-tooltip gets a help cursor, regardless of which
    specific selector below also targets it. The more specific rules further down are kept for
@@ -82,6 +83,28 @@ h2 .h2-title[data-tooltip]{cursor:help;}
 .panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:18px;min-width:0;}
 .panel.highlight{border:1.5px solid var(--gold);}
 .panel.negotiate{border:1.5px solid var(--accent2);}
+/* Collapsible panels: the h2 becomes a click target (chevron rotates), everything else in the
+   panel is hidden via [hidden] rather than display:none-by-selector, so any inline styles set
+   elsewhere in the app (e.g. kpi grids toggling their own display) aren't fought over. */
+.panel-collapsible{scroll-margin-top:58px;}
+.panel-collapsible > h2{cursor:pointer;user-select:none;}
+.panel-collapsible > h2:hover{color:var(--text);}
+.panel-collapse-chevron{margin-left:auto;flex:0 0 auto;font-size:11px;color:var(--muted);transition:transform .2s;}
+.panel-collapsible.collapsed > h2{margin-bottom:0;border-bottom:none;padding-bottom:0;}
+.panel-collapsible.collapsed > h2 .panel-collapse-chevron{transform:rotate(-90deg);}
+.panel-collapsible.collapsed > *:not(h2){display:none!important;}
+/* h2-toggle (e.g. "Utiliser cash au-del\u00e0 objectif") sits inside the h2 and has its own click
+   target (a checkbox) -- stop its clicks from bubbling up and toggling the whole panel closed. */
+.h2-toggle{cursor:default;}
+/* Sticky jump nav: horizontally scrollable pill row so every panel is one tap away, especially
+   valuable on a long single-page layout on mobile where scrolling past 10+ panels is tedious. */
+#jumpNav{position:sticky;top:0;z-index:40;background:var(--bg);padding:8px 0 10px;margin-bottom:10px;border-bottom:1px solid var(--border);display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;}
+#jumpNav::-webkit-scrollbar{display:none;}
+.jump-nav-btn{flex:0 0 auto;background:var(--panel2);border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:20px;font-size:11.5px;cursor:pointer;white-space:nowrap;font-weight:600;}
+.jump-nav-btn:hover{color:var(--text);border-color:var(--accent);}
+.jump-nav-btn.active{color:var(--bg);background:var(--accent);border-color:var(--accent);}
+#jumpNavToggleAll{flex:0 0 auto;background:transparent;border:1px solid var(--border);color:var(--muted);padding:6px 10px;border-radius:20px;font-size:11.5px;cursor:pointer;white-space:nowrap;}
+#jumpNavToggleAll:hover{color:var(--text);border-color:var(--accent);}
 .field-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-bottom:10px;}
 .field-row label{font-size:12.5px;color:var(--muted);flex:1 1 140px;min-width:0;}
 .field-row label[data-tooltip]{cursor:help;}
@@ -124,6 +147,19 @@ input[type=month]::-webkit-calendar-picker-indicator{cursor:pointer;}
 .section-title-row{display:flex;align-items:center;justify-content:space-between;margin:14px 0 8px;}
 .section-title .inline-link{margin-left:auto;text-transform:none;font-weight:400;font-size:11.5px;color:var(--accent);white-space:nowrap;}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+/* Internal split used when two related KPI blocks (e.g. Pr\u00eat principal / PTZ) share a single
+   collapsible panel -- keeps them visually distinct via a vertical rule while collapsing together
+   as one panel, instead of the old two-panel side-by-side layout that only collapsed independently. */
+.split-col{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+.split-col > div{padding:0 18px;min-width:0;}
+.split-col > div:first-child{padding-left:0;}
+.split-col > div:last-child{padding-right:0;border-left:1px solid var(--border);}
+.split-col h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 10px;font-weight:700;}
+@media (max-width:700px){
+  .two-col{grid-template-columns:1fr;}
+  .split-col{grid-template-columns:1fr;gap:22px;}
+  .split-col > div:last-child{border-left:none;border-top:1px solid var(--border);padding-left:0;padding-top:18px;}
+}
 table{width:100%;border-collapse:collapse;font-size:12.5px;}
 th,td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:right;}
 th{color:var(--muted);font-weight:600;background:var(--panel2);}
@@ -134,6 +170,9 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
 .vefa-remove:hover{color:var(--danger);background:rgba(255,107,107,.12);}
 .vefa-table th.vefa-remove-col,.vefa-table td.vefa-remove-col{text-align:center;white-space:nowrap;width:28px;}
 .vefa-table td:first-child{min-width:190px;} .vefa-table td:nth-child(3){min-width:130px;}
+.chart-wrap{position:relative;height:220px;margin-bottom:14px;}
+.chart-wrap.chart-wrap-sm{height:230px;}
+@media (max-width:480px){.chart-wrap{height:180px;}.chart-wrap.chart-wrap-sm{height:260px;}}
 .scrollbox{max-height:340px;overflow-y:auto;overflow-x:auto;border:1px solid var(--border);border-radius:8px;}
 .vefa-scrollbox{max-height:372px;}
 .scrollbox table thead th{position:sticky;top:0;z-index:5;}
@@ -148,6 +187,8 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
 .kpi .value.accent{color:var(--accent2);} .kpi .value.warn{color:var(--warn);}
 .kpi .value.danger{color:var(--danger);} .kpi .value.gold{color:var(--gold);}
 .note{font-size:11.5px;color:var(--muted);margin-top:2px;}
+.field-warning{font-size:11px;color:var(--danger);margin:-6px 0 10px;line-height:1.35;}
+.field-warning::before{content:'\26a0\fe0f  ';}
 .tag{display:inline-block;font-size:10.5px;padding:2px 7px;border-radius:20px;background:var(--panel2);border:1px solid var(--border);color:var(--muted);margin-left:2px;white-space:nowrap;cursor:help;}
 .row-ok{color:var(--accent2);} .row-short{color:var(--danger);font-weight:700;}
 .row-done{color:var(--accent2);font-style:italic;font-size:10.5px;}
@@ -206,7 +247,6 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
 .switch.sm .slider:before{height:12px;width:12px;left:2px;bottom:2px;}
 .switch.sm input:checked + .slider:before{transform:translateX(12px);}
 @media (max-width:900px){.grid,.topbar{grid-template-columns:1fr;}.topbar-right{grid-template-columns:1fr;}.status-wrap{justify-self:start;}.topbar-right-right{justify-self:start;}}
-@media (max-width:700px){.two-col{grid-template-columns:1fr;}}
 @media (max-width:480px){
   body{padding:12px;}
   .panel{padding:12px;}
@@ -295,9 +335,11 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
   </div>
 </div>
 
+<div id="jumpNav"></div>
+
 <div class="grid">
 <div>
-  <div class="panel">
+  <div class="panel panel-collapsible" id="panel-projet">
     <h2>Projet</h2>
     <div class="field-row"><label>Prix d'acquisition (&euro;)</label><input type="number" class="auto" id="price" value="350000" step="100" min="0"></div>
     <div class="field-row"><label>Remise (%)</label><input type="number" class="auto" id="remise" value="1" step="0.01" min="0"></div>
@@ -334,7 +376,7 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
     <div class="field-row"><label data-tooltip="Due uniquement en cas de remboursement anticip&eacute;. Plafonn&eacute;e par la loi (Art. R313-25 Code conso) &agrave; MIN(3% du capital restant d&ucirc;, 6 mois d'int&eacute;r&ecirc;ts au taux moyen du pr&ecirc;t).">IRA remb. anticip&eacute; (&euro;)</label><input type="number" class="auto" id="fraisIRA" value="0" step="100" min="0"></div>
   </div>
 
-  <div class="panel">
+  <div class="panel panel-collapsible" id="panel-financement">
     <h2>Financement</h2>
     <div class="field-row"><label id="apportLabel" data-tooltip="Objectif d'apport. Le tableau Diff&eacute;r&eacute; suppose que vous levez le compl&eacute;ment n&eacute;cessaire &agrave; chaque &eacute;tape pour que l'apport couvre en priorit&eacute; chaque appel jusqu'&agrave; ce plafond.<br><br>Rep&egrave;re courant : l'apport personnel repr&eacute;sente g&eacute;n&eacute;ralement 10 &agrave; 30% du prix d'achat -- de quoi couvrir a minima les frais de notaire, de garantie et de dossier, rarement financ&eacute;s par le pr&ecirc;t. Un apport proche de 30% est souvent recherch&eacute; pour obtenir de meilleures conditions de taux.<br><br>Champ laiss&eacute; vide = apport cible de 0&nbsp;&euro; dans tous les calculs. Le montant gris&eacute; affich&eacute; en italique dans le champ n'est qu'une suggestion (30% du prix apr&egrave;s remise) -- il n'est pas appliqu&eacute; tant que vous ne le saisissez pas vous-m&ecirc;me.">Apport cible total (&euro;)</label><input type="number" class="auto" id="apport" value="150000" step="1000" min="0"></div>
     <div class="section-title">PTZ<span class="tag" id="ptzEligTag" data-tooltip="Renseignez le RFR pour calculer l'&eacute;ligibilit&eacute;.">&hellip;</span><a class="inline-link" href="https://www.anil.org/outils/outils-de-calcul/votre-pret-a-taux-zero/" target="_blank">Simulateur ANIL</a></div>
@@ -355,6 +397,7 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
       </select>
     </div>
     <div class="field-row"><label data-tooltip="Calcul&eacute; automatiquement selon le bar&egrave;me officiel d&egrave;s que le RFR, la zone, le foyer et le type de logement sont renseign&eacute;s. Modifiable manuellement pour tester une offre bancaire r&eacute;elle.">Montant PTZ (&euro;)</label><input type="number" class="auto" id="ptzAmount" value="50000" step="1000" min="0" oninput="this.dataset.userSet='1'"></div>
+    <div class="field-warning" id="ptzAmountWarning" style="display:none"></div>
     <div class="field-row"><label data-tooltip="Calcul&eacute; automatiquement selon le bar&egrave;me officiel. Modifiable manuellement pour tester une offre bancaire r&eacute;elle.">Diff&eacute;r&eacute; PTZ (mois depuis livraison)</label><input type="number" class="auto" id="ptzDefer" value="0" step="1" min="0" oninput="this.dataset.userSet='1'"></div>
     <div class="field-row"><label data-tooltip="Calcul&eacute; automatiquement selon le bar&egrave;me officiel. Modifiable manuellement pour tester une offre bancaire r&eacute;elle.">Dur&eacute;e totale PTZ (mois)</label><input type="number" class="auto" id="ptzTotalMonths" value="180" step="1" min="0" oninput="this.dataset.userSet='1'"></div>
     <div class="checkbox-row">
@@ -363,8 +406,10 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
     </div>
     <div class="section-title"><span data-tooltip="Pr&ecirc;t Accession Action Logement (ex &laquo;&nbsp;1% patronal&nbsp;&raquo; / &laquo;&nbsp;1% Logement&nbsp;&raquo;) : jusqu'&agrave; 30&nbsp;000&euro; &agrave; 1% fixe (hors assurance), plafonn&eacute; &agrave; 40% du co&ucirc;t total de l'op&eacute;ration, sur 25 ans maximum. R&eacute;serv&eacute; aux salari&eacute;s d'entreprises priv&eacute;es non agricoles de 10 salari&eacute;s et plus (50+ en agricole), sous plafond de ressources (RFR N-2), pour l'achat d'une r&eacute;sidence principale neuve ou ancienne -- cumulable avec le PTZ. Demande directement aupr&egrave;s d'Action Logement, s&eacute;par&eacute;ment du dossier bancaire. Dans la simulation, il est mobilis&eacute; juste apr&egrave;s l'apport (et avant le PTZ) &agrave; chaque appel de fonds -- comme le PTZ, il est trait&eacute; comme d&eacute;bloqu&eacute; en une fois et amorti &agrave; taux fixe &agrave; partir de la livraison, sans int&eacute;r&ecirc;ts intercalaires pendant la construction.">Pr&ecirc;t Action Logement</span><a class="inline-link" href="https://www.service-public.gouv.fr/particuliers/vosdroits/F37842" target="_blank">Info Vos Droits</a></div>
     <div class="field-row"><label data-tooltip="Pr&ecirc;t Accession Action Logement (ex '1% patronal' / '1% Logement') : jusqu'&agrave; 30&nbsp;000&euro; &agrave; 1% fixe (hors assurance), plafonn&eacute; &agrave; 40% du co&ucirc;t total de l'op&eacute;ration, sur 25 ans maximum. R&eacute;serv&eacute; aux salari&eacute;s d'entreprises priv&eacute;es non agricoles de 10 salari&eacute;s et plus (50+ en agricole), sous plafond de ressources (RFR N-2), pour l'achat d'une r&eacute;sidence principale neuve ou ancienne. Cumulable avec le PTZ. Laissez &agrave; 0&euro; si non applicable.">Pr&ecirc;t AL (1%) Montant (&euro;)</label><input type="number" class="auto" id="empLoan1Amount" value="0" step="500" min="0"></div>
+    <div class="field-warning" id="empLoan1AmountWarning" style="display:none"></div>
     <div class="field-row"><label>Pr&ecirc;t AL Taux annuel (%)</label><input type="number" class="auto" id="empLoan1Rate" value="1" step="0.01" min="0"></div>
     <div class="field-row"><label>Pr&ecirc;t AL Dur&eacute;e totale (mois)</label><input type="number" class="auto" id="empLoan1TotalMonths" value="300" step="1" min="0"></div>
+    <div class="field-warning" id="empLoan1DurationWarning" style="display:none"></div>
     <div class="section-title">Pr&ecirc;t principal</div>
     <div class="field-row"><label>Dur&eacute;e amortissement (ans)</label><input type="number" class="auto" id="loanYears" value="15" step="1" min="0"></div>
     <div class="field-row"><label>Taux nominal du pr&ecirc;t (%)</label><input type="number" class="auto" id="loanRate" value="3.5" step="0.01" min="0"></div>
@@ -383,11 +428,12 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
     </div>
   </div>
 
-  <div class="panel">
+  <div class="panel panel-collapsible" id="panel-emprunteurs">
     <h2>Emprunteurs et &eacute;pargne</h2>
     <div class="field-row"><label>Salaire net emprunteur 1 (&euro;/mois)</label><input type="number" class="auto" id="salary1" value="3000" step="10" min="0"></div>
     <div class="field-row"><label>Salaire net emprunteur 2 (&euro;/mois)</label><input type="number" class="auto" id="salary2" value="2000" step="10" min="0"></div>
-    <div class="field-row"><label data-tooltip="Utilis&eacute; par la Comparaison des dur&eacute;es de pr&ecirc;t pour juger si une mensualit&eacute; est finan&ccedil;able. La norme HCSF officielle (contraignante depuis 2022) est 35% des revenus nets, ASSURANCE COMPRISE. Certains courtiers communiquent encore un plafond &agrave; 33% appliqu&eacute; HORS ASSURANCE (convention plus ancienne mais toujours tr&egrave;s r&eacute;pandue en pratique, ex: certains devis de courtiers). Ce champ reste appliqu&eacute; au montant hors assurance -- ajustez le pourcentage selon la convention de votre banque/courtier plut&ocirc;t que de vous fier &agrave; une valeur fig&eacute;e.">Plafond d'endettement (%) hors assurance</label><input type="number" class="auto" id="debtRatioPct" value="35" step="0.5" min="0"></div>
+    <div class="field-row"><label data-tooltip="Mensualit&eacute;s d&eacute;j&agrave; dues en dehors de ce projet : cr&eacute;dit auto, cr&eacute;dit conso, pension alimentaire, autre pr&ecirc;t immobilier en cours, etc. La norme HCSF officielle porte sur le taux d'endettement GLOBAL du foyer -- ces charges sont donc ajout&eacute;es &agrave; la mensualit&eacute; de ce projet avant comparaison au plafond ci-dessous. Laissez &agrave; 0&euro; si vous n'avez aucune autre charge de cr&eacute;dit r&eacute;currente.">Autres charges de cr&eacute;dit (&euro;/mois)</label><input type="number" class="auto" id="autresCharges" value="0" step="10" min="0"></div>
+    <div class="field-row"><label data-tooltip="Utilis&eacute; par la Comparaison des dur&eacute;es de pr&ecirc;t pour juger si une mensualit&eacute; est finan&ccedil;able. La norme HCSF officielle (contraignante depuis 2022) est 35% des revenus nets, ASSURANCE COMPRISE, TOUTES CHARGES DE CR&Eacute;DIT CONFONDUES (y compris les autres charges de cr&eacute;dit renseign&eacute;es ci-dessus). Certains courtiers communiquent encore un plafond &agrave; 33% appliqu&eacute; HORS ASSURANCE (convention plus ancienne mais toujours tr&egrave;s r&eacute;pandue en pratique, ex: certains devis de courtiers). Ce champ reste appliqu&eacute; au montant hors assurance -- ajustez le pourcentage selon la convention de votre banque/courtier plut&ocirc;t que de vous fier &agrave; une valeur fig&eacute;e.">Plafond d'endettement (%) hors assurance</label><input type="number" class="auto" id="debtRatioPct" value="35" step="0.5" min="0"></div>
     <div class="field-row"><label>% du salaire mis de c&ocirc;t&eacute; /mois</label><input type="number" class="auto" id="savingsRate" value="30" step="1" min="0"></div>
     <div class="field-row"><label>Rendement Flex Fund (% APY)</label><input type="number" class="auto" id="flexFundRate" value="2" step="0.01" min="0"></div>
     <div class="field-row"><label>Apport disponible aujourd'hui (&euro;)</label><input type="number" class="auto" id="apportDispo" value="50000" step="1000" min="0"></div>
@@ -396,19 +442,19 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
 </div>
 
 <div>
-  <div class="panel">
+  <div class="panel panel-collapsible" id="panel-resume">
     <h2>R&eacute;sum&eacute; du financement</h2>
     <div class="kpi-grid" id="kpiGrid"></div>
     <div class="note" id="consistencyNote"></div>
   </div>
 
-  <div class="panel">
+  <div class="panel panel-collapsible" id="panel-cout">
     <h2>Co&ucirc;t total du cr&eacute;dit <span class="tag" id="scenarioTag" data-tooltip="Ce panneau calcule les int&eacute;r&ecirc;ts r&eacute;els selon le calendrier de tirage du pr&ecirc;t actif (onglet Diff&eacute;r&eacute;/Prorata) : int&eacute;r&ecirc;ts intercalaires pendant la construction, puis amortissement &agrave; partir de la livraison.">scenario Diff&eacute;r&eacute;</span>
     </h2>
     <div class="kpi-grid" id="totalCostKpi"></div>
   </div>
 
-  <div class="panel negotiate">
+  <div class="panel negotiate panel-collapsible" id="panel-nego">
     <h2>Recommandation n&eacute;gociation prix</h2>
     <div class="kpi-grid" id="negoKpi"></div>
     <div class="note" id="negoNote"></div>
@@ -423,7 +469,7 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
     <div class="note" style="margin-top:10px">Total avantages n&eacute;goci&eacute;s obtenus : <b id="negoExtrasTotal" style="color:var(--gold);font-size:14px">0 &euro;</b></div>
   </div>
 
-  <div class="panel">
+  <div class="panel panel-collapsible" id="panel-vefa">
     <h2><span class="h2-title" data-tooltip="R&eacute;servation : le d&eacute;p&ocirc;t de garantie est plafonn&eacute; par la loi (Art. R261-28 CCH) &agrave; 5% si l'acte d&eacute;finitif est sign&eacute; sous 1 an, 2% entre 1 et 2 ans, et 0% au-del&agrave; de 2 ans -- et au-del&agrave; de ce d&eacute;lai, AUCUNE somme, m&ecirc;me forfaitaire, ne peut &ecirc;tre exig&eacute;e ou accept&eacute;e avant la signature de l'acte authentique (Art. L261-15 CCH). Les dates des paliers li&eacute;s au chantier (ancr&eacute;s sur le Mois de d&eacute;marrage construction) se d&eacute;calent automatiquement les uns par rapport aux autres lorsque vous modifiez l'une d'entre elles.">Calendrier des appels de fonds VEFA</span> <span class="tag" data-tooltip="R&eacute;servation : le d&eacute;p&ocirc;t de garantie est plafonn&eacute; par la loi (Art. R261-28 CCH) &agrave; 5% si l'acte d&eacute;finitif est sign&eacute; sous 1 an, 2% entre 1 et 2 ans, et 0% au-del&agrave; de 2 ans -- et au-del&agrave; de ce d&eacute;lai, AUCUNE somme, m&ecirc;me forfaitaire, ne peut &ecirc;tre exig&eacute;e ou accept&eacute;e avant la signature de l'acte authentique (Art. L261-15 CCH). Les dates des paliers li&eacute;s au chantier (ancr&eacute;s sur le Mois de d&eacute;marrage construction) se d&eacute;calent automatiquement les uns par rapport aux autres lorsque vous modifiez l'une d'entre elles.">paliers, dates et % enti&egrave;rement &eacute;ditables</span></h2>
     <div class="note" style="margin-bottom:8px">Renommez, ajoutez ou supprimez un palier librement pour coller au calendrier de votre programme. Pour le premier palier uniquement, vous pouvez saisir soit le %, soit le montant directement (les deux se recalculent l'un l'autre). Montant et cumul restent vides tant qu'aucun prix d'acquisition n'est renseign&eacute;.</div>
     <div class="scrollbox vefa-scrollbox">
@@ -438,7 +484,7 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
     </div>
   </div>
 
-  <div class="panel">
+  <div class="panel panel-collapsible" id="panel-epargne">
     <h2>
       <span class="h2-title" data-tooltip="Diff&eacute;r&eacute; : apport (cash organique + vente d'actifs) couvre en priorit&eacute; jusqu'&agrave; &eacute;puisement de l'objectif ; &eacute;pargne restante r&eacute;duit ensuite le pr&ecirc;t directement -- sauf si d&eacute;sactiv&eacute; via le r&eacute;glage ci-contre. Prorata : la banque exige un financement proportionnel identique &agrave; chaque appel.">Simulation d'&eacute;pargne</span>
       <span class="h2-toggle" data-tooltip="Si activ&eacute; (par d&eacute;faut) : une fois l'objectif d'apport atteint, toute &eacute;pargne organique restante continue de r&eacute;duire le pr&ecirc;t &agrave; chaque &eacute;tape suivante. Si d&eacute;sactiv&eacute; : l'&eacute;pargne au-del&agrave; de l'objectif s'accumule sans r&eacute;duire le pr&ecirc;t.">
@@ -469,31 +515,35 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
     <div class="note" id="aLeverSummary" style="margin-top:10px"></div>
   </div>
 
-  <div class="two-col">
-    <div class="panel">
-      <h2>Pr&ecirc;t principal</h2>
-      <div class="kpi-grid" id="loanKpi"></div>
-    </div>
-    <div class="panel">
-      <h2>PTZ<span id="ptzPanelEligTag"></span></h2>
-      <div class="kpi-grid" id="ptzKpi"></div>
+  <div class="panel panel-collapsible" id="panel-pret-principal">
+    <h2>Pr&ecirc;t principal &amp; PTZ</h2>
+    <div class="split-col">
+      <div>
+        <h3>Pr&ecirc;t principal</h3>
+        <div class="kpi-grid" id="loanKpi"></div>
+      </div>
+      <div>
+        <h3>PTZ<span id="ptzPanelEligTag"></span></h3>
+        <div class="kpi-grid" id="ptzKpi"></div>
+      </div>
     </div>
   </div>
 
-  <div class="panel">
+  <div class="panel panel-collapsible" id="panel-pretal">
     <h2><span class="h2-title" data-tooltip="Pr&ecirc;t Accession Action Logement (ex &laquo;&nbsp;1% patronal&nbsp;&raquo;) : jusqu'&agrave; 30&nbsp;000&euro; &agrave; 1% fixe, r&eacute;serv&eacute; aux salari&eacute;s d'entreprises priv&eacute;es non agricoles de 10+ salari&eacute;s (50+ en agricole), sous plafond de ressources RFR N-2, cumulable avec le PTZ. Mobilis&eacute; juste apr&egrave;s l'apport dans la simulation d'&eacute;pargne, avant le PTZ et le pr&ecirc;t principal.">Pr&ecirc;t Action Logement</span></h2>
     <div class="kpi-grid" id="empLoansKpi"></div>
   </div>
 
-  <div class="panel">
+  <div class="panel panel-collapsible" id="panel-assurance">
     <h2>D&eacute;tail de l'assurance emprunteur</h2>
     <div class="kpi-grid" id="insuranceKpi"></div>
     <div class="small-print">Comparer les offres : <a href="https://www.lesfurets.com/assurance-emprunteur" target="_blank">Les Furets - Assurance emprunteur (comparateur not&eacute; parmi les mieux class&eacute;s)</a></div>
   </div>
 
-  <div class="panel">
+  <div class="panel panel-collapsible" id="panel-echeancier">
     <h2>&Eacute;ch&eacute;ancier mensuel combin&eacute;</h2>
     <div class="note" id="scheduleTableNote" style="margin-bottom:8px">Avant livraison : int&eacute;r&ecirc;ts intercalaires. Apr&egrave;s livraison : amortissement classique.</div>
+    <div class="chart-wrap"><canvas id="balanceChart"></canvas></div>
     <div class="scrollbox">
       <table>
         <thead><tr><th>Date</th><th>Phase</th><th>Pr&ecirc;t</th><th>Pr&ecirc;t A.L.</th><th>PTZ</th><th>Assurance</th><th>Total</th></tr></thead>
@@ -502,12 +552,13 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
     </div>
   </div>
 
-  <div class="panel highlight">
+  <div class="panel highlight panel-collapsible" id="panel-duree">
     <h2>Comparaison des dur&eacute;es de pr&ecirc;t <span class="tag" id="durationCompareScenarioTag" data-tooltip="Le montant tir&eacute;, les int&eacute;r&ecirc;ts intercalaires, le PTZ et le Pr&ecirc;t Action Logement restent ceux du sc&eacute;nario actif (Diff&eacute;r&eacute;/Prorata) et de l'apport actuellement renseign&eacute; ci-dessus -- seule la dur&eacute;e d'amortissement du pr&ecirc;t principal varie d'une ligne &agrave; l'autre.">scenario Diff&eacute;r&eacute;</span></h2>
     <div class="note" id="durationCompareNote" style="margin-bottom:10px"></div>
+    <div class="chart-wrap chart-wrap-sm"><canvas id="durationCostChart"></canvas></div>
     <div class="no-scroll-table">
       <table>
-        <thead><tr><th>Dur&eacute;e</th><th>Mensualit&eacute; post-livraison</th><th id="intTotalTh">Int&eacute;r&ecirc;ts totaux</th><th>Assurance totale</th><th id="coutTotalTh">Co&ucirc;t total du cr&eacute;dit</th><th>&Eacute;cart vs actuelle</th><th></th></tr></thead>
+        <thead id="durationCompareThead"><tr><th>Dur&eacute;e</th><th>Mensualit&eacute; post-livraison</th><th id="intTotalTh">Int&eacute;r&ecirc;ts totaux</th><th>Assurance totale</th><th id="coutTotalTh">Co&ucirc;t total du cr&eacute;dit</th><th>&Eacute;cart vs actuelle</th><th></th></tr></thead>
         <tbody id="durationCompareTable"></tbody>
       </table>
     </div>
@@ -1303,6 +1354,7 @@ function runSimulation(){
   const insurePTZChecked=document.getElementById('insurePTZ').checked;
   const useCashBeyond=document.getElementById('useCashBeyondObjectif').checked;
   const salary1=val('salary1'), salary2=val('salary2'), savingsRate=val('savingsRate');
+  const autresCharges=val('autresCharges');
   const flexFundRate=val('flexFundRate'), apportDispo=val('apportDispo');
   const refDate=dateVal('refDate')||new Date();
 
@@ -1399,6 +1451,35 @@ function runSimulation(){
   const empLoansMonthly=empLoan1Sched.payment;
 
   const totalProjectCost=priceAfterRemise+fraisNotaire+fraisAgence+fraisMobilier+fraisGarantie+fraisDossier+fraisCourtage+fraisIRA;
+
+  // ---- Inline legal-cap warnings -- previously only mentioned in tooltips (easy to miss), now
+  // surfaced directly under the field they concern so an out-of-bounds value can't go unnoticed.
+  const ptzAmountWarningEl=document.getElementById('ptzAmountWarning');
+  if(rfr>0 && priceAfterRemise>0 && ptzAmount>ptzMontantCalcule+0.5){
+    ptzAmountWarningEl.style.display='';
+    ptzAmountWarningEl.textContent='Sup\u00e9rieur au plafond calcul\u00e9 selon le bar\u00e8me officiel ('+eur(Math.round(ptzMontantCalcule))+' pour ce profil) -- une banque n\'accordera pas plus.';
+  } else {
+    ptzAmountWarningEl.style.display='none';
+  }
+  const empLoan1AmountWarningEl=document.getElementById('empLoan1AmountWarning');
+  const empLoan1Ceiling40Pct = totalProjectCost*0.4;
+  const empLoan1Issues=[];
+  if(empLoan1Amount>30000.5) empLoan1Issues.push('plafond l\u00e9gal 30\u00a0000\u20ac d\u00e9pass\u00e9');
+  if(totalProjectCost>0 && empLoan1Amount>empLoan1Ceiling40Pct+0.5) empLoan1Issues.push('d\u00e9passe 40% du co\u00fbt total de l\'op\u00e9ration ('+eur(Math.round(empLoan1Ceiling40Pct))+')');
+  if(empLoan1Issues.length){
+    empLoan1AmountWarningEl.style.display='';
+    empLoan1AmountWarningEl.textContent='Pr\u00eat Action Logement : '+empLoan1Issues.join(' ; ')+'.';
+  } else {
+    empLoan1AmountWarningEl.style.display='none';
+  }
+  const empLoan1DurationWarningEl=document.getElementById('empLoan1DurationWarning');
+  if(empLoan1TotalMonths>300.5){
+    empLoan1DurationWarningEl.style.display='';
+    empLoan1DurationWarningEl.textContent='Sup\u00e9rieur au plafond l\u00e9gal de 25 ans (300 mois) pour le Pr\u00eat Action Logement.';
+  } else {
+    empLoan1DurationWarningEl.style.display='none';
+  }
+
   let loanAmount=totalProjectCost-apportTarget-ptzAmount-empLoansAmount;
   const overFunded=loanAmount<0;
   if(loanAmount<0) loanAmount=0;
@@ -1593,15 +1674,29 @@ function runSimulation(){
     // (see displayedCreditCost above) -- otherwise this column and the top figure can land 1\u20ac apart
     // for the exact same duration even though both are individually correct.
     const totalCostY = Math.round(staged.totalIntercalaryInterest) + Math.round(postSchedY.totalInterest) + Math.round(empLoansInterest) + Math.round(totalInsuranceY) + Math.round(totalFeesCredit);
+    // ---- Cost-category breakdown for the stacked chart + colored table columns. Each segment is
+    // rounded so that segMain+segAL+segPTZ+segAssurance+segFees === totalCostY EXACTLY (segAssurance
+    // absorbs the last euro of rounding residual) -- otherwise the 5 displayed numbers could fail to
+    // add up to the "Co\u00fbt total" figure shown right next to them, which would look like a bug.
+    const segMainInterest = Math.round(staged.totalIntercalaryInterest) + Math.round(postSchedY.totalInterest);
+    const segALInterest = Math.round(empLoansInterest);
+    const segFees = Math.round(totalFeesCredit);
+    const segInsuranceCombined = totalCostY - segMainInterest - segALInterest - segFees; // === Math.round(totalInsuranceY)
+    const segPTZ = Math.round(ptzInsuranceTotal);
+    const segAssurance = segInsuranceCombined - segPTZ;
     const monthlyHorsAssuranceY=postSchedY.payment+ptzSched.monthlyPayment+empLoansMonthly;
     const monthlyAssuranceY=(postSchedY.rows.length?postSchedY.rows[0].insurance:0)+ptzInsuranceMonthly;
     const monthlyPostLivraisonY=monthlyHorsAssuranceY+monthlyAssuranceY;
     // Compared hors-assurance vs hors-assurance -- never the assurance-comprise total against this
-    // ceiling, since that would mix two incompatible bases and misjudge feasibility.
-    const ceilingDiff = debtRatioCeiling>0 ? monthlyHorsAssuranceY-debtRatioCeiling : null;
+    // ceiling, since that would mix two incompatible bases and misjudge feasibility. Autres charges
+    // de cr\u00e9dit (existing debt outside this project) are added here because the HCSF ceiling is a
+    // GLOBAL household debt-ratio test, not just this loan's payment -- omitting them would make a
+    // duration look feasible when a bank would actually reject it.
+    const monthlyHorsAssuranceWithChargesY = monthlyHorsAssuranceY + autresCharges;
+    const ceilingDiff = debtRatioCeiling>0 ? monthlyHorsAssuranceWithChargesY-debtRatioCeiling : null;
     const ceilingDiffPct = (debtRatioCeiling>0) ? ceilingDiff/debtRatioCeiling*100 : null;
-    const feasible = debtRatioCeiling<=0 || monthlyHorsAssuranceY<=debtRatioCeiling;
-    return {years:y, isCurrent:y===loanYears, totalInterestY, totalInsuranceY, totalCostY, monthlyPostLivraisonY, monthlyHorsAssuranceY, monthlyAssuranceY, ceilingDiff, ceilingDiffPct, feasible};
+    const feasible = debtRatioCeiling<=0 || monthlyHorsAssuranceWithChargesY<=debtRatioCeiling;
+    return {years:y, isCurrent:y===loanYears, totalInterestY, totalInsuranceY, totalCostY, monthlyPostLivraisonY, monthlyHorsAssuranceY, monthlyHorsAssuranceWithChargesY, monthlyAssuranceY, ceilingDiff, ceilingDiffPct, feasible, segMainInterest, segALInterest, segPTZ, segAssurance, segFees};
   });
   const currentDurationRow=durationComparisons.find(r=>r.isCurrent);
   // "Moins cher" only among durations that actually respect the debt-ratio ceiling -- a cheaper
@@ -1611,16 +1706,24 @@ function runSimulation(){
     ? feasibleRows.reduce((min,r)=> r.totalCostY<min.totalCostY ? r : min, feasibleRows[0])
     : null;
   document.getElementById('durationCompareScenarioTag').textContent = activeScenario==='differe' ? 'scenario Diff\u00e9r\u00e9' : 'scenario Prorata';
-  const intTotalTooltip = 'Somme des int\u00e9r\u00eats du pr\u00eat principal (intercalaires + post-livraison)'
-    + (empLoansInterest>0.5 ? ' et du Pr\u00eat Action Logement (<b>'+eur(empLoansInterest)+'</b>, identiques quelle que soit la dur\u00e9e compar\u00e9e ici puisque seule la dur\u00e9e du pr\u00eat principal varie)' : '')
-    + '. Le PTZ n\'y contribue pas, \u00e9tant \u00e0 0%.';
-  document.getElementById('intTotalTh').setAttribute('data-tooltip', intTotalTooltip);
-  const coutTotalTooltip = 'Int\u00e9r\u00eats totaux + Assurance totale'
-    + (totalFeesCredit>0.5 ? ' + frais li\u00e9s au cr\u00e9dit (<b>'+eur(totalFeesCredit)+'</b>, identiques quelle que soit la dur\u00e9e, non repris dans une colonne d\u00e9di\u00e9e)' : '')
-    + '.';
+  // ---- Column set adapts to what's actually in play: Pr\u00eat AL and PTZ columns only appear when
+  // the corresponding financing is used, so an empty always-zero column doesn't clutter the table.
+  const hasALCol = empLoansAmount>0.5;
+  const hasPTZCol = ptzAmount>0.5;
+  const catColors = {main:'var(--cat-main)', al:'var(--cat-al)', ptz:'var(--cat-ptz)', ins:'var(--cat-ins)', fees:'var(--cat-fees)'};
+  const theadCells = ['<th>Dur\u00e9e</th>','<th>Mensualit\u00e9 post-livraison</th>',
+    '<th style="color:'+catColors.main+'" data-tooltip="Int\u00e9r\u00eats du pr\u00eat principal (intercalaires + post-livraison).">Int. pr\u00eat</th>'];
+  if(hasALCol) theadCells.push('<th style="color:'+catColors.al+'" data-tooltip="Int\u00e9r\u00eats du Pr\u00eat Action Logement -- identiques quelle que soit la dur\u00e9e compar\u00e9e ici puisque seule la dur\u00e9e du pr\u00eat principal varie.">Int. pr\u00eat AL</th>');
+  if(hasPTZCol) theadCells.push('<th style="color:'+catColors.ptz+'" data-tooltip="Assurance du PTZ -- le PTZ lui-m\u00eame ne co\u00fbte aucun int\u00e9r\u00eat, \u00e9tant \u00e0 0% par d\u00e9finition.">PTZ</th>');
+  theadCells.push('<th style="color:'+catColors.ins+'">Assurance</th>');
+  theadCells.push('<th style="color:'+catColors.fees+'" data-tooltip="Frais li\u00e9s au cr\u00e9dit (dossier, garantie, courtage) -- identiques quelle que soit la dur\u00e9e.">Frais</th>');
+  theadCells.push('<th id="coutTotalTh">Co\u00fbt total du cr\u00e9dit</th>','<th>\u00c9cart vs actuelle</th>','<th></th>');
+  document.getElementById('durationCompareThead').innerHTML = '<tr>'+theadCells.join('')+'</tr>';
+  const coutTotalTooltip = 'Somme des colonnes color\u00e9es ci-contre (int\u00e9r\u00eats, PTZ, assurance, frais) -- toujours coh\u00e9rente avec le "Co\u00fbt total du cr\u00e9dit" affich\u00e9 plus haut pour la dur\u00e9e actuelle.';
   document.getElementById('coutTotalTh').setAttribute('data-tooltip', coutTotalTooltip);
+  const autresChargesNote = autresCharges>0.5 ? ' + '+eur2(autresCharges)+'/mois d\'autres charges de cr\u00e9dit d\u00e9j\u00e0 dues (renseign\u00e9es ci-contre)' : '';
   document.getElementById('durationCompareNote').innerHTML = (debtRatioCeiling>0
-    ? 'Comparaison &agrave; apport, PTZ et Pr&ecirc;t Action Logement identiques (ceux renseign&eacute;s ci-dessus) : seule la dur&eacute;e d\'amortissement change. Plafond d\'endettement utilis&eacute; : '+debtRatioPct+'% des salaires nets <i>hors assurance</i> (modifiable ci-contre) = <b>'+eur2(debtRatioCeiling)+'/mois</b>.'
+    ? 'Comparaison &agrave; apport, PTZ et Pr&ecirc;t Action Logement identiques (ceux renseign&eacute;s ci-dessus) : seule la dur&eacute;e d\'amortissement change. Plafond d\'endettement utilis&eacute; : '+debtRatioPct+'% des salaires nets <i>hors assurance</i> (modifiable ci-contre) = <b>'+eur2(debtRatioCeiling)+'/mois</b>, compar&eacute; &agrave; la mensualit&eacute; hors assurance de ce projet'+autresChargesNote+'.'
     : 'Comparaison &agrave; apport, PTZ et Pr&ecirc;t Action Logement identiques (ceux renseign&eacute;s ci-dessus) : seule la dur&eacute;e d\'amortissement change. Renseignez les salaires pour &eacute;valuer chaque dur&eacute;e face au plafond d\'endettement ('+debtRatioPct+'% des revenus nets hors assurance, modifiable ci-contre).');
   document.getElementById('durationCompareTable').innerHTML=durationComparisons.map(r=>{
     const isCheapest = cheapestFeasibleRow && r===cheapestFeasibleRow;
@@ -1632,9 +1735,10 @@ function runSimulation(){
     if(r.ceilingDiff!=null){
       const sign = r.ceilingDiff>=0 ? '+' : '';
       let color, label;
-      if(r.ceilingDiff>0){ color='var(--danger)'; label='au-dessus du plafond (hors assurance)'; }
-      else if(r.monthlyHorsAssuranceY>=debtRatioCeiling*CLOSE_TO_CEILING_RATIO){ color='var(--warn)'; label='proche du plafond (hors assurance)'; }
-      else { color='var(--accent2)'; label='sous le plafond (hors assurance)'; }
+      const chargesSuffix = autresCharges>0.5 ? ', charges incl.' : '';
+      if(r.ceilingDiff>0){ color='var(--danger)'; label='au-dessus du plafond (hors assurance'+chargesSuffix+')'; }
+      else if(r.monthlyHorsAssuranceWithChargesY>=debtRatioCeiling*CLOSE_TO_CEILING_RATIO){ color='var(--warn)'; label='proche du plafond (hors assurance'+chargesSuffix+')'; }
+      else { color='var(--accent2)'; label='sous le plafond (hors assurance'+chargesSuffix+')'; }
       monthlyCell += '<br><span style="font-size:10.5px;font-weight:400;color:'+color+'">('+sign+eur(r.ceilingDiff)+' / '+sign+r.ceilingDiffPct.toFixed(0)+'%) '+label+'</span>';
     }
     const deltaVsCurrent = r.totalCostY - currentDurationRow.totalCostY;
@@ -1642,8 +1746,14 @@ function runSimulation(){
       ? '<span class="note">actuelle</span>'
       : '<span class="'+(deltaVsCurrent<0?'row-ok':'row-short')+'">'+(deltaVsCurrent>=0?'+':'')+eur(deltaVsCurrent)+'</span>';
     const applyBtn = r.isCurrent ? '' : '<button class="btn btn-secondary btn-sm" onclick="applyDurationYears('+r.years+')">Appliquer</button>';
-    return '<tr style="'+rowStyle+'"><td>'+r.years+' ans'+currentBadge+cheapestBadge+infeasibleBadge+'</td><td>'+monthlyCell+'</td><td>'+eur(r.totalInterestY)+'</td><td>'+eur(r.totalInsuranceY)+'</td><td>'+eur(r.totalCostY)+'</td><td>'+deltaCell+'</td><td>'+applyBtn+'</td></tr>';
+    const catCells = ['<td style="color:'+catColors.main+'">'+eur(r.segMainInterest)+'</td>'];
+    if(hasALCol) catCells.push('<td style="color:'+catColors.al+'">'+eur(r.segALInterest)+'</td>');
+    if(hasPTZCol) catCells.push('<td style="color:'+catColors.ptz+'">'+eur(r.segPTZ)+'</td>');
+    catCells.push('<td style="color:'+catColors.ins+'">'+eur(r.segAssurance)+'</td>');
+    catCells.push('<td style="color:'+catColors.fees+'">'+eur(r.segFees)+'</td>');
+    return '<tr style="'+rowStyle+'"><td>'+r.years+' ans'+currentBadge+cheapestBadge+infeasibleBadge+'</td><td>'+monthlyCell+'</td>'+catCells.join('')+'<td>'+eur(r.totalCostY)+'</td><td>'+deltaCell+'</td><td>'+applyBtn+'</td></tr>';
   }).join('');
+  renderDurationChart(durationComparisons, cheapestFeasibleRow, hasALCol, hasPTZCol, catColors);
 
   const totalCreditPrincipal = ptzAmount + empLoansAmount + loanAmount;
   // Simple capital-weighted average (weighted by each credit's INITIAL amount, PTZ counted at 0%).
@@ -1811,7 +1921,19 @@ function runSimulation(){
     + (mainLoanDuringDeferPayment!=null ? ' Pr\u00eat liss\u00e9 sur le PTZ actif : la colonne Pr\u00eat est plus \u00e9lev\u00e9e tant que la colonne PTZ affiche 0\u20ac (diff\u00e9r\u00e9 PTZ), puis les deux s\'\u00e9quilibrent -- le Total reste constant sur toute la p\u00e9riode d\'amortissement.' : '')
     + (hasTailPhase ? ' Une fois le pr\u00eat principal totalement rembours\u00e9, seuls le PTZ et/ou le Pr\u00eat Action Logement peuvent continuer si leur dur\u00e9e est plus longue -- la colonne Phase l\'indique alors explicitement plut\u00f4t que d\'afficher un simple \u00ab\u00a0Amortissement\u00a0\u00bb qui laisserait croire \u00e0 une erreur pendant que la colonne Pr\u00eat affiche 0\u20ac.' : '');
 
-  lastResults={projectName:currentProjectName, commune, adresse, price, surface, prixM2Calc, prixM2Moyen, ecartEur, ecartPct, stade, remise, priceAfterRemise, totalProjectCost, apportTarget, apportPctOfPrice, ptzAmount, empLoan1Amount, empLoan1Rate, empLoansAmount, empLoansInterest, empLoansMonthly, loanAmount, overFunded, loanYears, loanRate, ptzDefer, ptzRepayMonths:ptzSched.repayMonths, ptzMonthlyPayment:ptzSched.monthlyPayment, avgMonthlyPostLivraison, avgMonthlyPostLivraisonHorsAssurance, avgMonthlyPostLivraisonAssurance, rfr, ptzZone, ptzPersonnes, ptzCeiling:ceilingPtz, ptzEligible:eligible, combinedAnnualPctOfCapital, totalInsuranceAll, totalFeesCredit, totalFeesAcquisition, totalCreditCost, vefaRows, savingsRowsDiffere, savingsRowsProrata, monthlySavings, apportDispo, flexFundRate, salary1, salary2, savingsRate, durationComparisons, staged, activeScenario, apportUtiliseCumule, apportShortfallVsCible, negoExtrasTotal:updateNegoExtrasTotal()};
+  // ---- Balance chart: capital restant d\u00fb (pr\u00eat principal) sur toute la p\u00e9riode -- intercalaire
+  // (cumDrawn, en hausse) puis amortissement (balance, en baisse). Uses the same uniqueSorted date
+  // axis as the table above, but without the 60-row display cap since a chart handles density fine.
+  const postBalanceAnchored = staged.postSched.rows.map(r=>({date: livraisonDate ? addMonths(livraisonDate, r.month-1) : null, balance:r.balance}));
+  const balanceSeries = uniqueSorted.map(d=>{
+    const inter=staged.intercalaryRows.find(r=>r.date.getTime()===d.getTime());
+    if(inter) return {date:d, balance:inter.cumDrawn};
+    const post=postBalanceAnchored.find(r=>r.date && r.date.getTime()===d.getTime());
+    return {date:d, balance: post ? post.balance : 0};
+  });
+  renderBalanceChart(balanceSeries, livraisonDate);
+
+  lastResults={projectName:currentProjectName, commune, adresse, price, surface, prixM2Calc, prixM2Moyen, ecartEur, ecartPct, stade, remise, priceAfterRemise, totalProjectCost, apportTarget, apportPctOfPrice, ptzAmount, empLoan1Amount, empLoan1Rate, empLoansAmount, empLoansInterest, empLoansMonthly, loanAmount, overFunded, loanYears, loanRate, ptzDefer, ptzRepayMonths:ptzSched.repayMonths, ptzMonthlyPayment:ptzSched.monthlyPayment, avgMonthlyPostLivraison, avgMonthlyPostLivraisonHorsAssurance, avgMonthlyPostLivraisonAssurance, rfr, ptzZone, ptzPersonnes, ptzCeiling:ceilingPtz, ptzEligible:eligible, autresCharges, combinedAnnualPctOfCapital, totalInsuranceAll, totalFeesCredit, totalFeesAcquisition, totalCreditCost, vefaRows, savingsRowsDiffere, savingsRowsProrata, monthlySavings, apportDispo, flexFundRate, salary1, salary2, savingsRate, durationComparisons, staged, activeScenario, apportUtiliseCumule, apportShortfallVsCible, negoExtrasTotal:updateNegoExtrasTotal()};
 
   if(currentProjectName) saveProject(currentProjectName, serializeState());
 }
@@ -2160,6 +2282,185 @@ function bindAutoRecalc(){
   document.getElementById('contactEmailLink').addEventListener('click', e=>{ if(!e.currentTarget.getAttribute('href')) e.preventDefault(); e.stopPropagation(); });
 }
 
+// ---- Jump nav + collapsible panels (order matches document order; short labels for the pill nav) ----
+// ---- Charts (Chart.js) --------------------------------------------------------------------
+// Instances are kept in module scope and destroyed before each re-render (runSimulation can fire
+// on every keystroke) -- Chart.js does not garbage-collect old canvases on its own, and re-creating
+// without destroying leaks memory and causes the canvas to grow/flicker over repeated updates.
+let balanceChartInstance=null, durationChartInstance=null;
+function chartMonthLabel(d){ return d.toLocaleDateString('fr-FR',{month:'short',year:'2-digit'}); }
+// Reduce point count for very long schedules (e.g. 25 ans = 300+ monthly points): keeps the chart
+// legible and fast without materially changing the shape of the curve, always keeping the last point.
+function downsampleSeries(arr, maxPoints){
+  if(arr.length<=maxPoints) return arr;
+  const stride=Math.ceil(arr.length/maxPoints);
+  const out=[];
+  for(let i=0;i<arr.length;i+=stride) out.push(arr[i]);
+  if(out[out.length-1]!==arr[arr.length-1]) out.push(arr[arr.length-1]);
+  return out;
+}
+function cssVar(name, fallback){ const v=getComputedStyle(document.documentElement).getPropertyValue(name).trim(); return v||fallback; }
+// If the Chart.js CDN script failed to load (network issue, ad-blocker, offline use), fail visibly
+// instead of leaving a silent blank canvas that reads as a bug rather than a load failure.
+function showChartLoadError(canvas){
+  if(canvas.dataset.errorShown) return;
+  canvas.dataset.errorShown='1';
+  const msg=document.createElement('div');
+  msg.className='note';
+  msg.style.textAlign='center';
+  msg.style.paddingTop='90px';
+  msg.textContent='Graphique indisponible (biblioth\u00e8que Chart.js non charg\u00e9e -- v\u00e9rifiez la connexion internet).';
+  canvas.replaceWith(msg);
+}
+function renderBalanceChart(series, livraisonDate){
+  const canvas=document.getElementById('balanceChart');
+  if(!canvas) return;
+  if(typeof Chart==='undefined'){ showChartLoadError(canvas); return; }
+  if(balanceChartInstance){ balanceChartInstance.destroy(); balanceChartInstance=null; }
+  if(!series.length) return;
+  const sampled=downsampleSeries(series, 180);
+  const labels=sampled.map(p=>chartMonthLabel(p.date));
+  const values=sampled.map(p=>Math.round(p.balance));
+  const accent=cssVar('--accent','#4f8cff'), warn=cssVar('--warn','#ffb454'),
+        muted=cssVar('--muted','#9aa6c0'), border=cssVar('--border','#2a3452');
+  // Index of the first sampled point on/after livraison, used to color the intercalary (rising,
+  // interest-only) portion differently from the post-livraison amortization (falling) portion.
+  const livraisonIdx = livraisonDate ? sampled.findIndex(p=>p.date>=livraisonDate) : -1;
+  balanceChartInstance = new Chart(canvas.getContext('2d'), {
+    type:'line',
+    data:{ labels, datasets:[{
+      label:'Capital restant d\u00fb (pr\u00eat principal)', data:values,
+      borderColor:accent, backgroundColor:accent+'22',
+      segment:{ borderColor:ctx => (livraisonIdx>0 && ctx.p1DataIndex<=livraisonIdx) ? warn : accent },
+      pointRadius:0, borderWidth:2, fill:true, tension:0
+    }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index', intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{ callbacks:{ label:ctx => eur(ctx.parsed.y) } }
+      },
+      scales:{
+        x:{ ticks:{ color:muted, maxRotation:0, autoSkip:true, maxTicksLimit:8 }, grid:{ color:border } },
+        y:{ ticks:{ color:muted, callback:v=>eur(v) }, grid:{ color:border }, beginAtZero:true }
+      }
+    }
+  });
+}
+function renderDurationChart(durationComparisons, cheapestFeasibleRow, hasALCol, hasPTZCol, catColors){
+  const canvas=document.getElementById('durationCostChart');
+  if(!canvas) return;
+  if(typeof Chart==='undefined'){ showChartLoadError(canvas); return; }
+  if(durationChartInstance){ durationChartInstance.destroy(); durationChartInstance=null; }
+  if(!durationComparisons.length) return;
+  const gold=cssVar('--gold','#ffd166'), danger=cssVar('--danger','#ff6b6b'), accent=cssVar('--accent','#4f8cff'),
+        muted=cssVar('--muted','#9aa6c0'), border=cssVar('--border','#2a3452');
+  const catMain=cssVar('--cat-main','#4f8cff'), catAl=cssVar('--cat-al','#c084fc'), catPtz=cssVar('--cat-ptz','#22d3ee'),
+        catIns=cssVar('--cat-ins','#3ddc97'), catFees=cssVar('--cat-fees','#fb923c');
+  const labels=durationComparisons.map(r=>r.years+' ans');
+  // Stacked by cost category so the shape of the total cost is visible at a glance, using the exact
+  // same colors as the matching columns in the table below -- a segment's color always means the
+  // same thing whether you're looking at the chart or the numbers.
+  const datasets=[{ label:'Int. pr\u00eat principal', data:durationComparisons.map(r=>r.segMainInterest), backgroundColor:catMain, stack:'cost' }];
+  if(hasALCol) datasets.push({ label:'Int. pr\u00eat AL', data:durationComparisons.map(r=>r.segALInterest), backgroundColor:catAl, stack:'cost' });
+  if(hasPTZCol) datasets.push({ label:'PTZ (assurance)', data:durationComparisons.map(r=>r.segPTZ), backgroundColor:catPtz, stack:'cost' });
+  datasets.push({ label:'Assurance', data:durationComparisons.map(r=>r.segAssurance), backgroundColor:catIns, stack:'cost' });
+  datasets.push({ label:'Frais', data:durationComparisons.map(r=>r.segFees), backgroundColor:catFees, stack:'cost', borderRadius:4 });
+  // Feasibility/cheapest status is now conveyed via the x-axis tick color (since the bar body itself
+  // is split into category segments and can no longer carry a single status color).
+  const tickColors=durationComparisons.map(r=>{
+    if(cheapestFeasibleRow && r===cheapestFeasibleRow) return gold;
+    if(!r.feasible) return danger;
+    return r.isCurrent ? accent : muted;
+  });
+  durationChartInstance = new Chart(canvas.getContext('2d'), {
+    type:'bar',
+    data:{ labels, datasets },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index', intersect:false},
+      plugins:{
+        legend:{ display:true, position:'bottom', labels:{ color:muted, boxWidth:12, font:{size:10.5}, padding:10 } },
+        tooltip:{
+          callbacks:{
+            label:ctx => ctx.dataset.label+' : '+eur(ctx.parsed.y),
+            footer:items => 'Total : '+eur(items.reduce((s,i)=>s+i.parsed.y,0))
+          }
+        }
+      },
+      scales:{
+        x:{ stacked:true, ticks:{ color:ctx=>tickColors[ctx.index]||muted, font:{weight:'600'} }, grid:{ display:false } },
+        y:{ stacked:true, ticks:{ color:muted, callback:v=>eur(v) }, grid:{ color:border }, beginAtZero:true }
+      }
+    }
+  });
+}
+
+const PANEL_NAV=[
+  {id:'panel-projet', label:'Projet'},
+  {id:'panel-financement', label:'Financement'},
+  {id:'panel-emprunteurs', label:'Emprunteurs'},
+  {id:'panel-resume', label:'R\u00e9sum\u00e9'},
+  {id:'panel-cout', label:'Co\u00fbt cr\u00e9dit'},
+  {id:'panel-nego', label:'N\u00e9gociation'},
+  {id:'panel-vefa', label:'Appels de fonds'},
+  {id:'panel-epargne', label:'\u00c9pargne'},
+  {id:'panel-pret-principal', label:'Pr\u00eat + PTZ'},
+  {id:'panel-pretal', label:'Pr\u00eat AL'},
+  {id:'panel-assurance', label:'Assurance'},
+  {id:'panel-echeancier', label:'\u00c9ch\u00e9ancier'},
+  {id:'panel-duree', label:'Dur\u00e9es'},
+];
+const COLLAPSE_STORAGE_KEY='vefaCollapsedPanels';
+function getCollapsedSet(){ try{ return new Set(JSON.parse(localStorage.getItem(COLLAPSE_STORAGE_KEY)||'[]')); }catch(e){ return new Set(); } }
+function setCollapsedSet(set){ localStorage.setItem(COLLAPSE_STORAGE_KEY, JSON.stringify([...set])); }
+function setPanelCollapsed(panel, collapsed){
+  panel.classList.toggle('collapsed', collapsed);
+  const set=getCollapsedSet();
+  if(collapsed) set.add(panel.id); else set.delete(panel.id);
+  setCollapsedSet(set);
+}
+function togglePanelCollapsed(panel){ setPanelCollapsed(panel, !panel.classList.contains('collapsed')); }
+function initCollapsiblePanels(){
+  const collapsedSet=getCollapsedSet();
+  document.querySelectorAll('.panel-collapsible').forEach(panel=>{
+    const h2=panel.querySelector(':scope > h2');
+    if(!h2) return;
+    const chevron=document.createElement('span');
+    chevron.className='panel-collapse-chevron';
+    chevron.textContent='\u25be';
+    h2.appendChild(chevron);
+    h2.addEventListener('click', e=>{
+      // The "Utiliser cash au-del\u00e0 objectif" toggle (and its checkbox) lives inside some h2s --
+      // let it work normally rather than also collapsing the panel underneath it.
+      if(e.target.closest('.h2-toggle')) return;
+      togglePanelCollapsed(panel);
+    });
+    if(collapsedSet.has(panel.id)) panel.classList.add('collapsed');
+  });
+}
+function initJumpNav(){
+  const nav=document.getElementById('jumpNav');
+  nav.innerHTML = PANEL_NAV.map(p=>'<button type="button" class="jump-nav-btn" data-target="'+p.id+'">'+p.label+'</button>').join('')
+    + '<button type="button" id="jumpNavToggleAll">Tout replier</button>';
+  nav.querySelectorAll('.jump-nav-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const panel=document.getElementById(btn.getAttribute('data-target'));
+      if(!panel) return;
+      if(panel.classList.contains('collapsed')) setPanelCollapsed(panel, false);
+      panel.scrollIntoView({behavior:'smooth', block:'start'});
+    });
+  });
+  const toggleAllBtn=document.getElementById('jumpNavToggleAll');
+  toggleAllBtn.addEventListener('click', ()=>{
+    const panels=[...document.querySelectorAll('.panel-collapsible')];
+    const collapseAll = panels.some(p=>!p.classList.contains('collapsed'));
+    panels.forEach(p=>setPanelCollapsed(p, collapseAll));
+    toggleAllBtn.textContent = collapseAll ? 'Tout d\u00e9plier' : 'Tout replier';
+  });
+}
+
 function initDefaults(){
   const refEl=document.getElementById('refDate');
   if(!refEl.value) refEl.value=dateToInputStr(new Date());
@@ -2182,6 +2483,8 @@ window.onload=function(){
   bindTooltipDelegation();
   initHoverIntentDropdowns();
   initDocumentsScrollLock();
+  initCollapsiblePanels();
+  initJumpNav();
 
   const list=getProjectList();
   const lastActive=localStorage.getItem(STORAGE_LAST_ACTIVE);
