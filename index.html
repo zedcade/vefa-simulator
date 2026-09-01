@@ -73,7 +73,7 @@ body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color
 h2{font-size:16px;color:var(--accent);border-bottom:1px solid var(--border);padding-bottom:6px;margin-top:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
 h2[data-tooltip]{cursor:help;}
 h2 .h2-title[data-tooltip]{cursor:help;}
-.h2-toggle{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);font-weight:400;border-bottom:none;padding-bottom:0;white-space:nowrap;cursor:help;}
+.h2-toggle{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);font-weight:400;border-bottom:none;padding-bottom:0;white-space:nowrap;cursor:help;}
 .grid{display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:start;}
 /* Direct grid/flex item wrappers need an explicit min-width:0 -- otherwise a nowrap table cell
    (e.g. the omitted-rows marker or a wide date/amount column) buried deep inside a .scrollbox
@@ -93,7 +93,7 @@ h2 .h2-title[data-tooltip]{cursor:help;}
 .panel-collapsible.collapsed > h2{margin-bottom:0;border-bottom:none;padding-bottom:0;}
 .panel-collapsible.collapsed > h2 .panel-collapse-chevron{transform:rotate(-90deg);}
 .panel-collapsible.collapsed > *:not(h2){display:none!important;}
-/* h2-toggle (e.g. "Utiliser cash au-del\u00e0 objectif") sits inside the h2 and has its own click
+/* h2-toggle (e.g. "Utiliser l'\u00e9pargne exc\u00e9dentaire") sits inside the h2 and has its own click
    target (a checkbox) -- stop its clicks from bubbling up and toggling the whole panel closed. */
 .h2-toggle{cursor:default;}
 /* Sticky jump nav: horizontally scrollable pill row so every panel is one tap away, especially
@@ -187,6 +187,14 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
 .kpi .value.accent{color:var(--accent2);} .kpi .value.warn{color:var(--warn);}
 .kpi .value.danger{color:var(--danger);} .kpi .value.gold{color:var(--gold);}
 .note{font-size:11.5px;color:var(--muted);margin-top:2px;}
+.epargne-cell{display:flex;align-items:center;gap:4px;white-space:nowrap;}
+.epargne-override-input{width:72px;background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:3px 6px;font-size:12px;font-family:inherit;}
+.epargne-override-input.overridden{border-color:var(--accent);color:var(--accent);font-weight:700;}
+.epargne-override-input:focus{outline:none;border-color:var(--accent);}
+.epargne-override-input:disabled{opacity:.4;cursor:not-allowed;}
+.epargne-cell .unit{color:var(--muted);font-size:11px;}
+.epargne-reset-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:0 2px;line-height:1;}
+.epargne-reset-btn:hover{color:var(--accent);}
 .field-warning{font-size:11px;color:var(--danger);margin:-6px 0 10px;line-height:1.35;}
 .field-warning::before{content:'\26a0\fe0f  ';}
 .tag{display:inline-block;font-size:10.5px;padding:2px 7px;border-radius:20px;background:var(--panel2);border:1px solid var(--border);color:var(--muted);margin-left:2px;white-space:nowrap;cursor:help;}
@@ -437,6 +445,7 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
     <div class="field-row"><label>% du salaire mis de c&ocirc;t&eacute; /mois</label><input type="number" class="auto" id="savingsRate" value="30" step="1" min="0"></div>
     <div class="field-row"><label>Rendement Flex Fund (% APY)</label><input type="number" class="auto" id="flexFundRate" value="2" step="0.01" min="0"></div>
     <div class="field-row"><label>Apport disponible aujourd'hui (&euro;)</label><input type="number" class="auto" id="apportDispo" value="50000" step="1000" min="0"></div>
+    <div class="field-row"><label data-tooltip="La banque tire g&eacute;n&eacute;ralement un revenu d'int&eacute;r&ecirc;ts intercalaires proportionnel au montant tir&eacute; du pr&ecirc;t pendant le chantier -- utiliser de l'&eacute;pargne exc&eacute;dentaire pour payer une partie d'un appel de fonds au lieu de tirer sur le pr&ecirc;t r&eacute;duit ce revenu pour elle. Certaines banques l'acceptent volontiers (le pr&ecirc;t autoris&eacute; est un plafond, elles ne tirent que ce qui est n&eacute;cessaire) ; d'autres imposent un calendrier de d&eacute;blocage fixe ind&eacute;pendant de votre apport disponible, auquel cas r&eacute;duire le tirage n'est possible qu'en remboursant par anticipation la somme d&eacute;j&agrave; d&eacute;bloqu&eacute;e -- ce qui PEUT d&eacute;clencher une IRA (plafonn&eacute;e par la loi &agrave; MIN(3% du capital, 6 mois d'int&eacute;r&ecirc;ts)). &Agrave; confirmer aupr&egrave;s de votre banque/courtier avant de vous fier &agrave; 0%. Si applicable, ce taux s'applique au montant total d'&eacute;pargne exc&eacute;dentaire effectivement utilis&eacute; (sc&eacute;nario Diff&eacute;r&eacute; uniquement).">Taux IRA sur &eacute;pargne exc&eacute;dentaire (%)</label><input type="number" class="auto" id="epargneIRARate" value="0" step="0.1" min="0"></div>
     <div class="field-row"><label>Date de r&eacute;f&eacute;rence "aujourd'hui"</label><input type="date" class="auto" id="refDate"></div>
   </div>
 </div>
@@ -487,8 +496,8 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
   <div class="panel panel-collapsible" id="panel-epargne">
     <h2>
       <span class="h2-title" data-tooltip="Diff&eacute;r&eacute; : apport (cash organique + vente d'actifs) couvre en priorit&eacute; jusqu'&agrave; &eacute;puisement de l'objectif ; &eacute;pargne restante r&eacute;duit ensuite le pr&ecirc;t directement -- sauf si d&eacute;sactiv&eacute; via le r&eacute;glage ci-contre. Prorata : la banque exige un financement proportionnel identique &agrave; chaque appel.">Simulation d'&eacute;pargne</span>
-      <span class="h2-toggle" data-tooltip="Si activ&eacute; (par d&eacute;faut) : une fois l'objectif d'apport atteint, toute &eacute;pargne organique restante continue de r&eacute;duire le pr&ecirc;t &agrave; chaque &eacute;tape suivante. Si d&eacute;sactiv&eacute; : l'&eacute;pargne au-del&agrave; de l'objectif s'accumule sans r&eacute;duire le pr&ecirc;t.">
-        <label class="switch sm"><input type="checkbox" class="auto" id="useCashBeyondObjectif" checked><span class="slider"></span></label> Utiliser cash au-del&agrave; objectif
+      <span class="h2-toggle" data-tooltip="Si activ&eacute; (par d&eacute;faut) : une fois l'objectif d'apport atteint, toute &eacute;pargne organique restante (l'&eacute;pargne exc&eacute;dentaire) continue de r&eacute;duire les montants &agrave; emprunter &agrave; chaque &eacute;tape suivante. Si d&eacute;sactiv&eacute; : cette &eacute;pargne s'accumule sans r&eacute;duire les emprunts. &Agrave; ne pas confondre avec un remboursement anticip&eacute; (qui r&eacute;duit un pr&ecirc;t d&eacute;j&agrave; d&eacute;bloqu&eacute;) : ici, l'argent est utilis&eacute; comme apport suppl&eacute;mentaire AVANT que le pr&ecirc;t ne soit tir&eacute;, ce qui &eacute;vite d'emprunter cette somme -- et donc d'en payer les int&eacute;r&ecirc;ts -- plut&ocirc;t que de rembourser un capital d&eacute;j&agrave; d&eacute;caiss&eacute;.">
+        <label class="switch sm"><input type="checkbox" class="auto" id="useCashBeyondObjectif" checked><span class="slider"></span></label> Utiliser l'&eacute;pargne exc&eacute;dentaire
       </span>
     </h2>
     <div class="kpi-grid" id="savingsKpi" style="margin-bottom:12px"></div>
@@ -499,7 +508,7 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
     <div class="tab-panel active" id="tabDiffere">
       <div class="scrollbox">
         <table>
-          <thead><tr><th>Palier</th><th>Date</th><th>Appel</th><th>Pool avant</th><th>Cash apport</th><th>A lever</th><th>Au-del&agrave; objectif</th><th>Pr&ecirc;t A.L.</th><th>PTZ</th><th>Pr&ecirc;t</th><th>Pool restant</th><th>Apport requis cum.</th><th>A lever cum.</th></tr></thead>
+          <thead><tr><th>Palier</th><th>Date</th><th>Appel</th><th>Pool avant</th><th>Cash apport</th><th>A lever</th><th>&Eacute;pargne exc&eacute;dentaire</th><th>Pr&ecirc;t A.L.</th><th>PTZ</th><th>Pr&ecirc;t</th><th>Pool restant</th><th>Apport requis cum.</th><th>A lever cum.</th></tr></thead>
           <tbody id="savingsTableDiffere"></tbody>
         </table>
       </div>
@@ -617,6 +626,10 @@ const DEFAULT_VEFA_STAGES=[
   {name:'Solde \u00e0 la livraison du bien',        pct:100, anchor:'start', defaultOffset:21},
 ];
 let vefaStages=[];
+// User overrides for the "\u00c9pargne exc\u00e9dentaire" column (Simulation d'\u00e9pargne, sc\u00e9nario Diff\u00e9r\u00e9).
+// Keyed by palier index (stable within a project since paliers are positional) -> override amount in
+// \u20ac, or absent/undefined to keep using the auto-suggested amount from the savings-rate waterfall.
+let epargneOverrides={};
 const NEGO_RANGES={lancement:[0,2],mi:[2,5],fin:[5,10],invendu:[10,15]};
 const NEGO_LABELS={lancement:'Lancement',mi:'Mi-commercialisation',fin:'Fin de programme',invendu:'Stock invendu'};
 const STATUS_DATE_LABELS={
@@ -1006,6 +1019,7 @@ function serializeState(){
   document.querySelectorAll('.auto').forEach(el=>{ if(el.type==='checkbox') state[el.id]=el.checked; else state[el.id]=el.value; });
   PTZ_AUTOCALC_FIELDS.forEach(id=>{ if(document.getElementById(id).dataset.userSet) state[id+'_userSet']=true; });
   state.vefaStages = vefaStages.map(s=>({name:s.name, pct:s.pct, anchor:s.anchor, defaultOffset:s.defaultOffset, date:s.date||''}));
+  state.epargneOverrides = epargneOverrides;
   return state;
 }
 function applyState(state){
@@ -1031,6 +1045,7 @@ function applyState(state){
   } else {
     vefaStages = buildDefaultVefaStages();
   }
+  epargneOverrides = (state.epargneOverrides && typeof state.epargneOverrides==='object') ? state.epargneOverrides : {};
   renderVefaTable();
   initNegoData(); renderNegoExtrasGrid(); updateNegoExtrasTotal();
 }
@@ -1355,7 +1370,7 @@ function runSimulation(){
   const useCashBeyond=document.getElementById('useCashBeyondObjectif').checked;
   const salary1=val('salary1'), salary2=val('salary2'), savingsRate=val('savingsRate');
   const autresCharges=val('autresCharges');
-  const flexFundRate=val('flexFundRate'), apportDispo=val('apportDispo');
+  const flexFundRate=val('flexFundRate'), apportDispo=val('apportDispo'), epargneIRARate=val('epargneIRARate');
   const refDate=dateVal('refDate')||new Date();
 
   const gmapsParts=[adresse, commune, 'France'].filter(x=>x && x.trim());
@@ -1443,12 +1458,11 @@ function runSimulation(){
   }
   const ptzAmount=val('ptzAmount'), ptzDefer=val('ptzDefer'), ptzTotalMonths=val('ptzTotalMonths');
 
-  // Prêts complémentaires (Action Logement + autre) -- calculés avant loanAmount car ils réduisent
-  // le montant à financer par le prêt principal, au même titre que l'apport et le PTZ.
-  const empLoan1Sched=complementaryLoanSchedule(empLoan1Amount, empLoan1Rate, empLoan1TotalMonths);
+  // Pr\u00eats compl\u00e9mentaires (Action Logement + autre) -- le MONTANT est calcul\u00e9 avant loanAmount
+  // car il r\u00e9duit ce qui doit \u00eatre financ\u00e9 par le pr\u00eat principal, au m\u00eame titre que l'apport et le
+  // PTZ. Le co\u00fbt r\u00e9el (int\u00e9r\u00eats intercalaires + mensualit\u00e9 post-livraison) ne peut en revanche
+  // \u00eatre calcul\u00e9 qu'une fois le waterfall d'\u00e9pargne connu (plus bas) -- voir stagedAL.
   const empLoansAmount=empLoan1Amount;
-  const empLoansInterest=empLoan1Sched.totalInterest;
-  const empLoansMonthly=empLoan1Sched.payment;
 
   const totalProjectCost=priceAfterRemise+fraisNotaire+fraisAgence+fraisMobilier+fraisGarantie+fraisDossier+fraisCourtage+fraisIRA;
 
@@ -1521,7 +1535,7 @@ function runSimulation(){
 
   const combinedAnnualPctOfCapital = ins1Rate*ins1Quota/100 + ins2Rate*ins2Quota/100;
   function insMonthlyFn(balance,principal){ const base=degressive?balance:principal; return base*combinedAnnualPctOfCapital/100/12; }
-  const totalFeesCredit = fraisGarantie+fraisDossier+fraisCourtage+fraisIRA;
+  let totalFeesCredit = fraisGarantie+fraisDossier+fraisCourtage+fraisIRA;
   const totalFeesAcquisition = fraisNotaire+fraisAgence+fraisMobilier;
 
   if(!vefaStages.length) vefaStages=buildDefaultVefaStages();
@@ -1550,7 +1564,7 @@ function runSimulation(){
   const monthlySavings=(salary1+salary2)*savingsRate/100;
   const monthlyFlexRate=Math.pow(1+flexFundRate/100,1/12)-1;
   let poolD=apportDispo, curD=refDate, apportBudgetUsed=0, empLoansBudgetUsed=0, ptzBudgetUsed=0, aLeverCumule=0;
-  const savingsRowsDiffere = vefaRows.map(r=>{
+  const savingsRowsDiffere = vefaRows.map((r,idx)=>{
     const months = r.date ? Math.max(0, monthsBetween(curD, r.date)) : 0;
     for(let i=0;i<months;i++){ poolD = poolD*(1+monthlyFlexRate) + monthlySavings; }
     curD = r.date || curD;
@@ -1560,17 +1574,31 @@ function runSimulation(){
     const aLeverEtape = apportNecessaire - cashApport;
     poolD -= cashApport;
     const afterApportCall = r.callAmount - apportNecessaire;
-    const cashBeyondObjectif = useCashBeyond ? Math.min(poolD, afterApportCall) : 0;
+    // Suggested amount = the auto-computed max available beyond the apport target. The user can
+    // override this per palier (editable cell in the table) to model spending the surplus savings
+    // differently -- e.g. keeping some cash in reserve at a given stage instead of injecting the
+    // full suggested amount. The override is clamped to what's actually available/needed so it can
+    // never create cash from nowhere or exceed what this call still requires.
+    const suggestedBeyond = useCashBeyond ? Math.min(poolD, afterApportCall) : 0;
+    const hasOverride = useCashBeyond && epargneOverrides.hasOwnProperty(idx);
+    const cashBeyondObjectif = !useCashBeyond ? 0 : (hasOverride ? Math.min(Math.max(0, epargneOverrides[idx]), poolD, afterApportCall) : suggestedBeyond);
     poolD -= cashBeyondObjectif;
     const afterExtraCash = afterApportCall - cashBeyondObjectif;
-    const remainingEmpLoansBudget = Math.max(0, empLoansAmount - empLoansBudgetUsed);
-    const empLoansEtape = Math.min(afterExtraCash, remainingEmpLoansBudget);
-    const afterEmpLoans = afterExtraCash - empLoansEtape;
+    // PTZ is drawn BEFORE Pr\u00eat Action Logement here: PTZ is 0% by definition so its cost is
+    // completely unaffected by when it's drawn, whereas Pr\u00eat AL carries a real rate (~1%) and
+    // therefore costs more the earlier it's drawn (longer outstanding balance = more accrued
+    // interest). Drawing PTZ first and reserving Pr\u00eat AL for as late as possible (right before
+    // the market-rate main loan) minimizes total interest cost -- consistent with the general
+    // principle already applied to the main loan itself (drawn last, only once every cheaper source
+    // is exhausted).
     const remainingPtzBudget = Math.max(0, ptzAmount - ptzBudgetUsed);
-    const ptzEtape = Math.min(afterEmpLoans, remainingPtzBudget);
-    const financeParPret = afterEmpLoans - ptzEtape;
+    const ptzEtape = Math.min(afterExtraCash, remainingPtzBudget);
+    const afterPtz = afterExtraCash - ptzEtape;
+    const remainingEmpLoansBudget = Math.max(0, empLoansAmount - empLoansBudgetUsed);
+    const empLoansEtape = Math.min(afterPtz, remainingEmpLoansBudget);
+    const financeParPret = afterPtz - empLoansEtape;
     apportBudgetUsed += apportNecessaire; empLoansBudgetUsed += empLoansEtape; ptzBudgetUsed += ptzEtape; aLeverCumule += aLeverEtape;
-    return {name:r.name, date:r.date, callAmount:r.callAmount, poolAvant, cashApport, aLeverEtape, cashBeyondObjectif, empLoansEtape, ptzEtape, financeParPret, poolRestant:poolD, apportRequisCumule:apportBudgetUsed, aLeverCumule};
+    return {name:r.name, date:r.date, callAmount:r.callAmount, poolAvant, cashApport, aLeverEtape, cashBeyondObjectif, suggestedBeyond, hasOverride, empLoansEtape, ptzEtape, financeParPret, poolRestant:poolD, apportRequisCumule:apportBudgetUsed, aLeverCumule, idx};
   });
   const apportShortfallVsCible = savingsRowsDiffere.length ? savingsRowsDiffere[savingsRowsDiffere.length-1].aLeverCumule : 0;
   const apportUtiliseCumule = apportBudgetUsed;
@@ -1594,6 +1622,17 @@ function runSimulation(){
   });
   const feesShareOfApport = Math.max(0, apportTarget - apportShareSum);
 
+  // ---- IRA on \u00e9pargne exc\u00e9dentaire (optional, defaults to 0\u20ac): whether a bank actually lets a
+  // buyer draw less than its committed VEFA tranche (or instead disburses on a fixed schedule
+  // regardless, treating any surplus cash injected afterward as an early repayment) varies by lender
+  // -- see the field's tooltip. Only meaningful for the Diff\u00e9r\u00e9 scenario, since Prorata has no
+  // \u00e9pargne-exc\u00e9dentaire mechanism at all.
+  const epargneExcedentaireTotalUsed = activeScenario==='differe'
+    ? savingsRowsDiffere.reduce((s,r)=>s+r.cashBeyondObjectif, 0)
+    : 0;
+  const epargneIRAFee = epargneExcedentaireTotalUsed * (epargneIRARate/100);
+  totalFeesCredit += epargneIRAFee;
+
   const activeDrawEvents = activeScenario==='differe'
     ? savingsRowsDiffere.map(r=>({date:r.date, amount:r.financeParPret}))
     : savingsRowsProrata.map(r=>({date:r.date, amount:r.pretEtape}));
@@ -1610,6 +1649,39 @@ function runSimulation(){
     if(feeDrawIdx>=0) activeDrawEvents[feeDrawIdx] = {...activeDrawEvents[feeDrawIdx], amount:(activeDrawEvents[feeDrawIdx].amount||0)+feesFinancedByLoan};
   }
   const staged = stagedLoanCost(activeDrawEvents, livraisonDate, loanRate, loanYears, insMonthlyFn);
+
+  // ---- Pr\u00eat Action Logement: mirrors exactly how the main loan above is costed. Real-world, if
+  // Pr\u00eat AL money is used to pay VEFA calls starting well before livraison (per the waterfall,
+  // typically years earlier), it accrues real intercalary interest during that time just like the
+  // main loan does -- treating it as \"disbursed as one lump sum at livraison\" (the previous model)
+  // understated its true cost whenever it was actually drawn early. \"Dur\u00e9e totale\" is read as the
+  // TOTAL contract duration (construction + amortization), matching both its label and Action
+  // Logement's own 25-year legal cap on total duration -- so the post-livraison amortization phase
+  // gets whatever's left after subtracting the time actually spent drawing funds during construction.
+  const empLoan1DrawEvents = activeScenario==='differe'
+    ? savingsRowsDiffere.map(r=>({date:r.date, amount:r.empLoansEtape}))
+    : savingsRowsProrata.map(r=>({date:r.date, amount:r.empLoansEtape}));
+  const validEmpLoan1Draws = empLoan1DrawEvents.filter(d=>d.date && d.amount>0.5).sort((a,b)=>a.date-b.date);
+  const empLoan1ConstructionMonths = (validEmpLoan1Draws.length && livraisonDate)
+    ? Math.max(0, monthsBetween(validEmpLoan1Draws[0].date, livraisonDate))
+    : 0;
+  const empLoan1PostMonths = Math.max(1, empLoan1TotalMonths - empLoan1ConstructionMonths);
+  // No insurance modeled for Pr\u00eat AL (unchanged from before -- see complementaryLoanSchedule's
+  // original comment: to be confirmed case-by-case with the lending body).
+  const stagedAL = stagedLoanCost(empLoan1DrawEvents, livraisonDate, empLoan1Rate, empLoan1PostMonths/12, ()=>0);
+  const empLoansInterest = stagedAL.totalInterest; // intercalaire (chantier) + post-livraison combin\u00e9s
+  const empLoansMonthly = stagedAL.postSched.payment; // mensualit\u00e9, phase d'amortissement post-livraison uniquement
+  // The construction phase is observed from the waterfall, not user-set -- if it alone already meets
+  // or exceeds the stated "Dur\u00e9e totale", there's essentially no amortization phase left, which
+  // usually means the total duration was set assuming the old (pre-fix) lump-sum-at-livraison model.
+  // Flag it rather than silently showing a near-instant post-livraison payoff.
+  if(empLoan1Amount>0.5 && empLoan1ConstructionMonths>=empLoan1TotalMonths){
+    const extraMsg='La phase chantier estim\u00e9e ('+empLoan1ConstructionMonths+' mois, d\u2019apr\u00e8s le waterfall d\u2019\u00e9pargne) d\u00e9passe d\u00e9j\u00e0 la dur\u00e9e totale renseign\u00e9e ('+empLoan1TotalMonths+' mois) -- augmentez la dur\u00e9e totale pour laisser une vraie phase d\u2019amortissement post-livraison.';
+    empLoan1DurationWarningEl.style.display='';
+    empLoan1DurationWarningEl.textContent = empLoan1DurationWarningEl.style.display==='' && empLoan1DurationWarningEl.textContent
+      ? empLoan1DurationWarningEl.textContent + ' ' + extraMsg
+      : extraMsg;
+  }
 
   const ptzSched=ptzSchedule(ptzAmount, ptzDefer, ptzTotalMonths);
   const lissePTZChecked = document.getElementById('lissePTZ').checked;
@@ -1716,7 +1788,7 @@ function runSimulation(){
   if(hasALCol) theadCells.push('<th style="color:'+catColors.al+'" data-tooltip="Int\u00e9r\u00eats du Pr\u00eat Action Logement -- identiques quelle que soit la dur\u00e9e compar\u00e9e ici puisque seule la dur\u00e9e du pr\u00eat principal varie.">Int. pr\u00eat AL</th>');
   if(hasPTZCol) theadCells.push('<th style="color:'+catColors.ptz+'" data-tooltip="Assurance du PTZ -- le PTZ lui-m\u00eame ne co\u00fbte aucun int\u00e9r\u00eat, \u00e9tant \u00e0 0% par d\u00e9finition.">PTZ</th>');
   theadCells.push('<th style="color:'+catColors.ins+'">Assurance</th>');
-  theadCells.push('<th style="color:'+catColors.fees+'" data-tooltip="Frais li\u00e9s au cr\u00e9dit (dossier, garantie, courtage) -- identiques quelle que soit la dur\u00e9e.">Frais</th>');
+  theadCells.push('<th style="color:'+catColors.fees+'" data-tooltip="Frais li\u00e9s au cr\u00e9dit (dossier, garantie, courtage'+(epargneIRAFee>0.5?', dont IRA sur \u00e9pargne exc\u00e9dentaire':'')+') -- identiques quelle que soit la dur\u00e9e.">Frais</th>');
   theadCells.push('<th id="coutTotalTh">Co\u00fbt total du cr\u00e9dit</th>','<th>\u00c9cart vs actuelle</th>','<th></th>');
   document.getElementById('durationCompareThead').innerHTML = '<tr>'+theadCells.join('')+'</tr>';
   const coutTotalTooltip = 'Somme des colonnes color\u00e9es ci-contre (int\u00e9r\u00eats, PTZ, assurance, frais) -- toujours coh\u00e9rente avec le "Co\u00fbt total du cr\u00e9dit" affich\u00e9 plus haut pour la dur\u00e9e actuelle.';
@@ -1802,9 +1874,9 @@ function runSimulation(){
     +'<div class="kpi"><div class="label">Int\u00e9r\u00eats post-livraison</div><div class="value warn">'+eur(staged.postSched.totalInterest)+'</div></div>'
     +(empLoansInterest>0.5 ? '<div class="kpi"><div class="label">Int\u00e9r\u00eats Pr\u00eat Action Logement</div><div class="value warn">'+eur(empLoansInterest)+'</div></div>' : '')
     +'<div class="kpi"><div class="label">Assurance totale pr\u00eat + PTZ</div><div class="value warn">'+eur(totalInsuranceAll)+'</div></div>'
-    +'<div class="kpi"><div class="label">Frais li\u00e9s au cr\u00e9dit</div><div class="value">'+eur(totalFeesCredit)+'</div></div>'
+    +'<div class="kpi" data-tooltip="'+(epargneIRAFee>0.5 ? 'Dont '+eur(epargneIRAFee)+' d\u2019IRA estim\u00e9e sur l\u2019\u00e9pargne exc\u00e9dentaire utilis\u00e9e ('+eur(epargneExcedentaireTotalUsed)+' &times; '+epargneIRARate+'%) -- taux \u00e0 confirmer aupr\u00e8s de votre banque.' : 'Dossier, garantie, courtage -- pay\u00e9s une fois, ind\u00e9pendants de la dur\u00e9e.')+'"><div class="label">Frais li\u00e9s au cr\u00e9dit</div><div class="value">'+eur(totalFeesCredit)+'</div></div>'
     +'<div class="kpi"><div class="label">Frais li\u00e9s \u00e0 l acquisition</div><div class="value">'+eur(totalFeesAcquisition)+'</div></div>'
-    +'<div class="kpi" data-tooltip="= int\u00e9r\u00eats intercalaires + int\u00e9r\u00eats post-livraison + int\u00e9r\u00eats Pr\u00eat Action Logement + assurance + frais li\u00e9s au cr\u00e9dit (chaque montant arrondi \u00e0 l euro avant addition, d o\u00f9 un &eacute;cart possible de 1&euro; avec la somme des valeurs non arrondies). Change selon le sc\u00e9nario Diff\u00e9r\u00e9/Prorata et selon le r\u00e9glage Utiliser cash au-del\u00e0 objectif. Les frais li\u00e9s \u00e0 l acquisition notaire, agence, mobilier ne sont volontairement pas inclus ici -- voir Co\u00fbt total \u00e0 financer -- mais leur financement via le pr\u00eat augmente d\u00e9j\u00e0 les int\u00e9r\u00eats ci-dessus au prorata du montant emprunt\u00e9."><div class="label">Co\u00fbt total du cr\u00e9dit</div><div class="value danger">'+eur(displayedCreditCost)+'</div></div>'
+    +'<div class="kpi" data-tooltip="= int\u00e9r\u00eats intercalaires + int\u00e9r\u00eats post-livraison + int\u00e9r\u00eats Pr\u00eat Action Logement + assurance + frais li\u00e9s au cr\u00e9dit (chaque montant arrondi \u00e0 l euro avant addition, d o\u00f9 un &eacute;cart possible de 1&euro; avec la somme des valeurs non arrondies). Change selon le sc\u00e9nario Diff\u00e9r\u00e9/Prorata et selon le r\u00e9glage Utiliser l\'\u00e9pargne exc\u00e9dentaire. Les frais li\u00e9s \u00e0 l acquisition notaire, agence, mobilier ne sont volontairement pas inclus ici -- voir Co\u00fbt total \u00e0 financer -- mais leur financement via le pr\u00eat augmente d\u00e9j\u00e0 les int\u00e9r\u00eats ci-dessus au prorata du montant emprunt\u00e9."><div class="label">Co\u00fbt total du cr\u00e9dit</div><div class="value danger">'+eur(displayedCreditCost)+'</div></div>'
     +'<div class="kpi" data-tooltip="= pr\u00eat + int\u00e9r\u00eats + assurance + PTZ + Pr\u00eat Action Logement. Exclut volontairement les frais (total '+eur(totalFeesCredit+totalFeesAcquisition)+'), pay\u00e9s une fois, jamais rembours\u00e9s via mensualit\u00e9s -- contrairement au capital, aux int\u00e9r\u00eats et \u00e0 l assurance qui s \u00e9talent sur toute la dur\u00e9e."><div class="label">Montant total rembours\u00e9</div><div class="value">'+eur(staged.totalDrawn+staged.totalInterest+empLoansAmount+empLoansInterest+totalInsuranceAll+ptzAmount)+'</div></div>';
 
   document.getElementById('savingsKpi').innerHTML=''
@@ -1825,7 +1897,15 @@ function runSimulation(){
       ? 'OK'
       : (dejaLeve ? eur(r.aLeverCumule)+' <span class="deja-levee">d\u00e9j\u00e0 lev\u00e9</span>' : eur(r.aLeverCumule));
     prevApportRequisCumule=r.apportRequisCumule; prevALeverCumule=r.aLeverCumule;
-    return '<tr><td>'+r.name+objectifTag+'</td><td>'+fmtDate(r.date)+'</td><td>'+eur(r.callAmount)+'</td><td>'+eur(r.poolAvant)+'</td><td>'+eur(r.cashApport)+'</td><td>'+(r.aLeverEtape>0.5?'<span class="row-short">'+eur(r.aLeverEtape)+'</span>':'<span class="row-ok">-</span>')+'</td><td>'+(r.cashBeyondObjectif>0.5?eur(r.cashBeyondObjectif):'-')+'</td><td>'+(r.empLoansEtape>0.5?eur(r.empLoansEtape):'-')+'</td><td>'+eur(r.ptzEtape)+'</td><td>'+(r.financeParPret>0.5?'<span class="row-short">'+eur(r.financeParPret)+'</span>':'<span class="row-ok">-</span>')+'</td><td>'+eur(r.poolRestant)+'</td><td>'+apportCumCell+'</td><td>'+aLeverCumCell+'</td></tr>';
+    // Editable "\u00c9pargne exc\u00e9dentaire" cell: prefilled with the auto-suggested amount (driven
+    // by the savings-rate waterfall), but the user can override it per palier -- e.g. to keep some
+    // cash in reserve at a given stage instead of injecting the full suggested amount. A reset icon
+    // appears once overridden so it's easy to go back to the suggested value.
+    const epargneResetBtn = r.hasOverride
+      ? ' <button type="button" class="epargne-reset-btn" title="R\u00e9initialiser \u00e0 la valeur sugg\u00e9r\u00e9e (' + eur(r.suggestedBeyond) + ')" onclick="resetEpargneOverride(' + r.idx + ')">\u21ba</button>'
+      : '';
+    const epargneCell = '<div class="epargne-cell"><input type="number" class="epargne-override-input' + (r.hasOverride ? ' overridden' : '') + '" data-idx="' + r.idx + '" value="' + Math.round(r.cashBeyondObjectif) + '" min="0" step="10" title="Sugg\u00e9r\u00e9\u00a0: ' + eur(r.suggestedBeyond) + '"' + (useCashBeyond ? '' : ' disabled') + ' onchange="setEpargneOverride(' + r.idx + ', this.value)"> <span class="unit">\u20ac</span>' + epargneResetBtn + '</div>';
+    return '<tr><td>'+r.name+objectifTag+'</td><td>'+fmtDate(r.date)+'</td><td>'+eur(r.callAmount)+'</td><td>'+eur(r.poolAvant)+'</td><td>'+eur(r.cashApport)+'</td><td>'+(r.aLeverEtape>0.5?'<span class="row-short">'+eur(r.aLeverEtape)+'</span>':'<span class="row-ok">-</span>')+'</td><td>'+epargneCell+'</td><td>'+(r.empLoansEtape>0.5?eur(r.empLoansEtape):'-')+'</td><td>'+eur(r.ptzEtape)+'</td><td>'+(r.financeParPret>0.5?'<span class="row-short">'+eur(r.financeParPret)+'</span>':'<span class="row-ok">-</span>')+'</td><td>'+eur(r.poolRestant)+'</td><td>'+apportCumCell+'</td><td>'+aLeverCumCell+'</td></tr>';
   }).join('');
   document.getElementById('savingsTableProrata').innerHTML=savingsRowsProrata.map(r=>{
     return '<tr><td>'+r.name+'</td><td>'+fmtDate(r.date)+'</td><td>'+eur(r.apportShare)+'</td><td>'+eur(r.poolAvant)+'</td><td>'+eur(r.usedFromPool)+'</td><td>'+(r.aLever>0.5?'<span class="row-short">'+eur(r.aLever)+'</span>':'<span class="row-ok">-</span>')+'</td><td>'+eur(r.pretEtape)+'</td><td>'+eur(r.empLoansEtape)+'</td><td>'+eur(r.ptzEtape)+'</td></tr>';
@@ -1852,9 +1932,10 @@ function runSimulation(){
   document.getElementById('empLoansKpi').innerHTML=''
     +'<div class="kpi"><div class="label">Montant</div><div class="value">'+eur(empLoan1Amount)+'</div></div>'
     +'<div class="kpi"><div class="label">Taux fixe</div><div class="value">'+empLoan1Rate.toFixed(2)+'%</div></div>'
-    +'<div class="kpi"><div class="label">Dur\u00e9e</div><div class="value">'+(empLoan1TotalMonths/12).toFixed(0)+' ans</div></div>'
-    +'<div class="kpi"><div class="label">Mensualit\u00e9 hors assurance</div><div class="value accent">'+eur2(empLoan1Sched.payment)+'</div></div>'
-    +'<div class="kpi"><div class="label">Int\u00e9r\u00eats totaux</div><div class="value warn">'+eur(empLoansInterest)+'</div></div>';
+    +'<div class="kpi" data-tooltip="Dur\u00e9e totale du contrat (chantier + amortissement), plafonn\u00e9e \u00e0 25 ans par la r\u00e9glementation Action Logement."><div class="label">Dur\u00e9e totale</div><div class="value">'+(empLoan1TotalMonths/12).toFixed(1)+' ans</div></div>'
+    +'<div class="kpi" data-tooltip="D\u00e9duite automatiquement de la date du premier tirage effectif du Pr\u00eat AL (selon le waterfall d \u00e9pargne ci-dessous) jusqu \u00e0 la livraison -- pas un champ modifiable directement."><div class="label">Dont chantier (intercalaire)</div><div class="value">'+(empLoan1ConstructionMonths>0 ? (empLoan1ConstructionMonths+' mois') : '&mdash;')+'</div></div>'
+    +'<div class="kpi"><div class="label">Mensualit\u00e9 hors assurance (post-livraison)</div><div class="value accent">'+eur2(empLoansMonthly)+'</div></div>'
+    +'<div class="kpi" data-tooltip="Int\u00e9r\u00eats intercalaires (chantier, '+eur(stagedAL.totalIntercalaryInterest)+') + int\u00e9r\u00eats post-livraison ('+eur(stagedAL.postSched.totalInterest)+')."><div class="label">Int\u00e9r\u00eats totaux</div><div class="value warn">'+eur(empLoansInterest)+'</div></div>';
   const loanInsuranceMonthly = mainLoanInsuranceRepresentativeRow ? mainLoanInsuranceRepresentativeRow.insurance : (staged.postSched.rows.length ? staged.postSched.rows[0].insurance : 0);
   document.getElementById('insuranceKpi').innerHTML=''
     +'<div class="kpi"><div class="label">Taux combin\u00e9 annuel</div><div class="value">'+combinedAnnualPctOfCapital.toFixed(3)+'%</div></div>'
@@ -1865,12 +1946,16 @@ function runSimulation(){
 
   const ptzRowsAnchored = ptzSched.rows.map(r=>({date: livraisonDate ? addMonths(livraisonDate, r.month-1) : null, payment:r.payment}));
   const postRowsAnchored = staged.postSched.rows.map(r=>({date: livraisonDate ? addMonths(livraisonDate, r.month-1) : null, payment:r.payment, insurance:r.insurance}));
-  const empLoan1RowsAnchored = empLoan1Sched.rows.map(r=>({date: livraisonDate ? addMonths(livraisonDate, r.month-1) : null, payment:r.payment}));
+  // Pr\u00eat AL now has its own intercalary (chantier) phase, exactly like the main loan above --
+  // stagedAL.intercalaryRows are already anchored to real calendar dates (not relative months), so
+  // they're used directly; only the post-livraison amortization rows need anchoring to livraisonDate.
+  const empLoan1PostRowsAnchored = stagedAL.postSched.rows.map(r=>({date: livraisonDate ? addMonths(livraisonDate, r.month-1) : null, payment:r.payment}));
   const setDates=new Set();
   staged.intercalaryRows.forEach(r=>setDates.add(r.date.getTime()));
   postRowsAnchored.forEach(r=>{ if(r.date) setDates.add(r.date.getTime()); });
   ptzRowsAnchored.forEach(r=>{ if(r.date) setDates.add(r.date.getTime()); });
-  empLoan1RowsAnchored.forEach(r=>{ if(r.date) setDates.add(r.date.getTime()); });
+  stagedAL.intercalaryRows.forEach(r=>setDates.add(r.date.getTime()));
+  empLoan1PostRowsAnchored.forEach(r=>{ if(r.date) setDates.add(r.date.getTime()); });
   const uniqueSorted=Array.from(setDates).sort((a,b)=>a-b).map(t=>new Date(t));
   const maxDisplay=60;
   let displayDates;
@@ -1888,12 +1973,13 @@ function runSimulation(){
     const inter=staged.intercalaryRows.find(r=>r.date.getTime()===d.getTime());
     const post=postRowsAnchored.find(r=>r.date && r.date.getTime()===d.getTime());
     const ptzR=ptzRowsAnchored.find(r=>r.date && r.date.getTime()===d.getTime());
-    const emp1R=empLoan1RowsAnchored.find(r=>r.date && r.date.getTime()===d.getTime());
+    const emp1Inter=stagedAL.intercalaryRows.find(r=>r.date.getTime()===d.getTime());
+    const emp1Post=empLoan1PostRowsAnchored.find(r=>r.date && r.date.getTime()===d.getTime());
     const loanPay = inter ? inter.payment : (post ? post.payment : 0);
     const loanIns = inter ? inter.insurance : (post ? post.insurance : 0);
     const ptzPay = ptzR ? ptzR.payment : 0;
     const ptzIns = (insurePTZChecked && ptzR) ? ptzInsuranceMonthly : 0;
-    const empLoansPay = emp1R ? emp1R.payment : 0;
+    const empLoansPay = emp1Inter ? emp1Inter.payment : (emp1Post ? emp1Post.payment : 0);
     const inPtzDeferSubPhase = mainLoanDuringDeferPayment!=null && livraisonDate && d>=livraisonDate && ptzR && ptzR.payment<0.5;
     // Once the main loan's own amortization is fully repaid (no `post` row left) but the PTZ and/or
     // Pr\u00eat Action Logement still run beyond it (they can have a longer term), keep the phase label
@@ -1902,7 +1988,12 @@ function runSimulation(){
     const mainLoanFinished = !inter && livraisonDate && d>=livraisonDate && !post;
     const tailCredits=[];
     if(mainLoanFinished && ptzR) tailCredits.push('PTZ');
-    if(mainLoanFinished && emp1R) tailCredits.push('Pr\u00eat A.L.');
+    if(mainLoanFinished && emp1Post) tailCredits.push('Pr\u00eat A.L.');
+    // Pr\u00eat AL can now start its own intercalary phase before the main loan draws anything at all
+    // (its money is typically used earlier in the waterfall) -- flag that explicitly rather than
+    // showing "-" while the Pr\u00eat A.L. column already carries a non-zero interest-only payment,
+    // which would otherwise look like a data error.
+    const empLoan1LeadsPhase = !inter && !(livraisonDate && d>=livraisonDate) && emp1Inter && emp1Inter.payment>0.5;
     const phase = inter
       ? '<span class="row-intercalary">Intercalaire</span>'
       : (livraisonDate && d>=livraisonDate
@@ -1911,7 +2002,9 @@ function runSimulation(){
               : (tailCredits.length>0
                   ? '<span class="row-intercalary">Pr\u00eat principal sold\u00e9 &ndash; '+tailCredits.join(' + ')+' encore en cours</span>'
                   : '<span class="row-ok">Amortissement</span>'))
-          : '-');
+          : (empLoan1LeadsPhase
+              ? '<span class="row-intercalary">Intercalaire (Pr\u00eat A.L. seul)</span>'
+              : '-'));
     if(tailCredits.length>0) hasTailPhase=true;
     const total=loanPay+ptzPay+empLoansPay+loanIns+ptzIns;
     rowsHtml+='<tr><td>'+fmtDate(d)+'</td><td>'+phase+'</td><td>'+eur2(loanPay)+'</td><td>'+eur2(empLoansPay)+'</td><td>'+eur2(ptzPay)+'</td><td>'+eur2(loanIns+ptzIns)+'</td><td><strong>'+eur2(total)+'</strong></td></tr>';
@@ -1933,7 +2026,7 @@ function runSimulation(){
   });
   renderBalanceChart(balanceSeries, livraisonDate);
 
-  lastResults={projectName:currentProjectName, commune, adresse, price, surface, prixM2Calc, prixM2Moyen, ecartEur, ecartPct, stade, remise, priceAfterRemise, totalProjectCost, apportTarget, apportPctOfPrice, ptzAmount, empLoan1Amount, empLoan1Rate, empLoansAmount, empLoansInterest, empLoansMonthly, loanAmount, overFunded, loanYears, loanRate, ptzDefer, ptzRepayMonths:ptzSched.repayMonths, ptzMonthlyPayment:ptzSched.monthlyPayment, avgMonthlyPostLivraison, avgMonthlyPostLivraisonHorsAssurance, avgMonthlyPostLivraisonAssurance, rfr, ptzZone, ptzPersonnes, ptzCeiling:ceilingPtz, ptzEligible:eligible, autresCharges, combinedAnnualPctOfCapital, totalInsuranceAll, totalFeesCredit, totalFeesAcquisition, totalCreditCost, vefaRows, savingsRowsDiffere, savingsRowsProrata, monthlySavings, apportDispo, flexFundRate, salary1, salary2, savingsRate, durationComparisons, staged, activeScenario, apportUtiliseCumule, apportShortfallVsCible, negoExtrasTotal:updateNegoExtrasTotal()};
+  lastResults={projectName:currentProjectName, commune, adresse, price, surface, prixM2Calc, prixM2Moyen, ecartEur, ecartPct, stade, remise, priceAfterRemise, totalProjectCost, apportTarget, apportPctOfPrice, ptzAmount, empLoan1Amount, empLoan1Rate, empLoansAmount, empLoansInterest, empLoansMonthly, loanAmount, overFunded, loanYears, loanRate, ptzDefer, ptzRepayMonths:ptzSched.repayMonths, ptzMonthlyPayment:ptzSched.monthlyPayment, avgMonthlyPostLivraison, avgMonthlyPostLivraisonHorsAssurance, avgMonthlyPostLivraisonAssurance, rfr, ptzZone, ptzPersonnes, ptzCeiling:ceilingPtz, ptzEligible:eligible, autresCharges, combinedAnnualPctOfCapital, totalInsuranceAll, totalFeesCredit, totalFeesAcquisition, epargneIRAFee, epargneExcedentaireTotalUsed, epargneIRARate, totalCreditCost, vefaRows, savingsRowsDiffere, savingsRowsProrata, monthlySavings, apportDispo, flexFundRate, salary1, salary2, savingsRate, durationComparisons, staged, activeScenario, apportUtiliseCumule, apportShortfallVsCible, negoExtrasTotal:updateNegoExtrasTotal()};
 
   if(currentProjectName) saveProject(currentProjectName, serializeState());
 }
@@ -1942,11 +2035,23 @@ function applyDurationYears(years){
   document.getElementById('loanYears').value=years;
   runSimulation();
 }
+// ---- "\u00c9pargne exc\u00e9dentaire" per-palier overrides (Simulation d'\u00e9pargne, sc\u00e9nario
+// Diff\u00e9r\u00e9): the table cell is an editable input, prefilled with the auto-suggested amount --
+// these two functions are its onchange/reset handlers.
+function setEpargneOverride(idx, rawValue){
+  const v=parseFloat(String(rawValue).replace(',','.'));
+  if(isNaN(v)) delete epargneOverrides[idx]; else epargneOverrides[idx]=Math.max(0,v);
+  runSimulation();
+}
+function resetEpargneOverride(idx){
+  delete epargneOverrides[idx];
+  runSimulation();
+}
 function buildDiffereTableForPDF(r){
   const needsFullDetail = r.apportTarget > r.apportDispo;
 
   if(needsFullDetail){
-    const head = [['Palier','Date','Appel','Pool avant','Cash apport','A lever','Au-del\u00e0 objectif','Pr\u00eat A.L.','PTZ','Pr\u00eat','Pool restant','Apport requis cum.','A lever cum.']];
+    const head = [['Palier','Date','Appel','Pool avant','Cash apport','A lever','\u00c9pargne exc\u00e9dentaire','Pr\u00eat A.L.','PTZ','Pr\u00eat','Pool restant','Apport requis cum.','A lever cum.']];
     let prevApportCum = -1, prevALeverCum = -1;
     const body = r.savingsRowsDiffere.map(row=>{
       const apportCumUnchanged = Math.abs(row.apportRequisCumule - prevApportCum) < 0.5;
@@ -1986,7 +2091,7 @@ function buildDiffereTableForPDF(r){
 
   // Simplified set: apport dispo already covers the target, so cash-apport/aLever-etape/apport-requis-cum
   // columns are always trivial -- show pool/au-dela/a-lever-cumule instead, which stay informative.
-  const head = [['Palier','Date','Appel','Pool avant','Au-del\u00e0 obj.','Pr\u00eat A.L.','PTZ','Pr\u00eat','A lever cum.']];
+  const head = [['Palier','Date','Appel','Pool avant','\u00c9parg. exc\u00e9d.','Pr\u00eat A.L.','PTZ','Pr\u00eat','A lever cum.']];
   let prevALeverCumSimple = -1;
   const body = r.savingsRowsDiffere.map(row=>{
     const aLeverCumUnchanged = Math.abs(row.aLeverCumule - prevALeverCumSimple) < 0.5;
@@ -2067,6 +2172,7 @@ function buildSummaryTableBody(r){
   if(empLoansUsed) body.push(subRow('Int\u00e9r\u00eats Pr\u00eat Action Logement', pdfEur(r.empLoansInterest)));
   body.push(subRow('Assurance totale (pr\u00eat'+ptzSuffix+')', pdfEur(r.totalInsuranceAll)));
   body.push(subRow('Frais li\u00e9s au cr\u00e9dit', pdfEur(r.totalFeesCredit)));
+  if(r.epargneIRAFee>0.5) body.push(subRow('  dont IRA sur \u00e9pargne exc\u00e9dentaire ('+r.epargneIRARate+'%)', pdfEur(r.epargneIRAFee)));
   body.push(['Frais li\u00e9s \u00e0 l\'acquisition (notaire, agence, mobilier)', pdfEur(r.totalFeesAcquisition)]);
   return body;
 }
@@ -2432,7 +2538,7 @@ function initCollapsiblePanels(){
     chevron.textContent='\u25be';
     h2.appendChild(chevron);
     h2.addEventListener('click', e=>{
-      // The "Utiliser cash au-del\u00e0 objectif" toggle (and its checkbox) lives inside some h2s --
+      // The "Utiliser l'\u00e9pargne exc\u00e9dentaire" toggle (and its checkbox) lives inside some h2s --
       // let it work normally rather than also collapsing the panel underneath it.
       if(e.target.closest('.h2-toggle')) return;
       togglePanelCollapsed(panel);
