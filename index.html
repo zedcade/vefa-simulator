@@ -381,7 +381,12 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
     <div class="field-row"><label data-tooltip="Caution bancaire : g&eacute;n&eacute;ralement 1-2% du montant emprunt&eacute; ; une partie (environ 65-73%) est restituable en fin de pr&ecirc;t.">Frais de garantie (&euro;)</label><input type="number" class="auto" id="fraisGarantie" value="3000" step="1" min="0"></div>
     <div class="field-row"><label data-tooltip="Moyenne nationale environ 1900 &euro; pour un pr&ecirc;t de 200 000 &euro;, mais l'&eacute;cart va de 0 &euro; (banques en ligne) &agrave; 2500 &euro;.">Frais de dossier (&euro;)</label><input type="number" class="auto" id="fraisDossier" value="1500" step="1" min="0"></div>
     <div class="field-row"><label data-tooltip="Si vous passez par un courtier : g&eacute;n&eacute;ralement 1% du montant du pr&ecirc;t.">Frais de courtage (&euro;)</label><input type="number" class="auto" id="fraisCourtage" value="2500" step="1" min="0"></div>
-    <div class="field-row"><label data-tooltip="Due uniquement en cas de remboursement anticip&eacute;. Plafonn&eacute;e par la loi (Art. R313-25 Code conso) &agrave; MIN(3% du capital restant d&ucirc;, 6 mois d'int&eacute;r&ecirc;ts au taux moyen du pr&ecirc;t).">IRA remb. anticip&eacute; (&euro;)</label><input type="number" class="auto" id="fraisIRA" value="0" step="100" min="0"></div>
+    <div class="field-row"><label id="fraisIRALabel" data-tooltip="Due uniquement en cas de remboursement anticip&eacute;. Plafonn&eacute;e par la loi (Art. R313-25 Code conso) &agrave; MIN(3% du capital restant d&ucirc;, 6 mois d'int&eacute;r&ecirc;ts au taux moyen du pr&ecirc;t).">IRA remb. anticip&eacute; (&euro;)</label><input type="number" class="auto" id="fraisIRA" value="0" step="100" min="0"></div>
+    <div class="section-title"><span data-tooltip="Payer plus que la mensualit&eacute; requise pendant une p&eacute;riode raccourcit la dur&eacute;e du pr&ecirc;t (au lieu de choisir une dur&eacute;e plus courte d&egrave;s la signature, ou de faire baisser la mensualit&eacute; future) -- contrairement &agrave; l'&eacute;pargne exc&eacute;dentaire utilis&eacute;e pendant le chantier, ceci rembourse du capital d&eacute;j&agrave; d&eacute;bloqu&eacute; par anticipation, d'o&ugrave; le champ IRA ci-dessus qui se remplit automatiquement d&egrave;s qu'un surcro&icirc;t est renseign&eacute;. R&eacute;sultats dans le panneau Remboursement anticip&eacute;.">Surcro&icirc;t de mensualit&eacute;</span></div>
+    <div class="field-row"><label>Surcro&icirc;t mensuel (&euro;)</label><input type="number" class="auto" id="overpayAmount" value="0" step="50" min="0"></div>
+    <div class="field-row"><label>Dur&eacute;e du surcro&icirc;t (mois)</label><input type="number" class="auto" id="overpayDurationMonths" value="12" step="1" min="1"></div>
+    <div class="field-row"><label data-tooltip="Compt&eacute; en mois depuis le d&eacute;but de l'amortissement post-livraison (mois 1 = premi&egrave;re mensualit&eacute; apr&egrave;s livraison), pas depuis aujourd'hui.">&Agrave; partir du mois (post-livraison)</label><input type="number" class="auto" id="overpayStartMonth" value="1" step="1" min="1"></div>
+    <div class="field-row"><label data-tooltip="Taux appliqu&eacute; au capital effectivement rembours&eacute; par anticipation gr&acirc;ce au surcro&icirc;t (pas au surcro&icirc;t brut si la derni&egrave;re mensualit&eacute; est plafonn&eacute;e par le capital restant). &Agrave; confirmer aupr&egrave;s de votre banque -- 0% par d&eacute;faut.">Taux IRA sur le surcro&icirc;t (%)</label><input type="number" class="auto" id="overpayIRARate" value="0" step="0.1" min="0"></div>
   </div>
 
   <div class="panel panel-collapsible" id="panel-financement">
@@ -561,6 +566,11 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
     </div>
   </div>
 
+  <div class="panel panel-collapsible" id="panel-surcroit">
+    <h2>Remboursement anticip&eacute; (surcro&icirc;t de mensualit&eacute;)</h2>
+    <div class="note" style="margin-bottom:10px">Payer plus que la mensualit&eacute; requise pendant une p&eacute;riode raccourcit la dur&eacute;e du pr&ecirc;t (au lieu de choisir une dur&eacute;e plus courte d&egrave;s la signature, ou de faire baisser la mensualit&eacute; future) -- contrairement &agrave; l'&eacute;pargne exc&eacute;dentaire utilis&eacute;e pendant le chantier, ceci rembourse du capital d&eacute;j&agrave; d&eacute;bloqu&eacute; par anticipation et peut donc d&eacute;clencher une v&eacute;ritable IRA (plafonn&eacute;e par la loi &agrave; MIN(3% du capital rembours&eacute; par anticipation, 6 mois d'int&eacute;r&ecirc;ts sur ce capital) -- Art. R313-25 Code conso). S'applique au pr&ecirc;t principal, phase d'amortissement post-livraison uniquement. R&eacute;glages dans le panneau <strong>Projet</strong> (section Surcro&icirc;t de mensualit&eacute;, sidebar).</div>
+    <div class="kpi-grid" id="overpayKpi" style="margin-top:10px"></div>
+  </div>
   <div class="panel highlight panel-collapsible" id="panel-duree">
     <h2>Comparaison des dur&eacute;es de pr&ecirc;t <span class="tag" id="durationCompareScenarioTag" data-tooltip="Le montant tir&eacute;, les int&eacute;r&ecirc;ts intercalaires, le PTZ et le Pr&ecirc;t Action Logement restent ceux du sc&eacute;nario actif (Diff&eacute;r&eacute;/Prorata) et de l'apport actuellement renseign&eacute; ci-dessus -- seule la dur&eacute;e d'amortissement du pr&ecirc;t principal varie d'une ligne &agrave; l'autre.">scenario Diff&eacute;r&eacute;</span></h2>
     <div class="note" id="durationCompareNote" style="margin-bottom:10px"></div>
@@ -572,6 +582,7 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
       </table>
     </div>
   </div>
+
 </div>
 </div>
 
@@ -1271,6 +1282,32 @@ function amortizationSchedule(principal, annualRatePct, years, insMonthlyFn){
   }
   return {rows,payment,n,totalInterest,totalInsurance};
 }
+// Remboursement anticip\u00e9 par surcro\u00eet de mensualit\u00e9 : paying MORE than the contractually required
+// payment for a stretch of months (rather than choosing a shorter duration up front, or a one-off
+// lump sum) -- the loop stops the moment the balance actually reaches zero (n < maxMonths whenever
+// overpayAmount>0), which is exactly what "shortens the duration" means here. Unlike \u00e9pargne
+// exc\u00e9dentaire (pre-livraison, nothing yet disbursed), this genuinely reimburses already-disbursed
+// capital ahead of schedule, so it IS remboursement anticip\u00e9 in the strict legal sense and real IRA
+// exposure should be expected (capped by law at MIN(3% of the capital reimbursed early, 6 months of
+// interest on that capital) -- Art. R313-25 Code conso).
+function amortizationScheduleWithOverpay(principal, annualRatePct, maxMonths, insMonthlyFn, basePayment, overpayAmount, overpayStartMonth, overpayDurationMonths){
+  const r=annualRatePct/100/12;
+  let balance=principal; const rows=[]; let totalInterest=0, totalInsurance=0, totalOverpaidPrincipal=0; let m=0;
+  while(balance>0.5 && m<maxMonths){
+    m++;
+    const interest=balance*r;
+    const isOverpay = overpayAmount>0.5 && m>=overpayStartMonth && m<overpayStartMonth+overpayDurationMonths;
+    let payment = basePayment + (isOverpay?overpayAmount:0);
+    let capital = payment-interest;
+    if(capital>balance){ capital=balance; payment=capital+interest; }
+    if(isOverpay) totalOverpaidPrincipal += Math.min(overpayAmount, capital);
+    balance=Math.max(0,balance-capital);
+    const insurance=insMonthlyFn(balance,principal);
+    totalInterest+=interest; totalInsurance+=insurance;
+    rows.push({month:m,payment,interest,capital,balance,insurance,isOverpay});
+  }
+  return {rows,n:m,totalInterest,totalInsurance,totalOverpaidPrincipal};
+}
 // "Pr\u00eat lisse sur le PTZ": some banks size the main loan's own payment to be HIGHER while the
 // PTZ pays nothing (its deferral) and LOWER once the PTZ activates, so the COMBINED total (main
 // loan + PTZ) stays flat for the whole term -- rather than the main loan amortizing independently
@@ -1351,7 +1388,8 @@ function priceGradientColor(pct){
   return '#ff5f5f';
 }
 
-function runSimulation(){
+function runSimulation(fraisIRASyncDepth){
+  fraisIRASyncDepth = (typeof fraisIRASyncDepth==='number') ? fraisIRASyncDepth : 0;
   updateNegoExtrasTotal();
   const price=val('price'), remise=val('remise');
   const commune=document.getElementById('commune').value;
@@ -1574,15 +1612,20 @@ function runSimulation(){
     const aLeverEtape = apportNecessaire - cashApport;
     poolD -= cashApport;
     const afterApportCall = r.callAmount - apportNecessaire;
-    // Suggested amount = the auto-computed max available beyond the apport target. The user can
-    // override this per palier (editable cell in the table) to model spending the surplus savings
-    // differently -- e.g. keeping some cash in reserve at a given stage instead of injecting the
-    // full suggested amount. The override is clamped to what's actually available/needed so it can
-    // never create cash from nowhere or exceed what this call still requires.
+    // Suggested amount = the auto-computed max available from the MODELED savings pool beyond the
+    // apport target. A manual override is deliberately NOT capped to that modeled pool -- the whole
+    // point of overriding is to let the user inject money the simple %-of-salary simulation doesn't
+    // know about (a bonus, a gift, other savings). It's only capped to what this specific call still
+    // needs (paying more than the call amount doesn't mean anything) and to 0 minimum.
     const suggestedBeyond = useCashBeyond ? Math.min(poolD, afterApportCall) : 0;
     const hasOverride = useCashBeyond && epargneOverrides.hasOwnProperty(idx);
-    const cashBeyondObjectif = !useCashBeyond ? 0 : (hasOverride ? Math.min(Math.max(0, epargneOverrides[idx]), poolD, afterApportCall) : suggestedBeyond);
-    poolD -= cashBeyondObjectif;
+    const cashBeyondObjectif = !useCashBeyond ? 0 : (hasOverride ? Math.min(Math.max(0, epargneOverrides[idx]), afterApportCall) : suggestedBeyond);
+    // Only the portion that actually comes from the modeled pool depletes it -- any override amount
+    // beyond poolD is external money, so "Pool restant" for future rows stays representative of the
+    // organic (modeled) savings trajectory rather than being dragged negative by outside cash.
+    const drawnFromPoolForBeyond = Math.min(cashBeyondObjectif, poolD);
+    poolD -= drawnFromPoolForBeyond;
+    const usesExternalFunds = cashBeyondObjectif > drawnFromPoolForBeyond + 0.5;
     const afterExtraCash = afterApportCall - cashBeyondObjectif;
     // PTZ is drawn BEFORE Pr\u00eat Action Logement here: PTZ is 0% by definition so its cost is
     // completely unaffected by when it's drawn, whereas Pr\u00eat AL carries a real rate (~1%) and
@@ -1598,7 +1641,7 @@ function runSimulation(){
     const empLoansEtape = Math.min(afterPtz, remainingEmpLoansBudget);
     const financeParPret = afterPtz - empLoansEtape;
     apportBudgetUsed += apportNecessaire; empLoansBudgetUsed += empLoansEtape; ptzBudgetUsed += ptzEtape; aLeverCumule += aLeverEtape;
-    return {name:r.name, date:r.date, callAmount:r.callAmount, poolAvant, cashApport, aLeverEtape, cashBeyondObjectif, suggestedBeyond, hasOverride, empLoansEtape, ptzEtape, financeParPret, poolRestant:poolD, apportRequisCumule:apportBudgetUsed, aLeverCumule, idx};
+    return {name:r.name, date:r.date, callAmount:r.callAmount, poolAvant, cashApport, aLeverEtape, cashBeyondObjectif, suggestedBeyond, hasOverride, usesExternalFunds, empLoansEtape, ptzEtape, financeParPret, poolRestant:poolD, apportRequisCumule:apportBudgetUsed, aLeverCumule, idx};
   });
   const apportShortfallVsCible = savingsRowsDiffere.length ? savingsRowsDiffere[savingsRowsDiffere.length-1].aLeverCumule : 0;
   const apportUtiliseCumule = apportBudgetUsed;
@@ -1649,6 +1692,23 @@ function runSimulation(){
     if(feeDrawIdx>=0) activeDrawEvents[feeDrawIdx] = {...activeDrawEvents[feeDrawIdx], amount:(activeDrawEvents[feeDrawIdx].amount||0)+feesFinancedByLoan};
   }
   const staged = stagedLoanCost(activeDrawEvents, livraisonDate, loanRate, loanYears, insMonthlyFn);
+
+  // ---- Remboursement anticip\u00e9 par surcro\u00eet de mensualit\u00e9 (standalone what-if calculator, main
+  // loan / post-livraison phase only -- doesn't alter the \u00e9ch\u00e9ancier, duration comparison, or PDF,
+  // which all still describe the loan AS CONTRACTUALLY SIGNED). Compares the baseline schedule
+  // (staged.postSched, no overpay) against a second schedule where extra cash is paid for a window
+  // of months, which pays off the loan early (n < baseline n) rather than reducing future payments.
+  const overpayAmount=val('overpayAmount'), overpayDurationMonths=val('overpayDurationMonths'),
+        overpayStartMonth=val('overpayStartMonth'), overpayIRARate=val('overpayIRARate');
+  const overpayBaselineMonths = staged.postSched.n;
+  const overpayResult = overpayAmount>0.5
+    ? amortizationScheduleWithOverpay(staged.totalDrawn, loanRate, overpayBaselineMonths, insMonthlyFn, staged.postSched.payment, overpayAmount, overpayStartMonth, overpayDurationMonths)
+    : null;
+  const overpayMonthsSaved = overpayResult ? overpayBaselineMonths - overpayResult.n : 0;
+  const overpayInterestSaved = overpayResult ? staged.postSched.totalInterest - overpayResult.totalInterest : 0;
+  const overpayInsuranceSaved = overpayResult ? staged.postSched.totalInsurance - overpayResult.totalInsurance : 0;
+  const overpayIRACost = overpayResult ? overpayResult.totalOverpaidPrincipal * (overpayIRARate/100) : 0;
+  const overpayNetSavings = overpayInterestSaved + overpayInsuranceSaved - overpayIRACost;
 
   // ---- Pr\u00eat Action Logement: mirrors exactly how the main loan above is costed. Real-world, if
   // Pr\u00eat AL money is used to pay VEFA calls starting well before livraison (per the waterfall,
@@ -1827,6 +1887,23 @@ function runSimulation(){
   }).join('');
   renderDurationChart(durationComparisons, cheapestFeasibleRow, hasALCol, hasPTZCol, catColors);
 
+  // ---- Render the surcro\u00eet (overpay) KPI grid.
+  const overpayKpiEl=document.getElementById('overpayKpi');
+  if(!overpayResult){
+    overpayKpiEl.innerHTML = '<div class="note">Renseignez un surcro\u00eet mensuel &gt; 0&euro; ci-dessus pour voir l\u2019effet sur la dur\u00e9e et le co\u00fbt du pr\u00eat.</div>';
+  } else {
+    const newPayoffDate = livraisonDate ? addMonths(livraisonDate, overpayResult.n-1) : null;
+    const baselinePayoffDate = livraisonDate ? addMonths(livraisonDate, overpayBaselineMonths-1) : null;
+    const legalIRACap = Math.min(overpayResult.totalOverpaidPrincipal*0.03, overpayResult.totalOverpaidPrincipal*(loanRate/100/12)*6);
+    overpayKpiEl.innerHTML = ''
+      +'<div class="kpi" data-tooltip="Dur\u00e9e initiale : '+overpayBaselineMonths+' mois'+(baselinePayoffDate?' (sold\u00e9 '+fmtDate(baselinePayoffDate)+')':'')+'."><div class="label">Nouvelle dur\u00e9e</div><div class="value accent">'+overpayResult.n+' mois'+(newPayoffDate?' ('+fmtDate(newPayoffDate)+')':'')+'</div></div>'
+      +'<div class="kpi"><div class="label">Mois \u00e9conomis\u00e9s</div><div class="value accent">'+overpayMonthsSaved+' mois ('+(overpayMonthsSaved/12).toFixed(1)+' ans)</div></div>'
+      +'<div class="kpi" data-tooltip="'+eur(staged.postSched.totalInterest)+' (sans surcro\u00eet) &rarr; '+eur(overpayResult.totalInterest)+' (avec surcro\u00eet)."><div class="label">Int\u00e9r\u00eats \u00e9conomis\u00e9s</div><div class="value row-ok">'+eur(overpayInterestSaved)+'</div></div>'
+      +(overpayInsuranceSaved>0.5 ? '<div class="kpi"><div class="label">Assurance \u00e9conomis\u00e9e</div><div class="value row-ok">'+eur(overpayInsuranceSaved)+'</div></div>' : '')
+      +'<div class="kpi" data-tooltip="Capital rembours\u00e9 par anticipation gr\u00e2ce au surcro\u00eet : '+eur(overpayResult.totalOverpaidPrincipal)+' &times; '+overpayIRARate+'%. Plafond l\u00e9gal pour r\u00e9f\u00e9rence (MIN 3% du capital / 6 mois d\u2019int\u00e9r\u00eats) : '+eur(legalIRACap)+' -- v\u00e9rifiez le calcul exact avec votre banque."><div class="label">Co\u00fbt IRA estim\u00e9</div><div class="value warn">'+(overpayIRACost>0.5?'-'+eur(overpayIRACost):eur(0))+'</div></div>'
+      +'<div class="kpi" data-tooltip="Int\u00e9r\u00eats \u00e9conomis\u00e9s + assurance \u00e9conomis\u00e9e - co\u00fbt IRA estim\u00e9."><div class="label">\u00c9conomie nette</div><div class="value '+(overpayNetSavings>=0?'row-ok':'row-short')+'">'+eur(overpayNetSavings)+'</div></div>';
+  }
+
   const totalCreditPrincipal = ptzAmount + empLoansAmount + loanAmount;
   // Simple capital-weighted average (weighted by each credit's INITIAL amount, PTZ counted at 0%).
   // This is the standard, easily-reproduced convention -- a lender's own "taux moyen" may instead
@@ -1898,13 +1975,18 @@ function runSimulation(){
       : (dejaLeve ? eur(r.aLeverCumule)+' <span class="deja-levee">d\u00e9j\u00e0 lev\u00e9</span>' : eur(r.aLeverCumule));
     prevApportRequisCumule=r.apportRequisCumule; prevALeverCumule=r.aLeverCumule;
     // Editable "\u00c9pargne exc\u00e9dentaire" cell: prefilled with the auto-suggested amount (driven
-    // by the savings-rate waterfall), but the user can override it per palier -- e.g. to keep some
-    // cash in reserve at a given stage instead of injecting the full suggested amount. A reset icon
-    // appears once overridden so it's easy to go back to the suggested value.
+    // by the savings-rate waterfall), but the user can freely override it per palier -- including
+    // ABOVE what the modeled pool would provide, to use money the simple savings simulation doesn't
+    // track (a bonus, a gift, other savings). A reset icon appears once overridden so it's easy to
+    // go back to the suggested value; an "external" marker appears when the override exceeds what
+    // the modeled pool alone would have covered.
     const epargneResetBtn = r.hasOverride
       ? ' <button type="button" class="epargne-reset-btn" title="R\u00e9initialiser \u00e0 la valeur sugg\u00e9r\u00e9e (' + eur(r.suggestedBeyond) + ')" onclick="resetEpargneOverride(' + r.idx + ')">\u21ba</button>'
       : '';
-    const epargneCell = '<div class="epargne-cell"><input type="number" class="epargne-override-input' + (r.hasOverride ? ' overridden' : '') + '" data-idx="' + r.idx + '" value="' + Math.round(r.cashBeyondObjectif) + '" min="0" step="10" title="Sugg\u00e9r\u00e9\u00a0: ' + eur(r.suggestedBeyond) + '"' + (useCashBeyond ? '' : ' disabled') + ' onchange="setEpargneOverride(' + r.idx + ', this.value)"> <span class="unit">\u20ac</span>' + epargneResetBtn + '</div>';
+    const epargneExternalTag = r.usesExternalFunds
+      ? ' <span class="tag" style="border-color:var(--accent2);color:var(--accent2)" title="D\u00e9passe l\u2019\u00e9pargne modelis\u00e9e disponible \u00e0 cette \u00e9tape (' + eur(r.suggestedBeyond) + ') -- suppose des fonds externes non suivis par la simulation.">externe</span>'
+      : '';
+    const epargneCell = '<div class="epargne-cell"><input type="number" class="epargne-override-input' + (r.hasOverride ? ' overridden' : '') + '" data-idx="' + r.idx + '" value="' + Math.round(r.cashBeyondObjectif) + '" min="0" step="10" title="Sugg\u00e9r\u00e9\u00a0: ' + eur(r.suggestedBeyond) + ' (limite du mod\u00e8le d\u2019\u00e9pargne) -- vous pouvez saisir plus si vous financez cette \u00e9tape avec d\u2019autres fonds." ' + (useCashBeyond ? '' : ' disabled') + ' onchange="setEpargneOverride(' + r.idx + ', this.value)"> <span class="unit">\u20ac</span>' + epargneResetBtn + epargneExternalTag + '</div>';
     return '<tr><td>'+r.name+objectifTag+'</td><td>'+fmtDate(r.date)+'</td><td>'+eur(r.callAmount)+'</td><td>'+eur(r.poolAvant)+'</td><td>'+eur(r.cashApport)+'</td><td>'+(r.aLeverEtape>0.5?'<span class="row-short">'+eur(r.aLeverEtape)+'</span>':'<span class="row-ok">-</span>')+'</td><td>'+epargneCell+'</td><td>'+(r.empLoansEtape>0.5?eur(r.empLoansEtape):'-')+'</td><td>'+eur(r.ptzEtape)+'</td><td>'+(r.financeParPret>0.5?'<span class="row-short">'+eur(r.financeParPret)+'</span>':'<span class="row-ok">-</span>')+'</td><td>'+eur(r.poolRestant)+'</td><td>'+apportCumCell+'</td><td>'+aLeverCumCell+'</td></tr>';
   }).join('');
   document.getElementById('savingsTableProrata').innerHTML=savingsRowsProrata.map(r=>{
@@ -1945,7 +2027,11 @@ function runSimulation(){
     +'<div class="kpi"><div class="label">Assurance totale</div><div class="value danger">'+eur(totalInsuranceAll)+'</div></div>';
 
   const ptzRowsAnchored = ptzSched.rows.map(r=>({date: livraisonDate ? addMonths(livraisonDate, r.month-1) : null, payment:r.payment}));
-  const postRowsAnchored = staged.postSched.rows.map(r=>({date: livraisonDate ? addMonths(livraisonDate, r.month-1) : null, payment:r.payment, insurance:r.insurance}));
+  // If a surcro\u00eet (remboursement anticip\u00e9) is set, the \u00e9ch\u00e9ancier and balance chart should show
+  // what will ACTUALLY be paid month to month -- elevated payments during the surcro\u00eet window, and
+  // the loan ending earlier than its nominal duration -- rather than the loan-as-signed baseline.
+  const mainLoanPostRows = overpayResult ? overpayResult.rows : staged.postSched.rows;
+  const postRowsAnchored = mainLoanPostRows.map(r=>({date: livraisonDate ? addMonths(livraisonDate, r.month-1) : null, payment:r.payment, insurance:r.insurance}));
   // Pr\u00eat AL now has its own intercalary (chantier) phase, exactly like the main loan above --
   // stagedAL.intercalaryRows are already anchored to real calendar dates (not relative months), so
   // they're used directly; only the post-livraison amortization rows need anchoring to livraisonDate.
@@ -2011,13 +2097,14 @@ function runSimulation(){
   });
   document.getElementById('scheduleTable').innerHTML=rowsHtml;
   document.getElementById('scheduleTableNote').innerHTML = 'Avant livraison : int\u00e9r\u00eats intercalaires. Apr\u00e8s livraison : amortissement classique.'
+    + (overpayResult ? ' Surcro\u00eet de mensualit\u00e9 actif (panneau ci-dessus) : la colonne Pr\u00eat inclut le surcro\u00eet pendant sa p\u00e9riode, et le pr\u00eat principal se termine '+overpayMonthsSaved+' mois plus t\u00f4t que sans surcro\u00eet.' : '')
     + (mainLoanDuringDeferPayment!=null ? ' Pr\u00eat liss\u00e9 sur le PTZ actif : la colonne Pr\u00eat est plus \u00e9lev\u00e9e tant que la colonne PTZ affiche 0\u20ac (diff\u00e9r\u00e9 PTZ), puis les deux s\'\u00e9quilibrent -- le Total reste constant sur toute la p\u00e9riode d\'amortissement.' : '')
     + (hasTailPhase ? ' Une fois le pr\u00eat principal totalement rembours\u00e9, seuls le PTZ et/ou le Pr\u00eat Action Logement peuvent continuer si leur dur\u00e9e est plus longue -- la colonne Phase l\'indique alors explicitement plut\u00f4t que d\'afficher un simple \u00ab\u00a0Amortissement\u00a0\u00bb qui laisserait croire \u00e0 une erreur pendant que la colonne Pr\u00eat affiche 0\u20ac.' : '');
 
   // ---- Balance chart: capital restant d\u00fb (pr\u00eat principal) sur toute la p\u00e9riode -- intercalaire
   // (cumDrawn, en hausse) puis amortissement (balance, en baisse). Uses the same uniqueSorted date
   // axis as the table above, but without the 60-row display cap since a chart handles density fine.
-  const postBalanceAnchored = staged.postSched.rows.map(r=>({date: livraisonDate ? addMonths(livraisonDate, r.month-1) : null, balance:r.balance}));
+  const postBalanceAnchored = mainLoanPostRows.map(r=>({date: livraisonDate ? addMonths(livraisonDate, r.month-1) : null, balance:r.balance}));
   const balanceSeries = uniqueSorted.map(d=>{
     const inter=staged.intercalaryRows.find(r=>r.date.getTime()===d.getTime());
     if(inter) return {date:d, balance:inter.cumDrawn};
@@ -2025,6 +2112,34 @@ function runSimulation(){
     return {date:d, balance: post ? post.balance : 0};
   });
   renderBalanceChart(balanceSeries, livraisonDate);
+
+  // ---- Sync "IRA remb. anticip\u00e9" (panel Projet) with the surcro\u00eet calculator when a surcro\u00eet is
+  // configured, so its IRA cost flows into totalFeesCredit/totalProjectCost automatically instead of
+  // needing the same number entered twice. Field is disabled while auto-driven (mirrors the existing
+  // fraisNotaire/FNO pattern) so it can't silently be edited to something inconsistent, and reverts
+  // to freely editable the moment overpayAmount is cleared. Re-runs once if a change is needed so this
+  // pass's totals (already rendered above using the pre-sync fraisIRA) aren't left stale. Note:
+  // fraisIRA feeds into totalProjectCost -> loanAmount -> the very principal the surcro\u00eet/IRA is
+  // computed from, a real (if small) feedback loop -- fraisIRASyncDepth caps recursion so a
+  // pathological case degrades to a slightly-stale value instead of a stack overflow.
+  const fraisIRAInput=document.getElementById('fraisIRA'), fraisIRALabel=document.getElementById('fraisIRALabel');
+  if(overpayResult && overpayIRACost>0.5){
+    const roundedIRA=Math.round(overpayIRACost);
+    const needsSync = !fraisIRAInput.disabled || Math.abs((parseFloat(fraisIRAInput.value)||0)-roundedIRA)>0.5;
+    fraisIRALabel.setAttribute('data-tooltip','Calcul\u00e9 automatiquement depuis le surcro\u00eet de mensualit\u00e9 ci-dessus\u00a0: '+eur(overpayResult.totalOverpaidPrincipal)+' de capital rembours\u00e9 par anticipation \u00d7 '+overpayIRARate+'%. Remettez le surcro\u00eet \u00e0 0\u20ac pour saisir un montant manuel.');
+    if(needsSync && fraisIRASyncDepth<5){
+      fraisIRAInput.value=roundedIRA;
+      fraisIRAInput.disabled=true;
+      runSimulation(fraisIRASyncDepth+1);
+      return;
+    }
+  } else if(fraisIRAInput.disabled){
+    fraisIRAInput.disabled=false;
+    fraisIRAInput.value=0;
+    fraisIRALabel.setAttribute('data-tooltip','Due uniquement en cas de remboursement anticip\u00e9. Plafonn\u00e9e par la loi (Art. R313-25 Code conso) \u00e0 MIN(3% du capital restant d\u00fb, 6 mois d\'int\u00e9r\u00eats au taux moyen du pr\u00eat).');
+    runSimulation(fraisIRASyncDepth+1);
+    return;
+  }
 
   lastResults={projectName:currentProjectName, commune, adresse, price, surface, prixM2Calc, prixM2Moyen, ecartEur, ecartPct, stade, remise, priceAfterRemise, totalProjectCost, apportTarget, apportPctOfPrice, ptzAmount, empLoan1Amount, empLoan1Rate, empLoansAmount, empLoansInterest, empLoansMonthly, loanAmount, overFunded, loanYears, loanRate, ptzDefer, ptzRepayMonths:ptzSched.repayMonths, ptzMonthlyPayment:ptzSched.monthlyPayment, avgMonthlyPostLivraison, avgMonthlyPostLivraisonHorsAssurance, avgMonthlyPostLivraisonAssurance, rfr, ptzZone, ptzPersonnes, ptzCeiling:ceilingPtz, ptzEligible:eligible, autresCharges, combinedAnnualPctOfCapital, totalInsuranceAll, totalFeesCredit, totalFeesAcquisition, epargneIRAFee, epargneExcedentaireTotalUsed, epargneIRARate, totalCreditCost, vefaRows, savingsRowsDiffere, savingsRowsProrata, monthlySavings, apportDispo, flexFundRate, salary1, salary2, savingsRate, durationComparisons, staged, activeScenario, apportUtiliseCumule, apportShortfallVsCible, negoExtrasTotal:updateNegoExtrasTotal()};
 
@@ -2368,8 +2483,13 @@ function exportPDF(){
 
 function bindAutoRecalc(){
   document.querySelectorAll('input.auto, select.auto').forEach(el=>{
-    el.addEventListener('input', runSimulation);
-    el.addEventListener('change', runSimulation);
+    // Wrapped in a no-arg call rather than passed directly: addEventListener would otherwise invoke
+    // runSimulation(event), and runSimulation now takes an internal recursion-depth parameter --
+    // an Event object landing there is truthy, so "depth || 0" would keep the Event instead of
+    // defaulting to 0, and Event<5 is always false, silently disabling the fraisIRA auto-sync (and
+    // any future use of that parameter) on every normal user-triggered recalculation.
+    el.addEventListener('input', ()=>runSimulation());
+    el.addEventListener('change', ()=>runSimulation());
   });
   const titleEl=document.getElementById('pageTitle');
   titleEl.addEventListener('focus', showProjectDropdown);
@@ -2516,6 +2636,7 @@ const PANEL_NAV=[
   {id:'panel-pretal', label:'Pr\u00eat AL'},
   {id:'panel-assurance', label:'Assurance'},
   {id:'panel-echeancier', label:'\u00c9ch\u00e9ancier'},
+  {id:'panel-surcroit', label:'Surcro\u00eet'},
   {id:'panel-duree', label:'Dur\u00e9es'},
 ];
 const COLLAPSE_STORAGE_KEY='vefaCollapsedPanels';
