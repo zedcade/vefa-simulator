@@ -1714,10 +1714,19 @@ function runSimulation(fraisIRASyncDepth){
   // Pr\u00eat AL money is used to pay VEFA calls starting well before livraison (per the waterfall,
   // typically years earlier), it accrues real intercalary interest during that time just like the
   // main loan does -- treating it as \"disbursed as one lump sum at livraison\" (the previous model)
-  // understated its true cost whenever it was actually drawn early. \"Dur\u00e9e totale\" is read as the
-  // TOTAL contract duration (construction + amortization), matching both its label and Action
-  // Logement's own 25-year legal cap on total duration -- so the post-livraison amortization phase
-  // gets whatever's left after subtracting the time actually spent drawing funds during construction.
+  // understated its true cost whenever it was actually drawn early.
+  // \"Dur\u00e9e totale\" is the POST-LIVRAISON amortization/repayment duration -- exactly like the main
+  // loan's own \"Dur\u00e9e amortissement\" field a few lines above, which is NEVER shortened by the
+  // intercalary/construction phase (stagedLoanCost(..., loanYears, ...) uses loanYears as-is). A real
+  // Pr\u00eat Action Logement quote confirms this: 30\u00a0000\u20ac \u00e0 1% sur 180 mois amortis en totalit\u00e9
+  // (mensualit\u00e9 hors assurance) donne 179,55\u20ac/mois -- exactement l'amortissement standard sur 180
+  // mois PLEINS. An earlier version of this code subtracted the estimated construction phase from
+  // \"Dur\u00e9e totale\" before amortizing (inconsistent with the main loan's own convention above), which
+  // silently shortened the repayment period and inflated the mensualit\u00e9 (e.g. 193,59\u20ac instead of
+  // 179,55\u20ac for the same 30\u00a0000\u20ac/1%/180 mois quote once ~14 mois of construction were subtracted).
+  // The construction/intercalary phase still accrues its own separate interest-only cost below
+  // (stagedAL.totalIntercalaryInterest, folded into empLoansInterest) -- it's additional cost on top
+  // of the full stated amortization duration, never a deduction from it.
   const empLoan1DrawEvents = activeScenario==='differe'
     ? savingsRowsDiffere.map(r=>({date:r.date, amount:r.empLoansEtape}))
     : savingsRowsProrata.map(r=>({date:r.date, amount:r.empLoansEtape}));
@@ -1725,23 +1734,11 @@ function runSimulation(fraisIRASyncDepth){
   const empLoan1ConstructionMonths = (validEmpLoan1Draws.length && livraisonDate)
     ? Math.max(0, monthsBetween(validEmpLoan1Draws[0].date, livraisonDate))
     : 0;
-  const empLoan1PostMonths = Math.max(1, empLoan1TotalMonths - empLoan1ConstructionMonths);
   // No insurance modeled for Pr\u00eat AL (unchanged from before -- see complementaryLoanSchedule's
   // original comment: to be confirmed case-by-case with the lending body).
-  const stagedAL = stagedLoanCost(empLoan1DrawEvents, livraisonDate, empLoan1Rate, empLoan1PostMonths/12, ()=>0);
+  const stagedAL = stagedLoanCost(empLoan1DrawEvents, livraisonDate, empLoan1Rate, empLoan1TotalMonths/12, ()=>0);
   const empLoansInterest = stagedAL.totalInterest; // intercalaire (chantier) + post-livraison combin\u00e9s
   const empLoansMonthly = stagedAL.postSched.payment; // mensualit\u00e9, phase d'amortissement post-livraison uniquement
-  // The construction phase is observed from the waterfall, not user-set -- if it alone already meets
-  // or exceeds the stated "Dur\u00e9e totale", there's essentially no amortization phase left, which
-  // usually means the total duration was set assuming the old (pre-fix) lump-sum-at-livraison model.
-  // Flag it rather than silently showing a near-instant post-livraison payoff.
-  if(empLoan1Amount>0.5 && empLoan1ConstructionMonths>=empLoan1TotalMonths){
-    const extraMsg='La phase chantier estim\u00e9e ('+empLoan1ConstructionMonths+' mois, d\u2019apr\u00e8s le waterfall d\u2019\u00e9pargne) d\u00e9passe d\u00e9j\u00e0 la dur\u00e9e totale renseign\u00e9e ('+empLoan1TotalMonths+' mois) -- augmentez la dur\u00e9e totale pour laisser une vraie phase d\u2019amortissement post-livraison.';
-    empLoan1DurationWarningEl.style.display='';
-    empLoan1DurationWarningEl.textContent = empLoan1DurationWarningEl.style.display==='' && empLoan1DurationWarningEl.textContent
-      ? empLoan1DurationWarningEl.textContent + ' ' + extraMsg
-      : extraMsg;
-  }
 
   const ptzSched=ptzSchedule(ptzAmount, ptzDefer, ptzTotalMonths);
   const lissePTZChecked = document.getElementById('lissePTZ').checked;
