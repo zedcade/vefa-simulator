@@ -439,6 +439,12 @@ table input[type=text].vefa-name{width:100%;background:var(--panel2);border:1px 
       <label class="switch"><input type="checkbox" class="auto" id="insurePTZ" checked><span class="slider"></span></label>
       <label for="insurePTZ" data-tooltip="Le PTZ reste un pr&ecirc;t r&eacute;el &agrave; remboursement : sans assurance sur son capital, en cas de d&eacute;c&egrave;s ou d'invalidit&eacute;, vos h&eacute;ritiers ou votre co-emprunteur devraient quand m&ecirc;me le rembourser. La plupart des banques exigent cette couverture au montage du dossier. Ne d&eacute;cochez que si ce risque est d&eacute;j&agrave; couvert autrement (assurance-vie d&eacute;di&eacute;e, garantie d&eacute;c&egrave;s collective employeur, etc.).">Assurer &eacute;galement le capital du PTZ</label>
     </div>
+    <div class="checkbox-row">
+      <label class="switch"><input type="checkbox" class="auto" id="insureEmpLoan1" checked><span class="slider"></span></label>
+      <label for="insureEmpLoan1" data-tooltip="Contrairement au PTZ, le Pr&ecirc;t Action Logement exige syst&eacute;matiquement une assurance emprunteur sur son capital -- coch&eacute; par d&eacute;faut et non optionnel en pratique. Utilise les m&ecirc;mes taux annuels emprunteur 1/2 (TAEA) que le pr&ecirc;t principal ci-dessus (m&ecirc;me profil assur&eacute;, m&ecirc;me tarif), mais avec sa propre r&eacute;partition de quotit&eacute;s ci-dessous -- une banque/Action Logement peut r&eacute;partir la couverture diff&eacute;remment entre les deux pr&ecirc;ts (ex&nbsp;: 50/50 sur le Pr&ecirc;t AL contre 80/70 sur le pr&ecirc;t principal).">Assurer le capital du Pr&ecirc;t Action Logement</label>
+    </div>
+    <div class="field-row"><label data-tooltip="Quotit&eacute; d'assurance emprunteur 1 sp&eacute;cifique au Pr&ecirc;t Action Logement -- ind&eacute;pendante de la quotit&eacute; du pr&ecirc;t principal ci-dessus (les deux pr&ecirc;ts peuvent avoir des r&eacute;partitions diff&eacute;rentes). Taux annuel emprunteur repris de la section ci-dessus (m&ecirc;me profil assur&eacute;, taux de march&eacute; identique quel que soit le pr&ecirc;t couvert).">Quotit&eacute; emprunteur 1 (Pr&ecirc;t AL) (%)</label><input type="number" class="auto" id="empLoan1Ins1Quota" value="50" step="1" min="0"></div>
+    <div class="field-row"><label data-tooltip="Quotit&eacute; d'assurance emprunteur 2 sp&eacute;cifique au Pr&ecirc;t Action Logement -- ind&eacute;pendante de la quotit&eacute; du pr&ecirc;t principal ci-dessus (les deux pr&ecirc;ts peuvent avoir des r&eacute;partitions diff&eacute;rentes). Taux annuel emprunteur repris de la section ci-dessus (m&ecirc;me profil assur&eacute;, taux de march&eacute; identique quel que soit le pr&ecirc;t couvert).">Quotit&eacute; emprunteur 2 (Pr&ecirc;t AL) (%)</label><input type="number" class="auto" id="empLoan1Ins2Quota" value="50" step="1" min="0"></div>
   </div>
 
   <div class="panel panel-collapsible" id="panel-emprunteurs">
@@ -1405,6 +1411,8 @@ function runSimulation(fraisIRASyncDepth){
   const ins1Rate=val('ins1Rate'), ins1Quota=val('ins1Quota'), ins2Rate=val('ins2Rate'), ins2Quota=val('ins2Quota');
   const degressive=document.getElementById('insDegressive').checked;
   const insurePTZChecked=document.getElementById('insurePTZ').checked;
+  const insureEmpLoan1Checked=document.getElementById('insureEmpLoan1').checked;
+  const empLoan1Ins1Quota=val('empLoan1Ins1Quota'), empLoan1Ins2Quota=val('empLoan1Ins2Quota');
   const useCashBeyond=document.getElementById('useCashBeyondObjectif').checked;
   const salary1=val('salary1'), salary2=val('salary2'), savingsRate=val('savingsRate');
   const autresCharges=val('autresCharges');
@@ -1573,6 +1581,14 @@ function runSimulation(fraisIRASyncDepth){
 
   const combinedAnnualPctOfCapital = ins1Rate*ins1Quota/100 + ins2Rate*ins2Quota/100;
   function insMonthlyFn(balance,principal){ const base=degressive?balance:principal; return base*combinedAnnualPctOfCapital/100/12; }
+  // Pr\u00eat Action Logement: same per-person TAEA rates (ins1Rate/ins2Rate) as the main loan -- the
+  // insurer's tariff depends on the insured person's age/health, not on which loan is covered -- but
+  // its OWN quotit\u00e9 split (empLoan1Ins1Quota/empLoan1Ins2Quota), since a lender/Action Logement can
+  // divide coverage differently across two loans (e.g. 50/50 on the Pr\u00eat AL vs 80/70 on the pr\u00eat
+  // principal). Unlike the PTZ toggle, this defaults to CHECKED: Action Logement systematically
+  // requires borrower insurance on this loan, it's not an optional risk-acceptance choice like the PTZ.
+  const combinedEmpLoan1InsurancePct = ins1Rate*empLoan1Ins1Quota/100 + ins2Rate*empLoan1Ins2Quota/100;
+  function empLoan1InsMonthlyFn(balance,principal){ if(!insureEmpLoan1Checked) return 0; const base=degressive?balance:principal; return base*combinedEmpLoan1InsurancePct/100/12; }
   let totalFeesCredit = fraisGarantie+fraisDossier+fraisCourtage+fraisIRA;
   const totalFeesAcquisition = fraisNotaire+fraisAgence+fraisMobilier;
 
@@ -1734,11 +1750,10 @@ function runSimulation(fraisIRASyncDepth){
   const empLoan1ConstructionMonths = (validEmpLoan1Draws.length && livraisonDate)
     ? Math.max(0, monthsBetween(validEmpLoan1Draws[0].date, livraisonDate))
     : 0;
-  // No insurance modeled for Pr\u00eat AL (unchanged from before -- see complementaryLoanSchedule's
-  // original comment: to be confirmed case-by-case with the lending body).
-  const stagedAL = stagedLoanCost(empLoan1DrawEvents, livraisonDate, empLoan1Rate, empLoan1TotalMonths/12, ()=>0);
+  const stagedAL = stagedLoanCost(empLoan1DrawEvents, livraisonDate, empLoan1Rate, empLoan1TotalMonths/12, empLoan1InsMonthlyFn);
   const empLoansInterest = stagedAL.totalInterest; // intercalaire (chantier) + post-livraison combin\u00e9s
-  const empLoansMonthly = stagedAL.postSched.payment; // mensualit\u00e9, phase d'amortissement post-livraison uniquement
+  const empLoansMonthly = stagedAL.postSched.payment; // mensualit\u00e9 hors assurance, phase d'amortissement post-livraison uniquement
+  const empLoan1InsuranceMonthly = stagedAL.postSched.rows.length ? stagedAL.postSched.rows[0].insurance : 0; // mensualit\u00e9 d'assurance post-livraison (0 si non assur\u00e9 ou montant nul)
 
   const ptzSched=ptzSchedule(ptzAmount, ptzDefer, ptzTotalMonths);
   const lissePTZChecked = document.getElementById('lissePTZ').checked;
@@ -1763,9 +1778,9 @@ function runSimulation(fraisIRASyncDepth){
   }
   const ptzInsuranceMonthly = insurePTZChecked ? ptzAmount*combinedAnnualPctOfCapital/100/12 : 0;
   const ptzInsuranceTotal = ptzInsuranceMonthly*ptzTotalMonths;
-  const totalInsuranceAll = staged.totalInsurance + ptzInsuranceTotal;
+  const totalInsuranceAll = staged.totalInsurance + ptzInsuranceTotal + stagedAL.totalInsurance;
   const avgMonthlyPostLivraisonHorsAssurance = staged.postSched.payment + ptzSched.monthlyPayment + empLoansMonthly;
-  const avgMonthlyPostLivraisonAssurance = (mainLoanInsuranceRepresentativeRow ? mainLoanInsuranceRepresentativeRow.insurance : (staged.postSched.rows.length ? staged.postSched.rows[0].insurance : 0)) + ptzInsuranceMonthly;
+  const avgMonthlyPostLivraisonAssurance = (mainLoanInsuranceRepresentativeRow ? mainLoanInsuranceRepresentativeRow.insurance : (staged.postSched.rows.length ? staged.postSched.rows[0].insurance : 0)) + ptzInsuranceMonthly + empLoan1InsuranceMonthly;
   const avgMonthlyPostLivraison = avgMonthlyPostLivraisonHorsAssurance + avgMonthlyPostLivraisonAssurance;
 
   // ---- Comparaison de dur\u00e9es standard (10/15/20/25 ans, + la dur\u00e9e actuellement renseign\u00e9e si
@@ -1798,7 +1813,7 @@ function runSimulation(fraisIRASyncDepth){
     // not just fold it silently into totalCostY below. Otherwise the "Int\u00e9r\u00eats totaux" column
     // understates reality (PTZ excluded on purpose: it's 0% by definition, so it contributes no interest).
     const totalInterestY=staged.totalIntercalaryInterest+postSchedY.totalInterest+empLoansInterest;
-    const totalInsuranceY=staged.totalIntercalaryInsurance+postSchedY.totalInsurance+ptzInsuranceTotal;
+    const totalInsuranceY=staged.totalIntercalaryInsurance+postSchedY.totalInsurance+ptzInsuranceTotal+stagedAL.totalInsurance;
     // Same "sum of already-rounded line items" convention as the top Co\u00fbt total du cr\u00e9dit KPI
     // (see displayedCreditCost above) -- otherwise this column and the top figure can land 1\u20ac apart
     // for the exact same duration even though both are individually correct.
@@ -1814,7 +1829,7 @@ function runSimulation(fraisIRASyncDepth){
     const segPTZ = Math.round(ptzInsuranceTotal);
     const segAssurance = segInsuranceCombined - segPTZ;
     const monthlyHorsAssuranceY=postSchedY.payment+ptzSched.monthlyPayment+empLoansMonthly;
-    const monthlyAssuranceY=(postSchedY.rows.length?postSchedY.rows[0].insurance:0)+ptzInsuranceMonthly;
+    const monthlyAssuranceY=(postSchedY.rows.length?postSchedY.rows[0].insurance:0)+ptzInsuranceMonthly+empLoan1InsuranceMonthly;
     const monthlyPostLivraisonY=monthlyHorsAssuranceY+monthlyAssuranceY;
     // Compared hors-assurance vs hors-assurance -- never the assurance-comprise total against this
     // ceiling, since that would mix two incompatible bases and misjudge feasibility. Autres charges
@@ -1844,7 +1859,7 @@ function runSimulation(fraisIRASyncDepth){
     '<th style="color:'+catColors.main+'" data-tooltip="Int\u00e9r\u00eats du pr\u00eat principal (intercalaires + post-livraison).">Int. pr\u00eat</th>'];
   if(hasALCol) theadCells.push('<th style="color:'+catColors.al+'" data-tooltip="Int\u00e9r\u00eats du Pr\u00eat Action Logement -- identiques quelle que soit la dur\u00e9e compar\u00e9e ici puisque seule la dur\u00e9e du pr\u00eat principal varie.">Int. pr\u00eat AL</th>');
   if(hasPTZCol) theadCells.push('<th style="color:'+catColors.ptz+'" data-tooltip="Assurance du PTZ -- le PTZ lui-m\u00eame ne co\u00fbte aucun int\u00e9r\u00eat, \u00e9tant \u00e0 0% par d\u00e9finition.">PTZ</th>');
-  theadCells.push('<th style="color:'+catColors.ins+'">Assurance</th>');
+  theadCells.push('<th style="color:'+catColors.ins+'" data-tooltip="Assurance emprunteur sur le pr\u00eat principal'+(empLoansAmount>0.5 && insureEmpLoan1Checked?' + Pr\u00eat Action Logement':'')+' (quotit\u00e9s propres \u00e0 chaque pr\u00eat).">Assurance</th>');
   theadCells.push('<th style="color:'+catColors.fees+'" data-tooltip="Frais li\u00e9s au cr\u00e9dit (dossier, garantie, courtage'+(epargneIRAFee>0.5?', dont IRA sur \u00e9pargne exc\u00e9dentaire':'')+') -- identiques quelle que soit la dur\u00e9e.">Frais</th>');
   theadCells.push('<th id="coutTotalTh">Co\u00fbt total du cr\u00e9dit</th>','<th>\u00c9cart vs actuelle</th>','<th></th>');
   document.getElementById('durationCompareThead').innerHTML = '<tr>'+theadCells.join('')+'</tr>';
@@ -1916,7 +1931,16 @@ function runSimulation(fraisIRASyncDepth){
   if(ptzActive) mensualiteMoyenneLabelParts.push('+PTZ');
   mensualiteMoyenneLabelParts.push('+assurance');
   const mensualiteMoyenneLabel = (isFullyConstantAllMonths?'Mensualit\u00e9':'Mensualit\u00e9 moyenne') + ' (' + mensualiteMoyenneLabelParts.join(', ') + ')';
-  const mensualiteMoyenneTooltip = 'Mensualit\u00e9 repr\u00e9sentative une fois la livraison effectu\u00e9e'+(ptzActive && mainLoanDuringDeferPayment==null?' et le diff\u00e9r\u00e9 PTZ termin\u00e9':'')+', d\u00e9compos\u00e9e en deux parties : '+eur2(avgMonthlyPostLivraisonHorsAssurance)+' hors assurance (pr\u00eat principal'+(ptzActive?' + PTZ':'')+(empLoansAmount>0.5?' + Pr\u00eat Action Logement':'')+', capital uniquement) + '+eur2(avgMonthlyPostLivraisonAssurance)+' d\'assurance emprunteur'+(ptzActive?(insurePTZChecked?' (pr\u00eat + PTZ)':' (pr\u00eat seul, PTZ non assur\u00e9 ici)'):' (pr\u00eat seul)')+'.'+(mainLoanDuringDeferPayment!=null
+  // Which credits are actually insured here -- generalised over PTZ and Pr\u00eat AL (each independently
+  // toggleable) instead of a PTZ-only ternary, so the tooltip stays accurate for any combination.
+  const empLoan1Active = empLoansAmount>0.5;
+  const insuredCreditParts=['pr\u00eat'], uninsuredCreditParts=[];
+  if(ptzActive){ if(insurePTZChecked) insuredCreditParts.push('PTZ'); else uninsuredCreditParts.push('PTZ'); }
+  if(empLoan1Active){ if(insureEmpLoan1Checked) insuredCreditParts.push('Pr\u00eat AL'); else uninsuredCreditParts.push('Pr\u00eat AL'); }
+  const assuranceCreditsSuffix = ' (' + insuredCreditParts.join(' + ')
+    + (uninsuredCreditParts.length ? ', ' + uninsuredCreditParts.join(' + ') + ' non assur\u00e9'+(uninsuredCreditParts.length>1?'s':'')+' ici' : '')
+    + ')';
+  const mensualiteMoyenneTooltip = 'Mensualit\u00e9 repr\u00e9sentative une fois la livraison effectu\u00e9e'+(ptzActive && mainLoanDuringDeferPayment==null?' et le diff\u00e9r\u00e9 PTZ termin\u00e9':'')+', d\u00e9compos\u00e9e en deux parties : '+eur2(avgMonthlyPostLivraisonHorsAssurance)+' hors assurance (pr\u00eat principal'+(ptzActive?' + PTZ':'')+(empLoan1Active?' + Pr\u00eat Action Logement':'')+', capital uniquement) + '+eur2(avgMonthlyPostLivraisonAssurance)+' d\'assurance emprunteur'+assuranceCreditsSuffix+'.'+(mainLoanDuringDeferPayment!=null
     ? (isFullyConstantAllMonths
         ? ' Pr\u00eat liss\u00e9 sur le PTZ, assurance NON d\u00e9gressive : ce montant est EXACTEMENT IDENTIQUE sur les 180 mois (pas seulement une moyenne) -- l\'assurance \u00e9tant calcul\u00e9e sur le capital initial (constant) et le prêt+PTZ combin\u00e9 restant constant gr\u00e2ce au lissage.'
         : ' Pr\u00eat liss\u00e9 sur le PTZ : le prêt+PTZ combin\u00e9 (hors assurance) reste constant sur toute la dur\u00e9e. L\'assurance, elle, est D\u00c9GRESSIVE ici (calcul\u00e9e sur le capital restant d\u00fb) et diminue donc progressivement avec l\'amortissement -- ce total n\'est donc qu\'une valeur repr\u00e9sentative (prise juste apr\u00e8s activation du PTZ), pas une moyenne stricte sur 180 mois.')
@@ -1947,7 +1971,7 @@ function runSimulation(fraisIRASyncDepth){
     +'<div class="kpi"><div class="label">Int\u00e9r\u00eats intercalaires</div><div class="value warn">'+eur(staged.totalIntercalaryInterest)+'</div></div>'
     +'<div class="kpi"><div class="label">Int\u00e9r\u00eats post-livraison</div><div class="value warn">'+eur(staged.postSched.totalInterest)+'</div></div>'
     +(empLoansInterest>0.5 ? '<div class="kpi"><div class="label">Int\u00e9r\u00eats Pr\u00eat Action Logement</div><div class="value warn">'+eur(empLoansInterest)+'</div></div>' : '')
-    +'<div class="kpi"><div class="label">Assurance totale pr\u00eat + PTZ</div><div class="value warn">'+eur(totalInsuranceAll)+'</div></div>'
+    +'<div class="kpi"><div class="label">Assurance totale '+insuredCreditParts.join(' + ')+'</div><div class="value warn">'+eur(totalInsuranceAll)+'</div></div>'
     +'<div class="kpi" data-tooltip="'+(epargneIRAFee>0.5 ? 'Dont '+eur(epargneIRAFee)+' d\u2019IRA estim\u00e9e sur l\u2019\u00e9pargne exc\u00e9dentaire utilis\u00e9e ('+eur(epargneExcedentaireTotalUsed)+' &times; '+epargneIRARate+'%) -- taux \u00e0 confirmer aupr\u00e8s de votre banque.' : 'Dossier, garantie, courtage -- pay\u00e9s une fois, ind\u00e9pendants de la dur\u00e9e.')+'"><div class="label">Frais li\u00e9s au cr\u00e9dit</div><div class="value">'+eur(totalFeesCredit)+'</div></div>'
     +'<div class="kpi"><div class="label">Frais li\u00e9s \u00e0 l acquisition</div><div class="value">'+eur(totalFeesAcquisition)+'</div></div>'
     +'<div class="kpi" data-tooltip="= int\u00e9r\u00eats intercalaires + int\u00e9r\u00eats post-livraison + int\u00e9r\u00eats Pr\u00eat Action Logement + assurance + frais li\u00e9s au cr\u00e9dit (chaque montant arrondi \u00e0 l euro avant addition, d o\u00f9 un &eacute;cart possible de 1&euro; avec la somme des valeurs non arrondies). Change selon le sc\u00e9nario Diff\u00e9r\u00e9/Prorata et selon le r\u00e9glage Utiliser l\'\u00e9pargne exc\u00e9dentaire. Les frais li\u00e9s \u00e0 l acquisition notaire, agence, mobilier ne sont volontairement pas inclus ici -- voir Co\u00fbt total \u00e0 financer -- mais leur financement via le pr\u00eat augmente d\u00e9j\u00e0 les int\u00e9r\u00eats ci-dessus au prorata du montant emprunt\u00e9."><div class="label">Co\u00fbt total du cr\u00e9dit</div><div class="value danger">'+eur(displayedCreditCost)+'</div></div>'
@@ -2014,13 +2038,17 @@ function runSimulation(fraisIRASyncDepth){
     +'<div class="kpi" data-tooltip="Dur\u00e9e totale du contrat (chantier + amortissement), plafonn\u00e9e \u00e0 25 ans par la r\u00e9glementation Action Logement."><div class="label">Dur\u00e9e totale</div><div class="value">'+(empLoan1TotalMonths/12).toFixed(1)+' ans</div></div>'
     +'<div class="kpi" data-tooltip="D\u00e9duite automatiquement de la date du premier tirage effectif du Pr\u00eat AL (selon le waterfall d \u00e9pargne ci-dessous) jusqu \u00e0 la livraison -- pas un champ modifiable directement."><div class="label">Dont chantier (intercalaire)</div><div class="value">'+(empLoan1ConstructionMonths>0 ? (empLoan1ConstructionMonths+' mois') : '&mdash;')+'</div></div>'
     +'<div class="kpi"><div class="label">Mensualit\u00e9 hors assurance (post-livraison)</div><div class="value accent">'+eur2(empLoansMonthly)+'</div></div>'
-    +'<div class="kpi" data-tooltip="Int\u00e9r\u00eats intercalaires (chantier, '+eur(stagedAL.totalIntercalaryInterest)+') + int\u00e9r\u00eats post-livraison ('+eur(stagedAL.postSched.totalInterest)+')."><div class="label">Int\u00e9r\u00eats totaux</div><div class="value warn">'+eur(empLoansInterest)+'</div></div>';
+    +'<div class="kpi" data-tooltip="Int\u00e9r\u00eats intercalaires (chantier, '+eur(stagedAL.totalIntercalaryInterest)+') + int\u00e9r\u00eats post-livraison ('+eur(stagedAL.postSched.totalInterest)+')."><div class="label">Int\u00e9r\u00eats totaux</div><div class="value warn">'+eur(empLoansInterest)+'</div></div>'
+    +'<div class="kpi" data-tooltip="Quotit\u00e9s propres au Pr\u00eat AL ('+empLoan1Ins1Quota+'% + '+empLoan1Ins2Quota+'% = '+(empLoan1Ins1Quota+empLoan1Ins2Quota)+'%), aux m\u00eames taux annuels emprunteur que le pr\u00eat principal ('+ins1Rate.toFixed(2)+'% / '+ins2Rate.toFixed(2)+'%) -- taux combin\u00e9 '+combinedEmpLoan1InsurancePct.toFixed(3)+'%. Peut diff\u00e9rer de la quotit\u00e9 du pr\u00eat principal ci-contre."><div class="label">Assurance (quotit\u00e9s)</div><div class="value">'+(insureEmpLoan1Checked ? empLoan1Ins1Quota+'% / '+empLoan1Ins2Quota+'%' : 'Non assur\u00e9')+'</div></div>'
+    +'<div class="kpi"><div class="label">Assurance totale</div><div class="value warn">'+eur(insureEmpLoan1Checked?stagedAL.totalInsurance:0)+'</div></div>'
+    +'<div class="kpi" data-tooltip="Mensualit\u00e9 hors assurance ('+eur2(empLoansMonthly)+') + assurance ('+eur2(empLoan1InsuranceMonthly)+')."><div class="label">Mensualit\u00e9 avec assurance (post-livraison)</div><div class="value accent">'+eur2(empLoansMonthly+empLoan1InsuranceMonthly)+'</div></div>';
   const loanInsuranceMonthly = mainLoanInsuranceRepresentativeRow ? mainLoanInsuranceRepresentativeRow.insurance : (staged.postSched.rows.length ? staged.postSched.rows[0].insurance : 0);
   document.getElementById('insuranceKpi').innerHTML=''
-    +'<div class="kpi"><div class="label">Taux combin\u00e9 annuel</div><div class="value">'+combinedAnnualPctOfCapital.toFixed(3)+'%</div></div>'
+    +'<div class="kpi" data-tooltip="Quotit\u00e9s '+ins1Quota+'%/'+ins2Quota+'% sur le pr\u00eat principal."><div class="label">Taux combin\u00e9 annuel (pr\u00eat principal)</div><div class="value">'+combinedAnnualPctOfCapital.toFixed(3)+'%</div></div>'
     +'<div class="kpi"><div class="label">Assurance pr\u00eat</div><div class="value warn">'+eur(staged.totalInsurance)+'</div></div>'
     +'<div class="kpi"><div class="label">Assurance PTZ</div><div class="value warn">'+eur(ptzInsuranceTotal)+'</div></div>'
-    +'<div class="kpi" data-tooltip="Mensualit\u00e9 d\'assurance post-livraison, d\u00e9compos\u00e9e : '+eur2(loanInsuranceMonthly)+' sur le pr\u00eat principal'+(insurePTZChecked&&ptzAmount>0.5?' + '+eur2(ptzInsuranceMonthly)+' sur le PTZ':(ptzAmount>0.5?' (PTZ non assur\u00e9 ici)':''))+'."><div class="label">Mensualit\u00e9 assurance (post-livraison)</div><div class="value warn">'+eur2(avgMonthlyPostLivraisonAssurance)+'</div></div>'
+    +(empLoan1Active ? '<div class="kpi" data-tooltip="Quotit\u00e9s '+empLoan1Ins1Quota+'%/'+empLoan1Ins2Quota+'% (taux combin\u00e9 '+combinedEmpLoan1InsurancePct.toFixed(3)+'%) -- ind\u00e9pendantes de la quotit\u00e9 du pr\u00eat principal ci-contre."><div class="label">Assurance Pr\u00eat AL</div><div class="value warn">'+eur(insureEmpLoan1Checked?stagedAL.totalInsurance:0)+'</div></div>' : '')
+    +'<div class="kpi" data-tooltip="Mensualit\u00e9 d\'assurance post-livraison, d\u00e9compos\u00e9e : '+eur2(loanInsuranceMonthly)+' sur le pr\u00eat principal'+(insurePTZChecked&&ptzAmount>0.5?' + '+eur2(ptzInsuranceMonthly)+' sur le PTZ':(ptzAmount>0.5?' (PTZ non assur\u00e9 ici)':''))+(empLoan1Active?(insureEmpLoan1Checked?' + '+eur2(empLoan1InsuranceMonthly)+' sur le Pr\u00eat AL':' (Pr\u00eat AL non assur\u00e9 ici)'):'')+'."><div class="label">Mensualit\u00e9 assurance (post-livraison)</div><div class="value warn">'+eur2(avgMonthlyPostLivraisonAssurance)+'</div></div>'
     +'<div class="kpi"><div class="label">Assurance totale</div><div class="value danger">'+eur(totalInsuranceAll)+'</div></div>';
 
   const ptzRowsAnchored = ptzSched.rows.map(r=>({date: livraisonDate ? addMonths(livraisonDate, r.month-1) : null, payment:r.payment}));
@@ -2032,7 +2060,7 @@ function runSimulation(fraisIRASyncDepth){
   // Pr\u00eat AL now has its own intercalary (chantier) phase, exactly like the main loan above --
   // stagedAL.intercalaryRows are already anchored to real calendar dates (not relative months), so
   // they're used directly; only the post-livraison amortization rows need anchoring to livraisonDate.
-  const empLoan1PostRowsAnchored = stagedAL.postSched.rows.map(r=>({date: livraisonDate ? addMonths(livraisonDate, r.month-1) : null, payment:r.payment}));
+  const empLoan1PostRowsAnchored = stagedAL.postSched.rows.map(r=>({date: livraisonDate ? addMonths(livraisonDate, r.month-1) : null, payment:r.payment, insurance:r.insurance}));
   const setDates=new Set();
   staged.intercalaryRows.forEach(r=>setDates.add(r.date.getTime()));
   postRowsAnchored.forEach(r=>{ if(r.date) setDates.add(r.date.getTime()); });
@@ -2063,6 +2091,7 @@ function runSimulation(fraisIRASyncDepth){
     const ptzPay = ptzR ? ptzR.payment : 0;
     const ptzIns = (insurePTZChecked && ptzR) ? ptzInsuranceMonthly : 0;
     const empLoansPay = emp1Inter ? emp1Inter.payment : (emp1Post ? emp1Post.payment : 0);
+    const empLoansIns = emp1Inter ? emp1Inter.insurance : (emp1Post ? emp1Post.insurance : 0);
     const inPtzDeferSubPhase = mainLoanDuringDeferPayment!=null && livraisonDate && d>=livraisonDate && ptzR && ptzR.payment<0.5;
     // Once the main loan's own amortization is fully repaid (no `post` row left) but the PTZ and/or
     // Pr\u00eat Action Logement still run beyond it (they can have a longer term), keep the phase label
@@ -2089,8 +2118,8 @@ function runSimulation(fraisIRASyncDepth){
               ? '<span class="row-intercalary">Intercalaire (Pr\u00eat A.L. seul)</span>'
               : '-'));
     if(tailCredits.length>0) hasTailPhase=true;
-    const total=loanPay+ptzPay+empLoansPay+loanIns+ptzIns;
-    rowsHtml+='<tr><td>'+fmtDate(d)+'</td><td>'+phase+'</td><td>'+eur2(loanPay)+'</td><td>'+eur2(empLoansPay)+'</td><td>'+eur2(ptzPay)+'</td><td>'+eur2(loanIns+ptzIns)+'</td><td><strong>'+eur2(total)+'</strong></td></tr>';
+    const total=loanPay+ptzPay+empLoansPay+loanIns+ptzIns+empLoansIns;
+    rowsHtml+='<tr><td>'+fmtDate(d)+'</td><td>'+phase+'</td><td>'+eur2(loanPay)+'</td><td>'+eur2(empLoansPay)+'</td><td>'+eur2(ptzPay)+'</td><td>'+eur2(loanIns+ptzIns+empLoansIns)+'</td><td><strong>'+eur2(total)+'</strong></td></tr>';
   });
   document.getElementById('scheduleTable').innerHTML=rowsHtml;
   document.getElementById('scheduleTableNote').innerHTML = 'Avant livraison : int\u00e9r\u00eats intercalaires. Apr\u00e8s livraison : amortissement classique.'
@@ -2138,7 +2167,7 @@ function runSimulation(fraisIRASyncDepth){
     return;
   }
 
-  lastResults={projectName:currentProjectName, commune, adresse, price, surface, prixM2Calc, prixM2Moyen, ecartEur, ecartPct, stade, remise, priceAfterRemise, totalProjectCost, apportTarget, apportPctOfPrice, ptzAmount, empLoan1Amount, empLoan1Rate, empLoansAmount, empLoansInterest, empLoansMonthly, loanAmount, overFunded, loanYears, loanRate, ptzDefer, ptzRepayMonths:ptzSched.repayMonths, ptzMonthlyPayment:ptzSched.monthlyPayment, avgMonthlyPostLivraison, avgMonthlyPostLivraisonHorsAssurance, avgMonthlyPostLivraisonAssurance, rfr, ptzZone, ptzPersonnes, ptzCeiling:ceilingPtz, ptzEligible:eligible, autresCharges, combinedAnnualPctOfCapital, totalInsuranceAll, totalFeesCredit, totalFeesAcquisition, epargneIRAFee, epargneExcedentaireTotalUsed, epargneIRARate, totalCreditCost, vefaRows, savingsRowsDiffere, savingsRowsProrata, monthlySavings, apportDispo, flexFundRate, salary1, salary2, savingsRate, durationComparisons, staged, activeScenario, apportUtiliseCumule, apportShortfallVsCible, negoExtrasTotal:updateNegoExtrasTotal()};
+  lastResults={projectName:currentProjectName, commune, adresse, price, surface, prixM2Calc, prixM2Moyen, ecartEur, ecartPct, stade, remise, priceAfterRemise, totalProjectCost, apportTarget, apportPctOfPrice, ptzAmount, empLoan1Amount, empLoan1Rate, empLoansAmount, empLoansInterest, empLoansMonthly, loanAmount, overFunded, loanYears, loanRate, ptzDefer, ptzRepayMonths:ptzSched.repayMonths, ptzMonthlyPayment:ptzSched.monthlyPayment, avgMonthlyPostLivraison, avgMonthlyPostLivraisonHorsAssurance, avgMonthlyPostLivraisonAssurance, rfr, ptzZone, ptzPersonnes, ptzCeiling:ceilingPtz, ptzEligible:eligible, autresCharges, combinedAnnualPctOfCapital, totalInsuranceAll, totalFeesCredit, totalFeesAcquisition, epargneIRAFee, epargneExcedentaireTotalUsed, epargneIRARate, totalCreditCost, vefaRows, savingsRowsDiffere, savingsRowsProrata, monthlySavings, apportDispo, flexFundRate, salary1, salary2, savingsRate, durationComparisons, staged, stagedAL, insureEmpLoan1Checked, combinedEmpLoan1InsurancePct, empLoan1Ins1Quota, empLoan1Ins2Quota, empLoan1InsuranceMonthly, activeScenario, apportUtiliseCumule, apportShortfallVsCible, negoExtrasTotal:updateNegoExtrasTotal()};
 
   if(currentProjectName) saveProject(currentProjectName, serializeState());
 }
@@ -2230,7 +2259,13 @@ function buildSummaryTableBody(r){
   const remiseEur = r.price - r.priceAfterRemise;
   const ptzUsed = r.ptzAmount > 0.5;
   const empLoansUsed = r.empLoansAmount > 0.5;
-  const ptzSuffix = ptzUsed ? '+PTZ' : '';
+  // Which credits actually carry an insurance premium in this simulation, for the "Assurance totale"
+  // line label -- PTZ insurance is optional (insurePTZ), Pr\u00eat AL insurance is optional too
+  // (insureEmpLoan1Checked) even though it defaults to checked (Action Logement requires it).
+  const insSuffixParts=[];
+  if(ptzUsed) insSuffixParts.push('PTZ');
+  if(empLoansUsed && r.insureEmpLoan1Checked) insSuffixParts.push('AL');
+  const insSuffix = insSuffixParts.length ? '+'+insSuffixParts.join('+') : '';
   const totalFinancement = r.apportTarget + r.ptzAmount + r.empLoansAmount + r.loanAmount;
   const totalFrais = r.totalFeesAcquisition + r.totalFeesCredit;
   const INDENT = '\u00A0\u00A0\u00A0\u00A0'; // 4 non-breaking spaces -- visually nests a line under the bold total above it
@@ -2282,7 +2317,8 @@ function buildSummaryTableBody(r){
   body.push(totalRow('Co\u00fbt total du cr\u00e9dit', pdfEur(displayedCreditCost)));
   body.push(subRow('Int\u00e9r\u00eats totaux (pr\u00eat)', pdfEur(r.staged.totalInterest)));
   if(empLoansUsed) body.push(subRow('Int\u00e9r\u00eats Pr\u00eat Action Logement', pdfEur(r.empLoansInterest)));
-  body.push(subRow('Assurance totale (pr\u00eat'+ptzSuffix+')', pdfEur(r.totalInsuranceAll)));
+  body.push(subRow('Assurance totale (pr\u00eat'+insSuffix+')', pdfEur(r.totalInsuranceAll)));
+  if(empLoansUsed && r.insureEmpLoan1Checked) body.push(subRow('  dont assurance Pr\u00eat Action Logement ('+r.empLoan1Ins1Quota+'%/'+r.empLoan1Ins2Quota+'%)', pdfEur(r.stagedAL.totalInsurance)));
   body.push(subRow('Frais li\u00e9s au cr\u00e9dit', pdfEur(r.totalFeesCredit)));
   if(r.epargneIRAFee>0.5) body.push(subRow('  dont IRA sur \u00e9pargne exc\u00e9dentaire ('+r.epargneIRARate+'%)', pdfEur(r.epargneIRAFee)));
   body.push(['Frais li\u00e9s \u00e0 l\'acquisition (notaire, agence, mobilier)', pdfEur(r.totalFeesAcquisition)]);
